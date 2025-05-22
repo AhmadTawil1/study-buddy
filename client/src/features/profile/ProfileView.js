@@ -6,7 +6,7 @@ export default function ProfileView() {
     joined: 'Jan 2024',
     badges: ['AI Explorer', 'Math Helper'],
     questionsAsked: 4,
-    answersGiven: 12,
+    answersGiven: 15,
   }
 
   return (
