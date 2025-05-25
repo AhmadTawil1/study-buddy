@@ -1,37 +1,27 @@
-const mockData = {
-  '123': {
-    title: 'Can someone explain linear regression?',
-    tag: 'AI',
-    posted: '2 hours ago',
-    description: `I'm struggling to understand the cost function and how gradient descent actually reduces the loss. Also confused about how to choose the learning rate.`,
-  },
-  '456': {
-    title: 'How to solve 3-variable equations in Python?',
-    tag: 'Math',
-    posted: '1 day ago',
-    description: `I want to learn how to solve three linear equations using numpy or sympy. I don't fully understand the matrix representation of the equations.`,
-  },
-}
+// app/requests/[id]/page.js
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '@/src/firebase/firebase'
+import formatDate from '@/src/utils/formatDate'
 
 export default async function RequestDetails({ params }) {
-  const awaitedParams = await params;
-  const request = mockData[awaitedParams.id];
+  const { id } = params
+  const ref = doc(db, 'requests', id)
+  const snap = await getDoc(ref)
 
-  if (!request) {
+  if (!snap.exists()) {
     return <div className="text-center text-red-600 mt-20">❌ Request not found</div>
   }
 
+  const request = snap.data()
+
   return (
     <div className="max-w-3xl mx-auto py-12 px-4 bg-white rounded-xl shadow-md mt-10 border border-gray-100">
-      <p className="text-sm text-gray-500 mb-2">Posted: {request.posted}</p>
+      <p className="text-sm text-gray-500 mb-2">Posted: {formatDate(request.createdAt?.toDate())}</p>
       <h1 className="text-2xl font-bold text-blue-800 mb-4">{request.title}</h1>
       <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 text-sm rounded-full mb-6">
-        {request.tag}
+        {request.subject}
       </span>
-
-      <div className="text-gray-800 leading-relaxed">
-        {request.description}
-      </div>
+      <div className="text-gray-800 leading-relaxed whitespace-pre-line">{request.description}</div>
     </div>
   )
 }

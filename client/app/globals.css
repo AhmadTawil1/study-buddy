@@ -37,9 +37,15 @@ body {
 }
 
 /* Input styles */
-input::placeholder {
+input, textarea, select {
+  color: #171717;
+}
+input::placeholder, textarea::placeholder {
   color: var(--input-placeholder);
   opacity: 1;
+}
+label {
+  color: #374151;
 }
 
 input:focus {
