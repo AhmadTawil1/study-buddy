@@ -1,20 +1,33 @@
+// app/api/rephrase/route.js
+import { NextResponse } from 'next/server'
+
 export async function POST(req) {
-  const { prompt } = await req.json()
+  try {
+    const { prompt } = await req.json()
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-3.5-turbo',
-      messages: [{ role: 'user', content: `Rephrase this question: ${prompt}` }],
-      temperature: 0.7,
-    }),
-  })
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You rephrase unclear student question descriptions into clearer versions.' },
+          { role: 'user', content: `Rephrase this: ${prompt}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 150,
+      }),
+    })
 
-  const data = await res.json()
+    const data = await res.json()
+    const message = data.choices?.[0]?.message?.content?.trim()
 
-  return Response.json(data)
+    return NextResponse.json({ rephrased: message })
+  } catch (err) {
+    console.error('❌ Error in /api/rephrase:', err)
+    return NextResponse.json({ error: 'Failed to rephrase' }, { status: 500 })
+  }
 }

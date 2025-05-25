@@ -6,7 +6,7 @@ import CTASection from '../src/components/common/CTASection'
 
 export default function HomePage() {
   return (
-    <div className="space-y-24">
+    <div className="w-full">
       <HeroSection />
       <AboutSection />
       <FeaturesSection />

@@ -1,32 +1,185 @@
 'use client'
 import { useState } from 'react'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { auth } from '@/src/firebase/firebase'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '@/src/firebase/firebase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  const validatePassword = (password) => {
+    const minLength = 8
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumbers = /\d/.test(password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password)
+
+    if (password.length < minLength) {
+      return 'Password must be at least 8 characters long'
+    }
+    if (!hasUpperCase) {
+      return 'Password must contain at least one uppercase letter'
+    }
+    if (!hasLowerCase) {
+      return 'Password must contain at least one lowercase letter'
+    }
+    if (!hasNumbers) {
+      return 'Password must contain at least one number'
+    }
+    if (!hasSpecialChar) {
+      return 'Password must contain at least one special character'
+    }
+    return ''
+  }
 
   const handleSignup = async (e) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password)
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        setError('Passwords do not match')
+        setLoading(false)
+        return
+      }
+
+      // Validate password strength
+      const passwordError = validatePassword(password)
+      if (passwordError) {
+        setError(passwordError)
+        setLoading(false)
+        return
+      }
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+
+      // Add user info to Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        name: name,
+        joinDate: serverTimestamp(),
+        role: 'student', // Default role
+        bio: '',
+        subjects: [],
+        rating: 0,
+        totalRatings: 0
+      })
+
       router.push('/profile')
     } catch (err) {
-      alert('Signup failed: ' + err.message)
+      setError(err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow">
-      <h2 className="text-2xl font-bold mb-4">Create your StudyBuddy account</h2>
-      <form onSubmit={handleSignup} className="space-y-4">
-        <input className="w-full p-2 border rounded" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-        <input className="w-full p-2 border rounded" type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700" type="submit">Sign Up</button>
+    <div className="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg fade-in">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
+        <p className="text-gray-600">Join StudyBuddy and start learning together</p>
+      </div>
+
+      {error && (
+        <div className="error-message fade-in">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSignup} className="space-y-6">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name
+          </label>
+          <input
+            id="name"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            type="text"
+            placeholder="Enter your full name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            Email
+          </label>
+          <input
+            id="email"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            Password
+          </label>
+          <input
+            id="password"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            type="password"
+            placeholder="Create a password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            Confirm Password
+          </label>
+          <input
+            id="confirmPassword"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            type="password"
+            placeholder="Confirm your password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          className={`w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'Creating Account...' : 'Create Account'}
+        </button>
       </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Already have an account?{' '}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   )
 }

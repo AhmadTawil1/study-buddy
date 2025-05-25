@@ -12,11 +12,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 min-h-screen text-gray-900">
+      <body className="bg-white min-h-screen text-gray-900">
         <AuthProvider>
           <div className="flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-1 px-4 md:px-8 lg:px-12 py-8 bg-white shadow rounded-xl mt-4 mb-6">
+            <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 bg-white mt-12">
               {children}
             </main>
             <Footer />
