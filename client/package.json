@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+
     "@headlessui/react": "^2.2.4",
+
     "@heroicons/react": "^2.2.0",
     "autoprefixer": "^10.4.21",
     "date-fns": "^4.1.0",
