@@ -37,53 +37,6 @@ export default function ProfileView() {
     averageRating: 0,
     rank: 0
   })
-  const [badges, setBadges] = useState([
-    {
-      name: 'First Question',
-      description: 'Asked your first question!',
-      earned: true,
-      color: 'bg-blue-400',
-      icon: <TrophyIcon className="w-6 h-6" />
-    },
-    {
-      name: 'Helpful Answer',
-      description: 'Received 5 upvotes on an answer.',
-      earned: true,
-      color: 'bg-green-400',
-      icon: <ChatBubbleLeftRightIcon className="w-6 h-6" />
-    },
-    {
-      name: 'Top Student',
-      description: 'Ranked in the top 10.',
-      earned: false,
-      color: 'bg-yellow-400',
-      icon: <AcademicCapIcon className="w-6 h-6" />
-    },
-    {
-      name: 'Consistent Contributor',
-      description: 'Answered questions 7 days in a row.',
-      earned: false,
-      color: 'bg-purple-400',
-      icon: <ClockIcon className="w-6 h-6" />
-    }
-  ])
-  const [recentActivity, setRecentActivity] = useState([
-    {
-      type: 'answered',
-      description: 'Answered: How to use Merge Sort',
-      time: '2 hours ago'
-    },
-    {
-      type: 'asked',
-      description: 'Asked: Why does friction cause heat?',
-      time: '1 day ago'
-    },
-    {
-      type: 'answered',
-      description: 'Answered: What is a binary tree?',
-      time: '3 days ago'
-    }
-  ])
 
   useEffect(() => {
     if (!user) return
@@ -114,13 +67,27 @@ export default function ProfileView() {
         questionsAsked: questionsSnap.size,
         questionsAnswered: answersSnap.size,
         upvotesEarned: answersSnap.docs.reduce((acc, doc) => acc + (doc.data().upvotes || 0), 0),
-        averageRating: 4.5, // This would need to be calculated from actual ratings
-        rank: 42 // This would need to be calculated from actual rankings
+        averageRating: profile?.averageRating || 0,
+        rank: profile?.rank || 0
       })
     }
 
     fetchData()
   }, [user])
+
+  // Build recentActivity dynamically from fetched data
+  const recentActivity = [
+    ...myQuestions.map(q => ({
+      type: 'asked',
+      description: `Asked: ${q.title}`,
+      time: q.createdAt,
+    })),
+    ...myAnswers.map(a => ({
+      type: 'answered',
+      description: `Answered: ${a.questionTitle || a.content?.substring(0, 50) + '...'}`,
+      time: a.createdAt,
+    })),
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   if (!user || !profile) return <p>Loading...</p>
 
@@ -179,34 +146,6 @@ export default function ProfileView() {
             <TrophyIcon className="w-8 h-8 text-red-500 mx-auto mb-2" />
             <div className="text-2xl font-bold text-red-700">#{stats.rank}</div>
             <div className="text-sm text-gray-600">Rank</div>
-          </div>
-        </div>
-
-        {/* Badges Section */}
-        <div className="mb-8">
-          <h3 className="font-semibold text-gray-700 mb-2 flex items-center">
-            <TrophyIcon className="w-5 h-5 mr-2 text-yellow-500" /> Badges
-          </h3>
-          <div className="flex flex-wrap gap-4">
-            {badges.map((badge, idx) => (
-              <div
-                key={idx}
-                className={`relative group flex flex-col items-center p-3 rounded-lg shadow transition-all duration-200 ${badge.earned ? badge.color + ' text-white' : 'bg-gray-200 text-gray-400'}`}
-                style={{ minWidth: 100 }}
-              >
-                <div>{badge.icon}</div>
-                <span className="font-semibold mt-1 text-sm">{badge.name}</span>
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-40 bg-black text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 pointer-events-none z-10 transition-opacity">
-                  {badge.description}
-                </div>
-                {!badge.earned && (
-                  <div className="absolute inset-0 bg-gray-400 bg-opacity-50 rounded-lg flex items-center justify-center">
-                    <ShieldExclamationIcon className="w-6 h-6 text-white opacity-70" />
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         </div>
 
@@ -285,8 +224,12 @@ export default function ProfileView() {
                         <QuestionMarkCircleIcon className="w-5 h-5 text-white" />
                       </span>
                       <div className="flex-1">
-                        <div className="font-medium">{q.title}</div>
-                        <div className="text-xs text-gray-500">Asked {q.createdAt ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true }) : ''}</div>
+                        <div className="font-medium">Asked: {q.title}</div>
+                        <div className="text-xs text-gray-500">
+                          {q.createdAt && !isNaN(new Date(q.createdAt))
+                            ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })
+                            : ''}
+                        </div>
                       </div>
                     </div>
                   ))
@@ -304,8 +247,12 @@ export default function ProfileView() {
                         <ChatBubbleLeftRightIcon className="w-5 h-5 text-white" />
                       </span>
                       <div className="flex-1">
-                        <div className="font-medium">{a.questionTitle}</div>
-                        <div className="text-xs text-gray-500">Answered {a.createdAt ? formatDistanceToNow(new Date(a.createdAt), { addSuffix: true }) : ''}</div>
+                        <div className="font-medium">Answered: {a.questionTitle}</div>
+                        <div className="text-xs text-gray-500">
+                          {a.createdAt && !isNaN(new Date(a.createdAt))
+                            ? formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })
+                            : ''}
+                        </div>
                       </div>
                     </div>
                   ))
