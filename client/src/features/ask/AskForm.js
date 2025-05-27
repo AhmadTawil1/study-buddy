@@ -109,15 +109,22 @@ export default function AskForm() {
     setError('')
     setSuccess(false)
 
+    console.log('Attempting to submit form...')
+    console.log('Form values:', { title, description, subject, tags, isPrivate, files: files.map(f => f.name), codeSnippet, clarityScore })
+
     try {
       if (!title || !description || !subject) {
-        setError('Title, description, and subject are required.')
+        const errorMessage = 'Title, description, and subject are required.'
+        setError(errorMessage)
+        console.error('Validation failed:', errorMessage)
         setLoading(false)
         return
       }
 
       if (!user) {
-        setError('You must be logged in.')
+        const errorMessage = 'You must be logged in.'
+        setError(errorMessage)
+        console.error('Authentication check failed:', errorMessage)
         setLoading(false)
         return
       }
@@ -136,16 +143,20 @@ export default function AskForm() {
         createdAt: new Date(),
       }
 
+      console.log('Validation passed. Attempting to create request:', request)
+
       await createRequest(request)
+      console.log('Request created successfully!')
       setSuccess(true)
       setTimeout(() => {
         router.push('/requests')
       }, 1200)
     } catch (err) {
-      console.error('Submit error:', err)
+      console.error('Submit error during createRequest:', err)
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
+      console.log('Form submission process finished.')
     }
   }
 
@@ -392,6 +403,7 @@ export default function AskForm() {
               <select
                 value={subject}
                 onChange={e => {
+                  setSubject(e.target.value)
                   if (e.target.value && !tags.includes(e.target.value)) {
                     addTag(e.target.value)
                   }
