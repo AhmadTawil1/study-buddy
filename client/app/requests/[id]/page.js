@@ -9,6 +9,7 @@ import QuestionOverview from '@/src/components/common/QuestionOverview'
 import FullDescription from '@/src/components/common/FullDescription'
 import AnswerSection from '@/src/components/common/AnswerSection'
 import Sidebar from '@/src/components/common/Sidebar'
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function RequestDetails({ params }) {
   const { id } = params
@@ -17,6 +18,8 @@ export default function RequestDetails({ params }) {
   const [request, setRequest] = useState(null)
   const [requestLoading, setRequestLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [answers, setAnswers] = useState([])
+  const [answersLoading, setAnswersLoading] = useState(true)
 
   useEffect(() => {
     if (!loading && !user) {
@@ -52,6 +55,27 @@ export default function RequestDetails({ params }) {
     }
   }, [user, loading, id]) // Depend on user, loading, and id
 
+  useEffect(() => {
+    if (user && !loading && id) { // Fetch answers only if user is logged in and id is available
+      const fetchAnswers = async () => {
+        setAnswersLoading(true)
+        try {
+          const q = query(collection(db, 'answers'), where('requestId', '==', id));
+          const querySnapshot = await getDocs(q);
+          const answersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt?.toDate() }));
+          setAnswers(answersData);
+        } catch (e) {
+          console.error('Error fetching answers:', e);
+          // Handle error appropriately, maybe set an answersError state
+        } finally {
+          setAnswersLoading(false);
+        }
+      };
+
+      fetchAnswers();
+    }
+  }, [user, loading, id]); // Depend on user, loading, and id
+
   if (loading || !user) {
     return <div className="min-h-screen py-12 px-4 text-center">Loading or redirecting...</div>
   }
@@ -79,7 +103,7 @@ export default function RequestDetails({ params }) {
           timeAgo: formatDate(request.createdAt)
         }} />
         <FullDescription description={request.description} files={request.files || []} aiSummary={request.aiSummary} />
-        <AnswerSection answers={[]} requestId={request.id} />
+        <AnswerSection answers={answers} requestId={request.id} />
       </div>
       <div className="w-80">
         <Sidebar relatedQuestions={[]} aiSuggestions="Consider clarifying if you need social login or just email/password." />
