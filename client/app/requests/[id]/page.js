@@ -5,6 +5,10 @@ import { useAuth } from '@/src/context/authContext'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/src/firebase/firebase'
 import formatDate from '@/src/utils/formatDate'
+import QuestionOverview from '@/src/components/common/QuestionOverview'
+import FullDescription from '@/src/components/common/FullDescription'
+import AnswerSection from '@/src/components/common/AnswerSection'
+import Sidebar from '@/src/components/common/Sidebar'
 
 export default function RequestDetails({ params }) {
   const { id } = params
@@ -64,14 +68,22 @@ export default function RequestDetails({ params }) {
      return <div className="min-h-screen py-12 px-4 text-center text-red-600">Request not found</div>
   }
 
+  // Only ONE return below this line!
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 bg-white rounded-xl shadow-md mt-10 border border-gray-100">
-      <p className="text-sm text-gray-500 mb-2">Posted: {formatDate(request.createdAt)}</p>
-      <h1 className="text-2xl font-bold text-blue-800 mb-4">{request.title}</h1>
-      <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 text-sm rounded-full mb-6">
-        {request.subject}
-      </span>
-      <div className="text-gray-800 leading-relaxed whitespace-pre-line">{request.description}</div>
+    <div className="flex gap-8 items-start max-w-6xl mx-auto py-12 px-4">
+      <div className="flex-1">
+        <a href="/requests" className="text-blue-600 hover:underline mb-4 block">← Back to Requests</a>
+        <QuestionOverview request={{
+          ...request,
+          author: request.author || "Jane Doe",
+          timeAgo: formatDate(request.createdAt)
+        }} />
+        <FullDescription description={request.description} files={request.files || []} aiSummary={request.aiSummary} />
+        <AnswerSection answers={[]} requestId={request.id} />
+      </div>
+      <div className="w-80">
+        <Sidebar relatedQuestions={[]} aiSuggestions="Consider clarifying if you need social login or just email/password." />
+      </div>
     </div>
   )
 }
