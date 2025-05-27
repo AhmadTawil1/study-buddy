@@ -2,9 +2,9 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/src/context/authContext'
-import ProfileView from '@/src/features/profile/ProfileView'
+import AboutSection from '@/src/components/common/AboutSection'
 
-export default function ProfilePage() {
+export default function AboutPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
@@ -19,8 +19,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="py-12 px-4">
-      <ProfileView />
+    <div className="min-h-screen py-12 px-4">
+      <AboutSection />
     </div>
   )
-}
+} 

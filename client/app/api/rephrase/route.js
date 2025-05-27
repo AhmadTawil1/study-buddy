@@ -22,7 +22,10 @@ export async function POST(req) {
       }),
     })
 
-    const data = await res.json()
+    const resText = await res.text();
+    console.log('Raw OpenAI API response:', resText);
+
+    const data = JSON.parse(resText);
     const message = data.choices?.[0]?.message?.content?.trim()
 
     return NextResponse.json({ rephrased: message })
