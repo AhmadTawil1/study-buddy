@@ -19,7 +19,8 @@ import {
   ShieldExclamationIcon,
   ArrowRightOnRectangleIcon,
   TrashIcon,
-  ClockIcon
+  ClockIcon,
+  HandThumbUpIcon // Assuming HandThumbUpIcon is used for 'Helpful Answer' badge or stats
 } from '@heroicons/react/24/outline'
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
@@ -57,12 +58,13 @@ export default function ProfileView() {
       const savedQuery = query(collection(db, 'savedQuestions'), where('userId', '==', user.uid))
       const savedSnap = await getDocs(savedQuery)
 
-      setProfile(userSnap.data())
+      const profileData = userSnap.data()
+      setProfile(profileData)
       setMyQuestions(questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       setMyAnswers(answersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       setSavedQuestions(savedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       
-      // Calculate stats
+      // Calculate stats using fetched data
       setStats({
         questionsAsked: questionsSnap.size,
         questionsAnswered: answersSnap.size,
@@ -70,6 +72,9 @@ export default function ProfileView() {
         averageRating: profile?.averageRating || 0,
         rank: profile?.rank || 0
       })
+
+      // TODO: Fetch or calculate badges from Firestore based on user activity/data
+      // setBadges(...) 
     }
 
     fetchData()
@@ -139,7 +144,7 @@ export default function ProfileView() {
           </div>
           <div className="bg-purple-50 p-4 rounded-lg text-center">
             <TrophyIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-700">{stats.averageRating}</div>
+            <div className="text-2xl font-bold text-purple-700">{stats.averageRating.toFixed(1)}</div>{/* Display with 1 decimal place */}
             <div className="text-sm text-gray-600">Avg. Rating</div>
           </div>
           <div className="bg-red-50 p-4 rounded-lg text-center">
@@ -224,6 +229,12 @@ export default function ProfileView() {
                         <QuestionMarkCircleIcon className="w-5 h-5 text-white" />
                       </span>
                       <div className="flex-1">
+                        <div className="font-medium">Asked: {q.title}</div>
+                        <div className="text-xs text-gray-500">
+                          {q.createdAt && !isNaN(new Date(q.createdAt))
+                            ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })
+                            : ''}
+                        </div>
                         <div className="font-medium">Asked: {q.title}</div>
                         <div className="text-xs text-gray-500">
                           {q.createdAt && !isNaN(new Date(q.createdAt))
