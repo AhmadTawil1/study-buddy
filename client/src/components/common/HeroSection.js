@@ -78,7 +78,7 @@ export default function HeroSection() {
             className="flex-1 flex justify-center md:justify-end mt-12 md:mt-0"
           >
             <img
-              src="/hero-illustration.svg"
+              src="../../public/file.svg"
               alt="Students collaborating"
               className="w-full max-w-lg drop-shadow-xl"
             />

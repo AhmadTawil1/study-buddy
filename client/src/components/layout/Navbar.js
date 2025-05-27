@@ -19,14 +19,14 @@ export default function Navbar() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setIsProfileMenuOpen(false)
+        setIsProfileMenuOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
+    };
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isProfileMenuOpen])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileMenuOpen]);
 
   return (
     <nav className="bg-white shadow-sm">
@@ -100,7 +100,6 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                       tabIndex="-1"
-                      id="user-menu-item-0"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       Your Profile
@@ -110,7 +109,6 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                       tabIndex="-1"
-                      id="user-menu-item-1"
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       My Questions
@@ -120,7 +118,6 @@ export default function Navbar() {
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                       tabIndex="-1"
-                      id="user-menu-item-2"
                     >
                       Logout
                     </button>
@@ -144,6 +141,7 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             >
+              <span className="sr-only">Open main menu</span>
               {isMobileMenuOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
             </button>
           </div>
@@ -151,7 +149,7 @@ export default function Navbar() {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden">
+        <div className="md:hidden" id="mobile-menu">
           <div className="pt-2 pb-3 space-y-1">
             <Link href="/" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600">
               Home
