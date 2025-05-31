@@ -2,7 +2,7 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth }  from 'firebase/auth'
-import { getFirestore, collection, query, orderBy, limit, getDocs, where }  from 'firebase/firestore'
+import { getFirestore, collection, query, orderBy, limit, getDocs, where, Timestamp }  from 'firebase/firestore'
 import { isSupported, getAnalytics } from 'firebase/analytics'  // optional
 
 // 1️ Read config from env vars — never hardcode!
@@ -90,34 +90,69 @@ export const fetchFeaturedSubjects = async () => {
 
 export const fetchCommunityStats = async () => {
   try {
-    const statsRef = collection(db, 'stats')
-    const querySnapshot = await getDocs(statsRef)
-    const stats = querySnapshot.docs[0]?.data() || {
-      usersHelped: 0,
-      questionsThisWeek: 0,
-      activeHelpers: 0
-    }
-    
-    return stats
+    // Fetch total users
+    const usersRef = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersRef);
+    const totalUsers = usersSnapshot.size;
+
+    // Fetch active helpers (assuming 'isHelper' field)
+    const activeHelpersQuery = query(usersRef, where('isHelper', '==', true));
+    const activeHelpersSnapshot = await getDocs(activeHelpersQuery);
+    const activeHelpers = activeHelpersSnapshot.size;
+
+    // Fetch questions this week
+    const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+    const questionsRef = collection(db, 'requests');
+    const recentQuestionsQuery = query(
+      questionsRef,
+      where('createdAt', '>=', sevenDaysAgo)
+    );
+    const recentQuestionsSnapshot = await getDocs(recentQuestionsQuery);
+    const questionsThisWeek = recentQuestionsSnapshot.size;
+
+    // Note: 'Users Helped' is ambiguous, using total users for now.
+    // If 'Users Helped' means something else (e.g., users who received an answer),
+    // further logic would be needed.
+
+    return {
+      usersHelped: totalUsers,
+      questionsThisWeek: questionsThisWeek,
+      activeHelpers: activeHelpers
+    };
   } catch (error) {
-    console.error('Error fetching community stats:', error)
+    console.error('Error fetching community stats:', error);
     return {
       usersHelped: 0,
       questionsThisWeek: 0,
       activeHelpers: 0
-    }
+    };
   }
 }
 
 export const fetchTrendingTopics = async () => {
   try {
-    const topicsRef = collection(db, 'topics')
-    const q = query(topicsRef, orderBy('searchCount', 'desc'), limit(8))
-    const querySnapshot = await getDocs(q)
-    
-    return querySnapshot.docs.map(doc => doc.data().name)
+    const requestsRef = collection(db, 'requests');
+    const querySnapshot = await getDocs(requestsRef);
+
+    const tagCount = {};
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (Array.isArray(data.tags)) {
+        data.tags.forEach(tag => {
+          tagCount[tag] = (tagCount[tag] || 0) + 1;
+        });
+      }
+    });
+
+    // Get top 8 most frequent tags as trending topics
+    const trendingTopics = Object.entries(tagCount)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .slice(0, 8)
+      .map(([tag,]) => tag);
+
+    return trendingTopics;
   } catch (error) {
-    console.error('Error fetching trending topics:', error)
-    return []
+    console.error('Error fetching trending topics:', error);
+    return [];
   }
 }

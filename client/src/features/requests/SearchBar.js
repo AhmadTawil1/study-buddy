@@ -1,26 +1,58 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { db } from '@/src/firebase/firebase'
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 
 export default function SearchBar({ value, onChange, onSuggestionClick }) {
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
-  // Mock AI suggestions - replace with actual API call
   useEffect(() => {
-    if (value.length > 2) {
-      // Simulate AI suggestions
-      const mockSuggestions = [
-        'Did you mean matrix inversion?',
-        'Matrix multiplication',
-        'Matrix determinant'
-      ]
-      setSuggestions(mockSuggestions)
-      setShowSuggestions(true)
-    } else {
-      setSuggestions([])
-      setShowSuggestions(false)
+    const fetchSuggestions = async () => {
+      if (value.length > 2) {
+        try {
+          // Search in requests collection
+          const requestsRef = collection(db, 'requests')
+          const q = query(
+            requestsRef,
+            where('title', '>=', value),
+            where('title', '<=', value + '\uf8ff'),
+            orderBy('title'),
+            limit(5)
+          )
+          const querySnapshot = await getDocs(q)
+          
+          const requestSuggestions = querySnapshot.docs.map(doc => doc.data().title)
+
+          // Search in topics collection
+          const topicsRef = collection(db, 'topics')
+          const topicsQuery = query(
+            topicsRef,
+            where('name', '>=', value),
+            where('name', '<=', value + '\uf8ff'),
+            orderBy('name'),
+            limit(3)
+          )
+          const topicsSnapshot = await getDocs(topicsQuery)
+          
+          const topicSuggestions = topicsSnapshot.docs.map(doc => doc.data().name)
+
+          // Combine and deduplicate suggestions
+          const allSuggestions = [...new Set([...requestSuggestions, ...topicSuggestions])]
+          setSuggestions(allSuggestions)
+          setShowSuggestions(true)
+        } catch (error) {
+          console.error('Error fetching suggestions:', error)
+          setSuggestions([])
+        }
+      } else {
+        setSuggestions([])
+        setShowSuggestions(false)
+      }
     }
+
+    fetchSuggestions()
   }, [value])
 
   return (
