@@ -7,6 +7,8 @@ import { createRequest } from '@/src/services/firestoreService'
 import { FiUpload, FiCode, FiLock, FiGlobe } from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from 'framer-motion'
+import { uploadFiles } from '@/src/services/storageService'
+import { serverTimestamp } from 'firebase/firestore'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
@@ -111,23 +113,31 @@ export default function AskForm() {
     setSuccess(false)
 
     console.log('Attempting to submit form...')
-    console.log('Form values:', { title, description, subject, tags, isPrivate, isAnonymous, files: files.map(f => f.name), codeSnippet, clarityScore })
 
+    if (!title || !description || !subject) {
+      const errorMessage = 'Title, description, and subject are required.'
+      setError(errorMessage)
+      console.error('Validation failed:', errorMessage)
+      setLoading(false)
+      return
+    }
+
+    if (!user) {
+      const errorMessage = 'You must be logged in to ask a question.'
+      setError(errorMessage)
+      console.error('Authentication check failed:', errorMessage)
+      setLoading(false)
+      return
+    }
+
+    let fileDownloadURLs = []
     try {
-      if (!title || !description || !subject) {
-        const errorMessage = 'Title, description, and subject are required.'
-        setError(errorMessage)
-        console.error('Validation failed:', errorMessage)
-        setLoading(false)
-        return
-      }
-
-      if (!user) {
-        const errorMessage = 'You must be logged in to ask a question.'
-        setError(errorMessage)
-        console.error('Authentication check failed:', errorMessage)
-        setLoading(false)
-        return
+      if (files.length > 0) {
+        console.log(`Attempting to upload ${files.length} file(s)...`)
+        fileDownloadURLs = await uploadFiles(files, user.uid)
+        console.log('Files uploaded successfully. Download URLs:', fileDownloadURLs)
+      } else {
+        console.log('No files to upload.')
       }
 
       const request = {
@@ -140,28 +150,35 @@ export default function AskForm() {
         userId: isAnonymous ? null : user.uid,
         userEmail: isAnonymous ? null : user.email,
         authorName: isAnonymous ? 'Anonymous' : (user.displayName || user.email),
-        files: files.map(f => f.name),
+        fileURLs: fileDownloadURLs,
         codeSnippet: codeSnippet || null,
         clarityScore: calculateClarityScore(title),
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       }
 
-      console.log('Validation passed. Attempting to create request:', request)
+      console.log('Validation passed. Attempting to create request in Firestore:', request)
 
       await createRequest(request)
-      console.log('Request created successfully!')
+      console.log('Request created successfully in Firestore!')
       setSuccess(true)
+
       setTimeout(() => {
         router.push('/requests')
       }, 1200)
     } catch (err) {
-      console.error('Submit error during createRequest:', err)
-      setError('Something went wrong. Please try again.')
+      console.error('Submit error:', err)
+      setError(`Submission failed: ${err.message || 'An unexpected error occurred. Please try again.'}`)
     } finally {
       setLoading(false)
       console.log('Form submission process finished.')
     }
   }
+
+  const handleFileSelect = (file) => {
+    if (file) {
+      handleFiles([file]);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -337,27 +354,26 @@ export default function AskForm() {
               onDragOver={handleDrag}
               onDrop={handleDrop}
             >
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={e => handleFiles(e.target.files)}
-                className="hidden"
-              />
-              <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-600">
-                Drag and drop files here, or{' '}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  browse
-                </button>
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Supports: Images, PDFs, .txt, .docx
-              </p>
+              <label htmlFor="file-upload" className="cursor-pointer block w-full h-full">
+                <input
+                  id="file-upload"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={e => handleFiles(e.target.files)}
+                  className="hidden"
+                />
+                <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-sm text-gray-600">
+                  Drag and drop files here, or{' '}
+                  <span className="text-blue-600 hover:text-blue-700">
+                    browse
+                  </span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Supports: Images, PDFs, .txt, .docx
+                </p>
+              </label>
             </div>
             {files.length > 0 && (
               <div className="mt-4 space-y-2">
@@ -510,6 +526,7 @@ export default function AskForm() {
           <li>• Use appropriate tags to help others find your question</li>
         </ul>
       </div>
+
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth }  from 'firebase/auth'
 import { getFirestore, collection, query, orderBy, limit, getDocs, where, Timestamp }  from 'firebase/firestore'
 import { isSupported, getAnalytics } from 'firebase/analytics'  // optional
+import { getStorage } from 'firebase/storage' // Import Storage
 
 // 1️ Read config from env vars — never hardcode!
 const firebaseConfig = {
@@ -24,6 +25,7 @@ const app = getApps().length > 0
 // 3️ Export Auth and Firestore instances
 export const auth = getAuth(app)
 export const db   = getFirestore(app)
+export const storage = getStorage(app) // Export Storage
 
 // 4️ (Optional) Initialize Analytics only in the browser if supported
 export let analytics = null
@@ -53,24 +55,59 @@ export const fetchLatestQuestions = async () => {
 
 export const fetchTopHelpers = async () => {
   try {
-    const usersRef = collection(db, 'users')
-    const q = query(
-      usersRef,
-      where('isHelper', '==', true),
-      orderBy('rating', 'desc'),
-      limit(3)
-    )
-    const querySnapshot = await getDocs(q)
+    // Query the answers collection to count answers per user
+    const answersRef = collection(db, 'answers');
+    const querySnapshot = await getDocs(answersRef);
+
+    const contributorCount = {};
+    querySnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      // Assuming the author's email is stored in the 'author' or 'authorName' field
+      const authorEmail = data.author || data.authorName || 'Unknown';
+      if (authorEmail !== 'Unknown') {
+        contributorCount[authorEmail] = (contributorCount[authorEmail] || 0) + 1;
+      }
+    });
+
+    // Sort contributors by answer count and get top 3 emails
+    const sortedContributorEmails = Object.entries(contributorCount)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .slice(0, 3)
+      .map(([email, count]) => ({ email, count }));
+
+    // If there are no contributors, return empty array
+    if (sortedContributorEmails.length === 0) {
+      return [];
+    }
+
+    // Fetch user data for the top contributor emails
+    const topContributorEmails = sortedContributorEmails.map(item => item.email);
+    const usersRef = collection(db, 'users');
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    // To handle more than 10 emails in the 'in' query, we might need multiple queries
+    // or a different approach. For now, assuming max 3 top helpers fits the 'in' limit.
+    const usersQuery = query(usersRef, where('email', 'in', topContributorEmails));
+    const usersSnapshot = await getDocs(usersQuery);
+
+    const userDataMap = {};
+    usersSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      userDataMap[data.email] = { name: data.name, nickname: data.nickname };
+    });
+
+    // Combine answer counts with user names/nicknames
+    const topHelpersWithNames = sortedContributorEmails.map(item => {
+      const userData = userDataMap[item.email];
+      const displayName = userData?.nickname || userData?.name || item.email; // Use nickname, then name, then email as fallback
+      return { name: displayName, answers: item.count };
+    });
+
+    return topHelpersWithNames;
   } catch (error) {
-    console.error('Error fetching top helpers:', error)
-    return []
+    console.error('Error fetching top helpers:', error);
+    return [];
   }
-}
+};
 
 export const fetchFeaturedSubjects = async () => {
   try {

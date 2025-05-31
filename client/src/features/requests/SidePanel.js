@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 import { db } from '@/src/firebase/firebase'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, where, getDocs } from 'firebase/firestore'
 
 export default function SidePanel() {
   const [popularTags, setPopularTags] = useState([])
@@ -11,9 +11,9 @@ export default function SidePanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'requests'), (snapshot) => {
+    // Listener for Popular Tags (from requests)
+    const unsubRequests = onSnapshot(collection(db, 'requests'), (snapshot) => {
       const tagCount = {}
-      const contributorCount = {}
       snapshot.docs.forEach(doc => {
         const data = doc.data()
         // Tags
@@ -22,9 +22,6 @@ export default function SidePanel() {
             tagCount[tag] = (tagCount[tag] || 0) + 1
           })
         }
-        // Contributors
-        const author = data.authorName || 'Unknown'
-        contributorCount[author] = (contributorCount[author] || 0) + 1
       })
       // Top 5 tags
       const tagsSorted = Object.entries(tagCount)
@@ -32,16 +29,68 @@ export default function SidePanel() {
         .slice(0, 5)
         .map(([name, count]) => ({ name, count }))
       setPopularTags(tagsSorted)
-      // Top 5 contributors
-      const contributorsSorted = Object.entries(contributorCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, answers]) => ({ name, answers }))
-      setTopContributors(contributorsSorted)
-      setLoading(false)
+      // We don't set loading to false here yet, as we are also waiting for contributors data
     })
-    return () => unsub()
-  }, [])
+
+    // Listener for Top Contributors (from answers)
+    const unsubAnswers = onSnapshot(collection(db, 'answers'), async (snapshot) => {
+      const contributorCount = {}
+      snapshot.docs.forEach(doc => {
+        const data = doc.data()
+        // Contributors count based on answers
+        // Assuming the author's name is stored in the 'author' or 'authorName' field (which is currently email)
+        const authorEmail = data.author || data.authorName || 'Unknown'
+        if (authorEmail !== 'Unknown') {
+          contributorCount[authorEmail] = (contributorCount[authorEmail] || 0) + 1
+        }
+      })
+
+      // Sort contributors by answer count and get top 5 emails
+      const sortedContributorEmails = Object.entries(contributorCount)
+        .sort(([, countA], [, countB]) => countB - countA)
+        .slice(0, 5)
+        .map(([email, count]) => ({ email, count }))
+
+      // If there are no contributors, set and return
+      if (sortedContributorEmails.length === 0) {
+        setTopContributors([])
+        setLoading(false)
+        return
+      }
+
+      // Fetch user data for the top contributor emails
+      const topContributorEmails = sortedContributorEmails.map(item => item.email)
+      const usersRef = collection(db, 'users')
+      // Firestore 'in' query supports up to 10 items in the array
+      if (topContributorEmails.length > 0) {
+        const usersQuery = query(usersRef, where('email', 'in', topContributorEmails))
+        const usersSnapshot = await getDocs(usersQuery)
+
+        const userDataMap = {}
+        usersSnapshot.docs.forEach(doc => {
+          const data = doc.data()
+          userDataMap[data.email] = { name: data.name, nickname: data.nickname }
+        })
+
+        // Combine answer counts with user names/nicknames
+        const topContributorsWithNames = sortedContributorEmails.map(item => {
+          const userData = userDataMap[item.email]
+          const displayName = userData?.nickname || userData?.name || item.email // Use nickname, then name, then email as fallback
+          return { name: displayName, answers: item.count }
+        })
+
+        setTopContributors(topContributorsWithNames)
+      }
+
+      setLoading(false) // Set loading to false after answers data and user data is received
+    })
+
+    // Cleanup function to unsubscribe from both listeners
+    return () => {
+      unsubRequests()
+      unsubAnswers()
+    }
+  }, []) // Empty dependency array means this effect runs once on mount and cleans up on unmount
 
   return (
     <div className="space-y-6">

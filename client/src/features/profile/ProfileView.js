@@ -229,13 +229,7 @@ export default function ProfileView() {
                         <QuestionMarkCircleIcon className="w-5 h-5 text-white" />
                       </span>
                       <div className="flex-1">
-                        <div className="font-medium">Asked: {q.title}</div>
-                        <div className="text-xs text-gray-500">
-                          {q.createdAt && !isNaN(new Date(q.createdAt))
-                            ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })
-                            : ''}
-                        </div>
-                        <div className="font-medium">Asked: {q.title}</div>
+                        <div className="font-medium text-gray-900">Asked: {q.title}</div>
                         <div className="text-xs text-gray-500">
                           {q.createdAt && !isNaN(new Date(q.createdAt))
                             ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })

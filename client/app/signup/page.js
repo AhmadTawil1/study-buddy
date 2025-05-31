@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/src/firebase/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { collection, query, where, getDocs } from 'firebase/firestore'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -14,6 +15,8 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const [nickname, setNickname] = useState('')
+  const [signupComplete, setSignupComplete] = useState(false)
 
   const validatePassword = (password) => {
     const minLength = 8
@@ -61,22 +64,42 @@ export default function SignupPage() {
         return
       }
 
+      // Check if nickname is unique
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('nickname', '==', nickname));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        setError('Nickname already exists. Please choose a different one.');
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
+
+      // Send email verification
+      await sendEmailVerification(user);
 
       // Add user info to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         name: name,
+        nickname: nickname,
         joinDate: serverTimestamp(),
         role: 'student', // Default role
         bio: '',
         subjects: [],
         rating: 0,
-        totalRatings: 0
+        totalRatings: 0,
+        emailVerified: user.emailVerified || false, // Store email verification status
       })
 
-      router.push('/profile')
+      // Set signupComplete to true to show the success message
+      setSignupComplete(true);
+
+      // Instead of redirecting, we'll show a message prompting email verification.
+      // router.push('/profile');
+
     } catch (err) {
       setError(err.message)
     } finally {
@@ -91,86 +114,111 @@ export default function SignupPage() {
         <p className="text-gray-600">Join StudyBuddy and start learning together</p>
       </div>
 
-      {error && (
-        <div className="error-message fade-in">
-          {error}
+      {/* Show success message after signup */}
+      {signupComplete ? (
+        <div className="text-center text-green-600 mb-4 fade-in">
+          <p className="font-semibold">Successfully created account!</p>
+          <p>Please check your email to verify your address before signing in.</p>
         </div>
+      ) : (
+        <>
+          {error && (
+            <div className="error-message fade-in">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSignup} className="space-y-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                id="name"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="text"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="nickname" className="block text-sm font-medium text-gray-700 mb-1">
+                Nickname (must be unique)
+              </label>
+              <input
+                id="nickname"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="text"
+                placeholder="Choose a unique nickname"
+                value={nickname}
+                onChange={e => setNickname(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                id="email"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="password"
+                placeholder="Create a password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="password"
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button
+              className={`w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+        </>
       )}
-
-      <form onSubmit={handleSignup} className="space-y-6">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-            Full Name
-          </label>
-          <input
-            id="name"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            type="text"
-            placeholder="Enter your full name"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            type="password"
-            placeholder="Create a password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters
-          </p>
-        </div>
-
-        <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            type="password"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        <button
-          className={`w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Creating Account...' : 'Create Account'}
-        </button>
-      </form>
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
