@@ -2,7 +2,7 @@
 
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAuth }  from 'firebase/auth'
-import { getFirestore, collection, query, orderBy, limit, getDocs, where, Timestamp }  from 'firebase/firestore'
+import { getFirestore, collection, query, orderBy, limit, getDocs, where, Timestamp, doc, updateDoc }  from 'firebase/firestore'
 import { isSupported, getAnalytics } from 'firebase/analytics'  // optional
 import { getStorage } from 'firebase/storage' // Import Storage
 
@@ -35,71 +35,73 @@ if (typeof window !== 'undefined') {
   })
 }
 
-// Utility functions for fetching data
+// Fetch latest questions from 'requests'
 export const fetchLatestQuestions = async () => {
   try {
-    const questionsRef = collection(db, 'questions')
-    const q = query(questionsRef, orderBy('createdAt', 'desc'), limit(3))
-    const querySnapshot = await getDocs(q)
-    
+    const questionsRef = collection(db, 'requests');
+    const q = query(questionsRef, orderBy('createdAt', 'desc'), limit(3));
+    const querySnapshot = await getDocs(q);
+
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate()
-    }))
+    }));
   } catch (error) {
-    console.error('Error fetching latest questions:', error)
-    return []
+    console.error('Error fetching latest questions:', error);
+    return [];
   }
-}
+};
 
+// Fetch top helpers with displayName, subjects, and rating
 export const fetchTopHelpers = async () => {
   try {
-    // Query the answers collection to count answers per user
     const answersRef = collection(db, 'answers');
     const querySnapshot = await getDocs(answersRef);
 
     const contributorCount = {};
     querySnapshot.docs.forEach(doc => {
       const data = doc.data();
-      // Assuming the author's email is stored in the 'author' or 'authorName' field
       const authorEmail = data.author || data.authorName || 'Unknown';
       if (authorEmail !== 'Unknown') {
         contributorCount[authorEmail] = (contributorCount[authorEmail] || 0) + 1;
       }
     });
 
-    // Sort contributors by answer count and get top 3 emails
     const sortedContributorEmails = Object.entries(contributorCount)
       .sort(([, countA], [, countB]) => countB - countA)
       .slice(0, 3)
       .map(([email, count]) => ({ email, count }));
 
-    // If there are no contributors, return empty array
     if (sortedContributorEmails.length === 0) {
       return [];
     }
 
-    // Fetch user data for the top contributor emails
     const topContributorEmails = sortedContributorEmails.map(item => item.email);
     const usersRef = collection(db, 'users');
-    
-    // To handle more than 10 emails in the 'in' query, we might need multiple queries
-    // or a different approach. For now, assuming max 3 top helpers fits the 'in' limit.
     const usersQuery = query(usersRef, where('email', 'in', topContributorEmails));
     const usersSnapshot = await getDocs(usersQuery);
 
     const userDataMap = {};
     usersSnapshot.docs.forEach(doc => {
       const data = doc.data();
-      userDataMap[data.email] = { name: data.name, nickname: data.nickname };
+      userDataMap[data.email] = {
+        displayName: data.nickname || data.name || data.email,
+        subjects: data.subjects || [],
+        rating: data.rating || 0
+      };
     });
 
-    // Combine answer counts with user names/nicknames
+    // Combine answer counts with user info
     const topHelpersWithNames = sortedContributorEmails.map(item => {
-      const userData = userDataMap[item.email];
-      const displayName = userData?.nickname || userData?.name || item.email; // Use nickname, then name, then email as fallback
-      return { name: displayName, answers: item.count };
+      const userData = userDataMap[item.email] || {};
+      return {
+        id: item.email,
+        displayName: userData.displayName || item.email,
+        subjects: userData.subjects || [],
+        rating: userData.rating || 0,
+        answers: item.count
+      };
     });
 
     return topHelpersWithNames;
@@ -109,21 +111,22 @@ export const fetchTopHelpers = async () => {
   }
 };
 
+// Fetch featured subjects (assumes 'subjects' collection exists)
 export const fetchFeaturedSubjects = async () => {
   try {
-    const subjectsRef = collection(db, 'subjects')
-    const q = query(subjectsRef, orderBy('questionCount', 'desc'), limit(4))
-    const querySnapshot = await getDocs(q)
-    
+    const subjectsRef = collection(db, 'subjects');
+    const q = query(subjectsRef, orderBy('questionCount', 'desc'), limit(4));
+    const querySnapshot = await getDocs(q);
+
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    }))
+    }));
   } catch (error) {
-    console.error('Error fetching featured subjects:', error)
-    return []
+    console.error('Error fetching featured subjects:', error);
+    return [];
   }
-}
+};
 
 export const fetchCommunityStats = async () => {
   try {
@@ -193,3 +196,23 @@ export const fetchTrendingTopics = async () => {
     return [];
   }
 }
+
+// Utility: Initialize answersCount for all requests
+export const initializeAnswersCountForRequests = async () => {
+  try {
+    const requestsRef = collection(db, 'requests');
+    const querySnapshot = await getDocs(requestsRef);
+    let updated = 0;
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+      if (typeof data.answersCount === 'undefined') {
+        const requestDocRef = doc(db, 'requests', docSnap.id);
+        await updateDoc(requestDocRef, { answersCount: 0 });
+        updated++;
+      }
+    }
+    console.log(`Initialized answersCount for ${updated} requests.`);
+  } catch (error) {
+    console.error('Error initializing answersCount for requests:', error);
+  }
+};

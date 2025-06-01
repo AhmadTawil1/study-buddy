@@ -6,7 +6,7 @@ import SearchBar from './SearchBar'
 import FiltersPanel from './FiltersPanel'
 import SidePanel from './SidePanel'
 import { db } from '@/src/firebase/firebase'
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore'
+import { collection, query, orderBy, onSnapshot, where, getCountFromServer } from 'firebase/firestore'
 
 export default function RequestFeed() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -22,8 +22,17 @@ export default function RequestFeed() {
   useEffect(() => {
     // Build Firestore query (add filters as needed)
     let q = query(collection(db, 'requests'), orderBy('createdAt', 'desc'))
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setRequests(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const reqs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      // Fetch answer counts for each request
+      const reqsWithCounts = await Promise.all(
+        reqs.map(async req => {
+          const answersQ = query(collection(db, 'answers'), where('requestId', '==', req.id))
+          const countSnap = await getCountFromServer(answersQ)
+          return { ...req, answersCount: countSnap.data().count }
+        })
+      )
+      setRequests(reqsWithCounts)
       setLoading(false)
     })
     return () => unsubscribe()

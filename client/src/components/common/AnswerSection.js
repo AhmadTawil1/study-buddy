@@ -21,6 +21,11 @@ export default function AnswerSection({ answers, requestId }) {
         upvotes: 0,
         createdAt: serverTimestamp(),
       });
+      // Increment answersCount in the related request document
+      const requestRef = doc(db, 'requests', requestId);
+      await updateDoc(requestRef, {
+        answersCount: increment(1)
+      });
       setNewAnswerContent('');
     } catch (error) {
       console.error('Error adding answer:', error);

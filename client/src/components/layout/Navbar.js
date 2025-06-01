@@ -34,13 +34,6 @@ export default function Navbar() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <Image
-                src="/logo.svg"
-                alt="StudyBuddy"
-                width={40}
-                height={40}
-                className="h-8 w-auto"
-              />
               <span className="ml-2 text-xl font-bold text-blue-800">StudyBuddy</span>
             </Link>
             <div className="hidden md:ml-6 md:flex md:space-x-8">

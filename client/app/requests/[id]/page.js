@@ -9,7 +9,7 @@ import QuestionOverview from '@/src/components/common/QuestionOverview'
 import FullDescription from '@/src/components/common/FullDescription'
 import AnswerSection from '@/src/components/common/AnswerSection'
 import Sidebar from '@/src/components/common/Sidebar'
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
 export default function RequestDetails({ params }) {
   const { id } = params
@@ -28,53 +28,37 @@ export default function RequestDetails({ params }) {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (user && !loading && id) { // Fetch data only if user is logged in and id is available
-      const fetchRequest = async () => {
-        setRequestLoading(true)
-        setError(null)
-        try {
-          const ref = doc(db, 'requests', id)
-          const snap = await getDoc(ref)
-
-          if (!snap.exists()) {
-            setError('Request not found')
-            setRequest(null)
-          } else {
-            setRequest({ id: snap.id, ...snap.data(), createdAt: snap.data().createdAt?.toDate() })
-          }
-        } catch (e) {
-          console.error('Error fetching request:', e)
-          setError('Failed to load request')
-          setRequest(null)
-        } finally {
-          setRequestLoading(false)
+    if (user && !loading && id) {
+      // Real-time listener for the request
+      const ref = doc(db, 'requests', id);
+      const unsubRequest = onSnapshot(ref, (snap) => {
+        if (!snap.exists()) {
+          setError('Request not found');
+          setRequest(null);
+        } else {
+          setRequest({ id: snap.id, ...snap.data(), createdAt: snap.data().createdAt?.toDate() });
         }
-      }
+        setRequestLoading(false);
+      }, (e) => {
+        setError('Failed to load request');
+        setRequest(null);
+        setRequestLoading(false);
+      });
 
-      fetchRequest()
-    }
-  }, [user, loading, id]) // Depend on user, loading, and id
+      // Real-time listener for answers
+      const q = query(collection(db, 'answers'), where('requestId', '==', id));
+      const unsubAnswers = onSnapshot(q, (querySnapshot) => {
+        const answersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt?.toDate() }));
+        setAnswers(answersData);
+        setAnswersLoading(false);
+      });
 
-  useEffect(() => {
-    if (user && !loading && id) { // Fetch answers only if user is logged in and id is available
-      const fetchAnswers = async () => {
-        setAnswersLoading(true)
-        try {
-          const q = query(collection(db, 'answers'), where('requestId', '==', id));
-          const querySnapshot = await getDocs(q);
-          const answersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt?.toDate() }));
-          setAnswers(answersData);
-        } catch (e) {
-          console.error('Error fetching answers:', e);
-          // Handle error appropriately, maybe set an answersError state
-        } finally {
-          setAnswersLoading(false);
-        }
+      return () => {
+        unsubRequest();
+        unsubAnswers();
       };
-
-      fetchAnswers();
     }
-  }, [user, loading, id]); // Depend on user, loading, and id
+  }, [user, loading, id]);
 
   if (loading || !user) {
     return <div className="min-h-screen py-12 px-4 text-center">Loading or redirecting...</div>

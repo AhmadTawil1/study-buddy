@@ -58,19 +58,49 @@ export default function ProfileView() {
       const savedQuery = query(collection(db, 'savedQuestions'), where('userId', '==', user.uid))
       const savedSnap = await getDocs(savedQuery)
 
-      const profileData = userSnap.data()
-      setProfile(profileData)
+      // Calculate upvotes and average rating
+      let upvotes = 0;
+      let totalRating = 0;
+      let ratingCount = 0;
+      answersSnap.docs.forEach(doc => {
+        const data = doc.data();
+        upvotes += data.upvotes || 0;
+        if (Array.isArray(data.ratings)) {
+          data.ratings.forEach(r => {
+            totalRating += r;
+            ratingCount++;
+          });
+        }
+      });
+      const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
+
+      // Calculate rank (by upvotes)
+      // Fetch all users' upvotes
+      const usersSnap = await getDocs(collection(db, 'users'))
+      const allUserUpvotes = []
+      for (const userDoc of usersSnap.docs) {
+        const userId = userDoc.id
+        const userAnswersQuery = query(collection(db, 'answers'), where('userId', '==', userId))
+        const userAnswersSnap = await getDocs(userAnswersQuery)
+        let userUpvotes = 0
+        userAnswersSnap.docs.forEach(ansDoc => {
+          userUpvotes += ansDoc.data().upvotes || 0
+        })
+        allUserUpvotes.push({ userId, upvotes: userUpvotes })
+      }
+      allUserUpvotes.sort((a, b) => b.upvotes - a.upvotes)
+      const rank = allUserUpvotes.findIndex(u => u.userId === user.uid) + 1
+
+      setProfile(userSnap.data())
       setMyQuestions(questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       setMyAnswers(answersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
       setSavedQuestions(savedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-      
-      // Calculate stats using fetched data
       setStats({
         questionsAsked: questionsSnap.size,
         questionsAnswered: answersSnap.size,
-        upvotesEarned: answersSnap.docs.reduce((acc, doc) => acc + (doc.data().upvotes || 0), 0),
-        averageRating: profile?.averageRating || 0,
-        rank: profile?.rank || 0
+        upvotesEarned: upvotes,
+        averageRating: averageRating,
+        rank: rank
       })
 
       // TODO: Fetch or calculate badges from Firestore based on user activity/data
@@ -100,23 +130,23 @@ export default function ProfileView() {
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
       {/* User Banner */}
       <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
-        <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end">
-          <div className="relative">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-end">
+          <div className="relative flex-shrink-0 mb-4 sm:mb-0">
             {profile.avatar ? (
               <img 
                 src={profile.avatar} 
                 alt={profile.name} 
-                className="w-32 h-32 rounded-full border-4 border-white"
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white"
               />
             ) : (
-              <UserCircleIcon className="w-32 h-32 text-white" />
+              <UserCircleIcon className="w-24 h-24 sm:w-32 sm:h-32 text-white" />
             )}
             <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-100">
               <PencilIcon className="w-5 h-5 text-gray-600" />
             </button>
           </div>
-          <div className="ml-6 text-white">
-            <h2 className="text-3xl font-bold">{profile.name}</h2>
+          <div className="sm:ml-6 text-white text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-bold">{profile.name}</h2>
             <p className="text-sm opacity-90">{profile.email}</p>
             <p className="text-sm opacity-80">Joined: {formatDate(profile.joinDate?.toDate())}</p>
           </div>
@@ -124,9 +154,9 @@ export default function ProfileView() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {/* Stats Overview */}
-        <div className="grid grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-blue-50 p-4 rounded-lg text-center">
             <QuestionMarkCircleIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
             <div className="text-2xl font-bold text-blue-700">{stats.questionsAsked}</div>
