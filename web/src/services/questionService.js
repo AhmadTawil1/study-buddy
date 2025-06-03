@@ -1,0 +1,214 @@
+import { db } from '@/src/firebase/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  getDocs, 
+  onSnapshot,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  increment,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc
+} from 'firebase/firestore';
+
+export const questionService = {
+  // Get all questions with optional filters
+  getQuestions: async (filters = {}) => {
+    const questionsRef = collection(db, 'questions');
+    let q = query(questionsRef);
+
+    if (filters.subject) {
+      q = query(q, where('subject', '==', filters.subject));
+    }
+    if (filters.userId) {
+      q = query(q, where('userId', '==', filters.userId));
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      q = query(q, where('tags', 'array-contains-any', filters.tags));
+    }
+
+    q = query(q, orderBy('createdAt', 'desc'));
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  },
+
+  // Subscribe to questions updates
+  subscribeToQuestions: (callback, filters = {}) => {
+    const questionsRef = collection(db, 'questions');
+    let q = query(questionsRef);
+
+    if (filters.subject) {
+      q = query(q, where('subject', '==', filters.subject));
+    }
+    if (filters.userId) {
+      q = query(q, where('userId', '==', filters.userId));
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      q = query(q, where('tags', 'array-contains-any', filters.tags));
+    }
+
+    q = query(q, orderBy('createdAt', 'desc'));
+
+    return onSnapshot(q, (snapshot) => {
+      const questions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(questions);
+    });
+  },
+
+  // Get a single question by ID
+  getQuestionById: async (questionId) => {
+    const questionRef = doc(db, 'questions', questionId);
+    const questionSnap = await getDoc(questionRef);
+    
+    if (questionSnap.exists()) {
+      return {
+        id: questionSnap.id,
+        ...questionSnap.data()
+      };
+    }
+    return null;
+  },
+
+  // Create a new question
+  createQuestion: async (questionData) => {
+    const questionsRef = collection(db, 'questions');
+    const newQuestion = {
+      ...questionData,
+      createdAt: serverTimestamp(),
+      upvotes: 0,
+      downvotes: 0,
+      answers: [],
+      views: 0
+    };
+    
+    const docRef = await addDoc(questionsRef, newQuestion);
+    return {
+      id: docRef.id,
+      ...newQuestion
+    };
+  },
+
+  // Update a question
+  updateQuestion: async (questionId, updateData) => {
+    const questionRef = doc(db, 'questions', questionId);
+    await updateDoc(questionRef, {
+      ...updateData,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  // Add an answer to a question/request
+  addAnswer: async (requestId, answerData) => {
+    // Support both questions and requests collections
+    const requestRef = doc(db, 'requests', requestId);
+    const answersRef = collection(db, 'answers');
+    const newAnswer = {
+      ...answerData,
+      requestId,
+      createdAt: serverTimestamp(),
+      upvotes: 0,
+      downvotes: 0,
+      isAccepted: false,
+      upvotedBy: []
+    };
+    const answerDoc = await addDoc(answersRef, newAnswer);
+    await updateDoc(requestRef, {
+      answers: arrayUnion(answerDoc.id),
+      updatedAt: serverTimestamp()
+    });
+    return {
+      id: answerDoc.id,
+      ...newAnswer
+    };
+  },
+
+  // Update answer
+  updateAnswer: async (answerId, updateData) => {
+    const answerRef = doc(db, 'answers', answerId);
+    await updateDoc(answerRef, {
+      ...updateData,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  // Vote on a question
+  voteQuestion: async (questionId, voteType) => {
+    const questionRef = doc(db, 'questions', questionId);
+    const updates = {};
+    
+    if (voteType === 'up') {
+      updates.upvotes = increment(1);
+    } else if (voteType === 'down') {
+      updates.downvotes = increment(1);
+    }
+
+    await updateDoc(questionRef, updates);
+  },
+
+  // Vote on an answer
+  voteAnswer: async (answerId, voteType, userId) => {
+    const answerRef = doc(db, 'answers', answerId);
+    const answerSnap = await getDoc(answerRef);
+    if (!answerSnap.exists()) return;
+    const data = answerSnap.data();
+    const upvotedBy = data.upvotedBy || [];
+    if (voteType === 'up') {
+      if (upvotedBy.includes(userId)) return; // already upvoted
+      await updateDoc(answerRef, {
+        upvotes: increment(1),
+        upvotedBy: arrayUnion(userId)
+      });
+    } else if (voteType === 'down') {
+      await updateDoc(answerRef, {
+        downvotes: increment(1)
+      });
+    }
+  },
+
+  // Accept an answer
+  acceptAnswer: async (questionId, answerId) => {
+    const questionRef = doc(db, 'questions', questionId);
+    const answerRef = doc(db, 'answers', answerId);
+
+    await updateDoc(questionRef, {
+      acceptedAnswerId: answerId,
+      updatedAt: serverTimestamp()
+    });
+
+    await updateDoc(answerRef, {
+      isAccepted: true,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  // Delete an answer and update the parent request
+  deleteAnswer: async (answerId) => {
+    const answerRef = doc(db, 'answers', answerId);
+    const answerSnap = await getDoc(answerRef);
+    if (!answerSnap.exists()) return;
+    const answerData = answerSnap.data();
+    const requestId = answerData.requestId;
+    if (requestId) {
+      const requestRef = doc(db, 'requests', requestId);
+      await updateDoc(requestRef, {
+        answers: arrayRemove(answerId),
+        updatedAt: serverTimestamp()
+      });
+    }
+    await deleteDoc(answerRef);
+  }
+}; 
