@@ -123,12 +123,14 @@ export const questionService = {
       upvotes: 0,
       downvotes: 0,
       isAccepted: false,
-      upvotedBy: []
+      upvotedBy: [],
+      replies: [] // Initialize empty replies array
     };
     const answerDoc = await addDoc(answersRef, newAnswer);
     await updateDoc(requestRef, {
       answers: arrayUnion(answerDoc.id),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
+      answersCount: increment(1) // Increment answer count
     });
     return {
       id: answerDoc.id,
@@ -200,15 +202,129 @@ export const questionService = {
     const answerRef = doc(db, 'answers', answerId);
     const answerSnap = await getDoc(answerRef);
     if (!answerSnap.exists()) return;
+    
     const answerData = answerSnap.data();
     const requestId = answerData.requestId;
+    const replyIds = answerData.replies || [];
+
+    // Delete all replies first
+    const deleteRepliesPromises = replyIds.map(replyId => {
+      const replyRef = doc(db, 'replies', replyId);
+      return deleteDoc(replyRef);
+    });
+
+    // Wait for all replies to be deleted
+    await Promise.all(deleteRepliesPromises);
+
+    // Update the request to remove the answer ID and decrement count
     if (requestId) {
       const requestRef = doc(db, 'requests', requestId);
       await updateDoc(requestRef, {
         answers: arrayRemove(answerId),
+        updatedAt: serverTimestamp(),
+        answersCount: increment(-1) // Decrement answer count
+      });
+    }
+
+    // Finally delete the answer
+    await deleteDoc(answerRef);
+  },
+
+  // Add a reply to an answer
+  addReply: async (answerId, replyData) => {
+    if (!answerId || typeof answerId !== 'string') {
+      console.error('Invalid answerId provided to addReply:', answerId);
+      throw new Error('Invalid answerId provided to addReply');
+    }
+    console.log('Adding reply to answerId:', answerId, 'with data:', replyData);
+    const answerRef = doc(db, 'answers', answerId);
+    const answerSnap = await getDoc(answerRef);
+    if (!answerSnap.exists()) {
+      throw new Error('Answer not found');
+    }
+    // Ensure repliesRef is a top-level collection
+    const repliesRef = collection(db, 'replies');
+    const newReply = {
+      ...replyData,
+      answerId,
+      createdAt: serverTimestamp(),
+      upvotes: 0,
+      upvotedBy: []
+    };
+    const replyDoc = await addDoc(repliesRef, newReply);
+    await updateDoc(answerRef, {
+      replies: arrayUnion(replyDoc.id),
+      updatedAt: serverTimestamp()
+    });
+    return {
+      id: replyDoc.id,
+      ...newReply
+    };
+  },
+
+  // Get replies for an answer
+  getReplies: async (answerId) => {
+    const repliesRef = collection(db, 'replies');
+    const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  },
+
+  // Subscribe to replies for an answer
+  subscribeToReplies: (answerId, callback) => {
+    const repliesRef = collection(db, 'replies');
+    const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
+    return onSnapshot(q, (snapshot) => {
+      const replies = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(replies);
+    });
+  },
+
+  // Vote on a reply
+  voteReply: async (replyId, voteType, userId) => {
+    const replyRef = doc(db, 'replies', replyId);
+    const replySnap = await getDoc(replyRef);
+    if (!replySnap.exists()) return;
+    
+    const data = replySnap.data();
+    const upvotedBy = data.upvotedBy || [];
+    
+    if (voteType === 'up') {
+      if (upvotedBy.includes(userId)) return; // already upvoted
+      await updateDoc(replyRef, {
+        upvotes: increment(1),
+        upvotedBy: arrayUnion(userId)
+      });
+    } else if (voteType === 'down') {
+      await updateDoc(replyRef, {
+        downvotes: increment(1)
+      });
+    }
+  },
+
+  // Delete a reply
+  deleteReply: async (replyId) => {
+    const replyRef = doc(db, 'replies', replyId);
+    const replySnap = await getDoc(replyRef);
+    if (!replySnap.exists()) return;
+    
+    const replyData = replySnap.data();
+    const answerId = replyData.answerId;
+    
+    if (answerId) {
+      const answerRef = doc(db, 'answers', answerId);
+      await updateDoc(answerRef, {
+        replies: arrayRemove(replyId),
         updatedAt: serverTimestamp()
       });
     }
-    await deleteDoc(answerRef);
+    
+    await deleteDoc(replyRef);
   }
 }; 

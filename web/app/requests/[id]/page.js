@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/src/context/authContext'
 import { doc, getDoc } from 'firebase/firestore'
@@ -11,8 +11,46 @@ import AnswerSection from '@/src/components/common/AnswerSection'
 import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
+function AISuggestions({ question, description }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchSuggestions() {
+      setLoading(true);
+      const res = await fetch('/api/ai-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, description })
+      });
+      const data = await res.json();
+      setSuggestions(data.suggestions || []);
+      setLoading(false);
+    }
+    if (question && description) fetchSuggestions();
+  }, [question, description]);
+
+  if (loading) return <div className="mt-10">Loading AI suggestions...</div>;
+  if (!suggestions.length) return null;
+
+  return (
+    <div className="mt-10">
+      <h2 className="text-xl font-bold mb-4">AI Suggested Videos & Resources</h2>
+      <div className="space-y-4">
+        {suggestions.map((s, i) => (
+          <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+            <div className="font-semibold text-blue-800">{s.title}</div>
+            <div className="text-gray-700 text-sm">{s.description}</div>
+            <div className="text-blue-600 text-xs mt-1">{s.url}</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function RequestDetails({ params }) {
-  const { id } = params
+  const { id } = use(params)
   const { user, loading } = useAuth()
   const router = useRouter()
   const [request, setRequest] = useState(null)
@@ -88,6 +126,7 @@ export default function RequestDetails({ params }) {
         }} />
         <FullDescription description={request.description} files={request.files || []} aiSummary={request.aiSummary} />
         <AnswerSection answers={answers} requestId={request.id} />
+        <AISuggestions question={request.title} description={request.description} />
       </div>
       <div className="w-80">
         <Sidebar relatedQuestions={[]} aiSuggestions="Consider clarifying if you need social login or just email/password." />

@@ -8,6 +8,10 @@ import { FiUpload, FiCode, FiLock, FiGlobe } from 'react-icons/fi'
 import ReactMarkdown from 'react-markdown'
 import { motion, AnimatePresence } from 'framer-motion'
 import { uploadFiles } from '@/src/services/storageService'
+import { questionService } from '@/src/services/questionService'
+import calculateClarityScore from '@/src/utils/clarityScore'
+import { addTag, removeTag } from '@/src/utils/tags'
+import { handleFiles, removeFile } from '@/src/utils/fileUtils'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
@@ -144,7 +148,27 @@ export default function AskForm() {
         clarityScore: calculateClarityScore(title),
       }
 
-      await requestService.createRequest(request)
+      // Create the question/request and get its ID
+      const createdRequest = await requestService.createRequest(request)
+      const questionId = createdRequest.id
+
+      // Call the AI answer API
+      const aiRes = await fetch('/api/ai-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: title + '\n' + description })
+      })
+      const { answer: aiAnswer } = await aiRes.json()
+
+      // Save the AI answer as a normal answer
+      await questionService.addAnswer(questionId, {
+        author: 'AI Assistant',
+        badge: 'AI',
+        content: aiAnswer,
+        userId: 'ai-bot',
+        requestId: questionId
+      })
+
       setSuccess(true)
       setTimeout(() => {
         router.push('/requests')

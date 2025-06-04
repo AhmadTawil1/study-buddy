@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { BookmarkIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+import pluralize from '@/src/utils/pluralize'
 
 export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount }) {
   const [bookmarked, setBookmarked] = useState(false)
@@ -39,7 +40,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
       <div className="flex justify-between items-center">
         <div className="flex items-center text-gray-500 text-sm">
           <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
-          {answersCount} {answersCount === 1 ? 'answer' : 'answers'}
+          {pluralize(answersCount, 'answer')}
         </div>
         <div className="flex gap-2">
           <Link

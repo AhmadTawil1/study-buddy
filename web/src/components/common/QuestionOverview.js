@@ -48,21 +48,48 @@ export default function QuestionOverview({ request }) {
   };
 
   return (
-    <div className="mb-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">{request.title}</h1>
-      <div className="flex items-center gap-2 mb-2">
-        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold">{request.subject}</span>
-        <span className="text-gray-600 text-xs">{request.authorName || request.author || request.userEmail || "Unknown"} • {request.timeAgo}</span>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">{request.title}</h1>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{request.subject}</span>
+            <div className="flex items-center text-gray-500 text-sm">
+              <span className="font-medium text-gray-700">{request.authorName || request.author || request.userEmail || "Unknown"}</span>
+              <span className="mx-2">•</span>
+              <span>{request.timeAgo}</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="flex gap-4 mb-4">
-        <button className="flex items-center gap-1 text-blue-600 font-medium hover:underline disabled:opacity-50" onClick={handleUpvote} disabled={request.upvotedBy && user && request.upvotedBy.includes(user.uid)}>
-          <FiThumbsUp /> Upvote ({request.upvotes || 0})
+      
+      <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
+        <button 
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+          onClick={handleUpvote} 
+          disabled={request.upvotedBy && user && request.upvotedBy.includes(user.uid)}
+        >
+          <FiThumbsUp className="w-4 h-4" /> 
+          <span className="font-medium">Upvote</span>
+          <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-sm">
+            {request.upvotes || 0}
+          </span>
         </button>
-        <button className="flex items-center gap-1 text-blue-600 font-medium hover:underline" onClick={handleSave}>
-          <FiBookmark /> Save
+        
+        <button 
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors" 
+          onClick={handleSave}
+        >
+          <FiBookmark className="w-4 h-4" /> 
+          <span className="font-medium">Save</span>
         </button>
-        <button className="flex items-center gap-1 text-blue-600 font-medium hover:underline" onClick={handleShare}>
-          <FiShare2 /> Share
+        
+        <button 
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors" 
+          onClick={handleShare}
+        >
+          <FiShare2 className="w-4 h-4" /> 
+          <span className="font-medium">Share</span>
         </button>
       </div>
     </div>
