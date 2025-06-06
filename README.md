@@ -4,10 +4,10 @@
 
 ![StudyBuddy Logo](https://via.placeholder.com/150x150.png?text=StudyBuddy)
 
-[![Next.js](https://img.shields.io/badge/Next.js-13.0-blue)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-18.0-blue)](https://reactjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0-blue)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-9.0-orange)](https://firebase.google.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.2-blue)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0-blue)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-blue)](https://tailwindcss.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-11.7.3-orange)](https://firebase.google.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A modern web application designed to help students collaborate, share resources, and enhance their learning experience.
@@ -56,8 +56,8 @@ A modern web application designed to help students collaborate, share resources,
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Next.js 13**: React framework with server-side rendering
-- **React 18**: UI library with hooks and concurrent features
+- **Next.js 15**: React framework with server-side rendering
+- **React 19**: UI library with hooks and concurrent features
 - **Tailwind CSS**: Utility-first CSS framework
 - **Context API**: State management solution
 
@@ -78,13 +78,13 @@ A modern web application designed to help students collaborate, share resources,
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/studybuddy.git
-   cd studybuddy
+   git clone https://github.com/AhmadTawil1/studybuddy.git
+   cd study-buddy
    ```
 
 2. **Install dependencies:**
    ```bash
-   cd frontend
+   cd web
    npm install
    ```
 
@@ -148,14 +148,3 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Contact & Support
-
-- **Email:** [your-email@example.com](mailto:your-email@example.com)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/studybuddy/issues)
-- **Documentation:** [Wiki](https://github.com/yourusername/studybuddy/wiki)
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors
-- Inspired by the need for better student collaboration
-- Built with modern web technologies
