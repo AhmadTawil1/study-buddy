@@ -4,10 +4,10 @@
 
 ![StudyBuddy Logo](https://via.placeholder.com/150x150.png?text=StudyBuddy)
 
-[![Next.js](https://img.shields.io/badge/Next.js-13.0-blue)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-18.0-blue)](https://reactjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.0-blue)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Firebase-9.0-orange)](https://firebase.google.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.2-blue)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.0-blue)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-blue)](https://tailwindcss.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-11.7.3-orange)](https://firebase.google.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A modern web application designed to help students collaborate, share resources, and enhance their learning experience.
