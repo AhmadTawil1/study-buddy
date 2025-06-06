@@ -56,8 +56,8 @@ A modern web application designed to help students collaborate, share resources,
 ## 🛠 Tech Stack
 
 ### Frontend
-- **Next.js 13**: React framework with server-side rendering
-- **React 18**: UI library with hooks and concurrent features
+- **Next.js 15**: React framework with server-side rendering
+- **React 19**: UI library with hooks and concurrent features
 - **Tailwind CSS**: Utility-first CSS framework
 - **Context API**: State management solution
 
@@ -78,13 +78,13 @@ A modern web application designed to help students collaborate, share resources,
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/studybuddy.git
-   cd studybuddy
+   git clone https://github.com/AhmadTawil1/studybuddy.git
+   cd study-buddy
    ```
 
 2. **Install dependencies:**
    ```bash
-   cd frontend
+   cd web
    npm install
    ```
 
@@ -148,14 +148,3 @@ We welcome contributions! Please follow these steps:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Contact & Support
-
-- **Email:** [your-email@example.com](mailto:your-email@example.com)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/studybuddy/issues)
-- **Documentation:** [Wiki](https://github.com/yourusername/studybuddy/wiki)
-
-## 🙏 Acknowledgments
-
-- Thanks to all contributors
-- Inspired by the need for better student collaboration
-- Built with modern web technologies
