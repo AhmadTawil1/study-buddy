@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiUsers, FiMessageSquare, FiTrendingUp } from 'react-icons/fi'
-import { fetchCommunityStats, fetchTrendingTopics } from '@/src/firebase/firebase'
+import { fetchCommunityStats, fetchTrendingTopics } from '@/src/firebase/queries'
 
 export default function CommunitySnapshot() {
   const [stats, setStats] = useState({

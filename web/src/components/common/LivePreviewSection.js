@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { FiArrowRight, FiStar, FiUsers, FiBook } from 'react-icons/fi'
-import { fetchLatestQuestions, fetchTopHelpers, fetchFeaturedSubjects } from '@/src/firebase/firebase'
+import { fetchLatestQuestions, fetchTopHelpers, fetchFeaturedSubjects } from '@/src/firebase/queries'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function LivePreviewSection() {

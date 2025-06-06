@@ -1,23 +1,48 @@
 import { storage } from '@/src/firebase/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-export const uploadFiles = async (files, userId) => {
-  if (!files || files.length === 0) {
-    return [];
-  }
-
-  const uploadPromises = files.map(async (file) => {
-    const storageRef = ref(storage, `attachments/${userId}/${Date.now()}_${file.name}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
-  });
+/**
+ * Uploads files to Firebase Storage and returns their download URLs
+ * @param {File[]} files - Array of files to upload
+ * @param {string} path - Storage path where files should be uploaded
+ * @param {function} onProgress - Callback function to track upload progress
+ * @returns {Promise<string[]>} Array of download URLs
+ */
+export const uploadFiles = async (files, path, onProgress) => {
+  if (!files || files.length === 0) return [];
 
   try {
-    const downloadURLs = await Promise.all(uploadPromises);
-    return downloadURLs;
+    const uploadPromises = files.map(async (file, index) => {
+      const storageRef = ref(storage, `${path}/${file.name}`);
+      
+      // Create upload task
+      const uploadTask = uploadBytes(storageRef, file);
+      
+      // Track progress if callback provided
+      if (onProgress) {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            onProgress(index, progress);
+          },
+          (error) => {
+            console.error('Upload error:', error);
+            throw error;
+          }
+        );
+      }
+
+      // Wait for upload to complete
+      await uploadTask;
+      
+      // Get download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    });
+
+    return await Promise.all(uploadPromises);
   } catch (error) {
     console.error('Error uploading files:', error);
-    throw error; // Re-throw the error to be handled in the calling function
+    throw error;
   }
 }; 

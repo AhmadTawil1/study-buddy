@@ -12,6 +12,11 @@ import { questionService } from '@/src/services/questionService'
 import calculateClarityScore from '@/src/utils/clarityScore'
 import { addTag, removeTag } from '@/src/utils/tags'
 import { handleFiles, removeFile } from '@/src/utils/fileUtils'
+import TitleInput from './components/TitleInput'
+import DescriptionInput from './components/DescriptionInput'
+import FileUpload from './components/FileUpload'
+import TagInput from './components/TagInput'
+import PrivacyToggle from './components/PrivacyToggle'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
@@ -218,110 +223,50 @@ export default function AskForm() {
           </AnimatePresence>
 
           {/* Title Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title
-              <span className="text-gray-500 ml-2">
-                {title.length}/{MAX_TITLE_LENGTH}
-              </span>
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={title}
-                onChange={e => {
-                  setTitle(e.target.value.slice(0, MAX_TITLE_LENGTH))
-                  setClarityScore(calculateClarityScore(e.target.value))
-                }}
-                placeholder="Enter your question title"
-                className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                type="button"
-                onClick={handleRephraseTitle}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-700"
-                disabled={loadingTitle || !title.trim()}
-              >
-                {loadingTitle ? 'Rephrasing...' : 'Rephrase with AI'}
-              </button>
-            </div>
-            {title && (
-              <div className="mt-2 text-sm text-gray-500">
-                Avoid vague titles like "Help me please"
-              </div>
-            )}
-            {clarityScore !== null && (
-              <div className="mt-2 flex items-center gap-2">
-                <span className="text-sm font-medium">Clarity score:</span>
-                <div className="flex items-center">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-2 h-2 rounded-full mx-0.5 ${
-                        i < clarityScore ? 'bg-green-500' : 'bg-gray-200'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-gray-600">
-                  {clarityScore}/10 {clarityScore >= 7 ? '😊' : '🤔'}
-                </span>
-              </div>
-            )}
-            {aiTitle && (
-              <div className="mt-2 bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>AI Suggestion:</strong> {aiTitle}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setTitle(aiTitle)}
-                  className="mt-1 text-xs text-blue-600 hover:text-blue-700"
-                >
-                  Use this version
-                </button>
-              </div>
-            )}
-          </div>
+          <TitleInput
+            value={title}
+            onChange={val => {
+              setTitle(val)
+              setClarityScore(calculateClarityScore(val))
+            }}
+            onRephrase={handleRephraseTitle}
+            loading={loadingTitle}
+            clarityScore={clarityScore}
+            maxLength={MAX_TITLE_LENGTH}
+          />
 
-          {/* Description */}
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  {showPreview ? 'Edit' : 'Preview'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRephraseDescription}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                  disabled={loadingDescription || !description.trim()}
-                >
-                  {loadingDescription ? 'Rephrasing...' : 'Rephrase with AI'}
-                </button>
-              </div>
-            </div>
-            {showPreview ? (
-              <div className="border border-gray-300 rounded-lg p-4 min-h-[200px] bg-gray-50">
-                <ReactMarkdown>{description}</ReactMarkdown>
-              </div>
-            ) : (
-              <textarea
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={6}
-                placeholder="Describe your question in detail..."
-                className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            )}
-          </div>
+          {/* Description Input */}
+          <DescriptionInput
+            value={description}
+            onChange={setDescription}
+            onRephrase={handleRephraseDescription}
+            loading={loadingDescription}
+            showPreview={showPreview}
+            setShowPreview={setShowPreview}
+          />
+
+          {/* File Upload */}
+          <FileUpload
+            files={files}
+            setFiles={setFiles}
+            dragActive={dragActive}
+            setDragActive={setDragActive}
+            onFilesAdd={handleFiles}
+            onFileRemove={removeFile}
+          />
+
+          {/* Tag/Subject Input */}
+          <TagInput
+            subject={subject}
+            setSubject={setSubject}
+            tags={tags}
+            setTags={setTags}
+            customTag={customTag}
+            setCustomTag={setCustomTag}
+            onAddTag={addTag}
+            onRemoveTag={removeTag}
+            subjectsList={SUBJECTS}
+          />
 
           {/* Code Snippet */}
           <div>
@@ -346,175 +291,27 @@ export default function AskForm() {
             )}
           </div>
 
-          {/* File Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Attach Files
-            </label>
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-              }`}
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <label htmlFor="file-upload" className="cursor-pointer block w-full h-full">
-                <input
-                  id="file-upload"
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  onChange={e => handleFiles(e.target.files)}
-                  className="hidden"
-                />
-                <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
-                  Drag and drop files here, or{' '}
-                  <span className="text-blue-600 hover:text-blue-700">
-                    browse
-                  </span>
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Supports: Images, PDFs, .txt, .docx
-                </p>
-              </label>
-            </div>
-            {files.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {files.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 p-2 rounded"
-                  >
-                    <span className="text-sm text-gray-700">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {tags.map(tag => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => removeTag(tag)}
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={subject}
-                onChange={e => {
-                  setSubject(e.target.value)
-                  if (e.target.value && !tags.includes(e.target.value)) {
-                    addTag(e.target.value)
-                  }
-                }}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">Select a subject</option>
-                {SUBJECTS.map(sub => (
-                  <option key={sub} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={customTag}
-                  onChange={e => setCustomTag(e.target.value)}
-                  placeholder="Add custom tag"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  onKeyPress={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      addTag(customTag)
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Privacy Toggle */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsPrivate(!isPrivate)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-                isPrivate
-                  ? 'bg-gray-100 border-gray-300'
-                  : 'bg-blue-50 border-blue-200'
-              }`}
-            >
-              {isPrivate ? (
-                <>
-                  <FiLock className="text-gray-600" />
-                  <span className="text-sm text-gray-700">Private</span>
-                </>
-              ) : (
-                <>
-                  <FiGlobe className="text-blue-600" />
-                  <span className="text-sm text-blue-700">Public</span>
-                </>
-              )}
-            </button>
-            <span className="text-sm text-gray-500">
-              {isPrivate
-                ? 'Only visible to tutors and moderators'
-                : 'Visible to everyone'}
-            </span>
-          </div>
+          {/* Privacy/Anonymous Toggle */}
+          <PrivacyToggle
+            isPrivate={isPrivate}
+            setIsPrivate={setIsPrivate}
+            isAnonymous={isAnonymous}
+            setIsAnonymous={setIsAnonymous}
+          />
 
           {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading || !title || !description || !subject}
-            className={`w-full py-3 px-6 rounded-lg font-semibold text-white ${
-              loading || !title || !description || !subject
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {loading ? 'Submitting...' : 'Submit Question'}
-          </button>
-
-          {/* Anonymous Submission Checkbox */}
-          <div className="flex items-center mt-4">
-            <input
-              type="checkbox"
-              id="anonymous"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <label htmlFor="anonymous" className="ml-2 block text-sm text-gray-900">
-              Submit anonymously
-            </label>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`px-6 py-2 rounded-md text-white font-medium ${
+                loading
+                  ? 'bg-blue-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {loading ? 'Submitting...' : 'Submit Question'}
+            </button>
           </div>
         </form>
       </div>
