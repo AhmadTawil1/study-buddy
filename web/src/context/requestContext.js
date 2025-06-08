@@ -13,10 +13,15 @@ export const RequestProvider = ({ children }) => {
   const [filters, setFilters] = useState({
     subject: null,
     status: null,
-    userId: null
+    userId: null,
+    timeRange: 'all',
+    sortBy: 'newest',
+    difficulty: 'all',
+    searchQuery: null
   });
 
   useEffect(() => {
+    console.log('RequestContext: subscribing to requests with filters:', filters);
     const unsubscribe = requestService.subscribeToRequests(
       (updatedRequests) => {
         console.log('Fetched requests:', updatedRequests);

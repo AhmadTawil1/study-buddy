@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/src/firebase/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -32,6 +33,31 @@ export default function LoginPage() {
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
         <p className="text-gray-600">Sign in to your StudyBuddy account</p>
+      </div>
+
+      {/* Social Login Buttons */}
+      <div className="flex flex-col gap-3 mb-6">
+        <button
+          onClick={async () => { setLoading(true); setError(''); try { await signInWithGoogle(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
+        >
+          <img src="/google.svg" alt="Google" className="h-5 w-5" /> Sign in with Google
+        </button>
+        <button
+          onClick={async () => { setLoading(true); setError(''); try { await signInWithGithub(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
+        >
+          <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign in with GitHub
+        </button>
+        <button
+          onClick={async () => { setLoading(true); setError(''); try { await signInWithMicrosoft(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+          disabled={loading}
+        >
+          <img src="/microsoft.svg" alt="Microsoft" className="h-5 w-5" /> Sign in with Microsoft
+        </button>
       </div>
 
       {error && (

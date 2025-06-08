@@ -35,9 +35,10 @@ export default function FiltersPanel({ filters, onFilterChange }) {
   }, [])
 
   const handleTagToggle = (tag) => {
-    const newTags = filters.subject.includes(tag)
-      ? filters.subject.filter(s => s !== tag)
-      : [...filters.subject, tag]
+    const subjectArr = Array.isArray(filters.subject) ? filters.subject : [];
+    const newTags = subjectArr.includes(tag)
+      ? subjectArr.filter(s => s !== tag)
+      : [...subjectArr, tag]
     onFilterChange({ ...filters, subject: newTags })
   }
 
@@ -58,7 +59,7 @@ export default function FiltersPanel({ filters, onFilterChange }) {
             key={tag}
             onClick={() => handleTagToggle(tag)}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 ${
-              filters.subject.includes(tag)
+              (Array.isArray(filters.subject) ? filters.subject : []).includes(tag)
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-blue-50 hover:text-blue-700'
             }`}
@@ -71,7 +72,7 @@ export default function FiltersPanel({ filters, onFilterChange }) {
       {/* Dropdowns */}
       <div className="flex gap-2 items-center flex-wrap">
         <select
-          value={filters.timeRange}
+          value={filters.timeRange || ''}
           onChange={(e) => onFilterChange({ ...filters, timeRange: e.target.value })}
           className="rounded-full px-3 py-1 text-xs bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 shadow-sm"
         >
@@ -80,7 +81,7 @@ export default function FiltersPanel({ filters, onFilterChange }) {
           ))}
         </select>
         <select
-          value={filters.sortBy}
+          value={filters.sortBy || ''}
           onChange={(e) => onFilterChange({ ...filters, sortBy: e.target.value })}
           className="rounded-full px-3 py-1 text-xs bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 shadow-sm"
         >
@@ -89,7 +90,7 @@ export default function FiltersPanel({ filters, onFilterChange }) {
           ))}
         </select>
         <select
-          value={filters.difficulty}
+          value={filters.difficulty || ''}
           onChange={(e) => onFilterChange({ ...filters, difficulty: e.target.value })}
           className="rounded-full px-3 py-1 text-xs bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 shadow-sm"
         >

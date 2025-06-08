@@ -56,16 +56,27 @@ export const requestService = {
     if (filters.userId) {
       q = query(q, where('userId', '==', filters.userId));
     }
+    if (filters.searchQuery) {
+      // Temporarily do not filter by searchTerms to show all requests
+      // You can implement search logic here later if needed
+    }
 
     q = query(q, orderBy('createdAt', 'desc'));
 
-    return onSnapshot(q, (snapshot) => {
-      const requests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(requests);
-    });
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const requests = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        callback(requests);
+      },
+      (error) => {
+        console.error('Firestore subscribeToRequests error:', error);
+        callback([]); // Return empty array on error
+      }
+    );
   },
 
   // Get a single request by ID

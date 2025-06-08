@@ -1,7 +1,9 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signOut, getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, OAuthProvider } from 'firebase/auth'
 import { auth } from '@/src/firebase/firebase'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '@/src/firebase/firebase'
 
 const AuthContext = createContext()
 
@@ -18,9 +20,29 @@ export function AuthProvider({ children }) {
   // Effect to listen for authentication state changes
   useEffect(() => {
     // Subscribe to auth state changes
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       setUser(currentUser)
       setLoading(false)
+      // Ensure Firestore user doc exists for all users
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid)
+        const userSnap = await getDoc(userRef)
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            email: currentUser.email,
+            name: currentUser.displayName || '',
+            nickname: '', // You may want to prompt for this later
+            joinDate: serverTimestamp(),
+            role: 'student',
+            bio: '',
+            subjects: [],
+            rating: 0,
+            totalRatings: 0,
+            emailVerified: currentUser.emailVerified || false,
+            provider: currentUser.providerData[0]?.providerId || 'unknown'
+          })
+        }
+      }
     })
     // Cleanup subscription on unmount
     return () => unsubscribe()
@@ -55,4 +77,22 @@ export function AuthProvider({ children }) {
  * @returns {Object} Authentication context containing user, loading state, and logout function
  */
 export const useAuth = () => useContext(AuthContext)
+
+export const signInWithGoogle = async () => {
+  const auth = getAuth();
+  const provider = new GoogleAuthProvider();
+  return signInWithPopup(auth, provider);
+};
+
+export const signInWithGithub = async () => {
+  const auth = getAuth();
+  const provider = new GithubAuthProvider();
+  return signInWithPopup(auth, provider);
+};
+
+export const signInWithMicrosoft = async () => {
+  const auth = getAuth();
+  const provider = new OAuthProvider('microsoft.com');
+  return signInWithPopup(auth, provider);
+};
 

@@ -6,6 +6,7 @@ import { auth, db } from '@/src/firebase/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { collection, query, where, getDocs } from 'firebase/firestore'
+import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -205,6 +206,31 @@ export default function SignupPage() {
                 onChange={e => setConfirmPassword(e.target.value)}
                 required
               />
+            </div>
+
+            {/* Social Signup Buttons */}
+            <div className="flex flex-col gap-3 mb-6">
+              <button
+                onClick={async () => { setLoading(true); setError(''); try { await signInWithGoogle(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                <img src="/google.svg" alt="Google" className="h-5 w-5" /> Sign up with Google
+              </button>
+              <button
+                onClick={async () => { setLoading(true); setError(''); try { await signInWithGithub(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign up with GitHub
+              </button>
+              <button
+                onClick={async () => { setLoading(true); setError(''); try { await signInWithMicrosoft(); router.push('/profile'); } catch (err) { setError(err.message); } finally { setLoading(false); } }}
+                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                <img src="/microsoft.svg" alt="Microsoft" className="h-5 w-5" /> Sign up with Microsoft
+              </button>
             </div>
 
             <button

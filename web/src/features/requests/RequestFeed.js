@@ -1,6 +1,6 @@
 // src/features/requests/RequestFeed.js
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RequestCard from './RequestCard'
 import SearchBar from './SearchBar'
 import FiltersPanel from './FiltersPanel'
@@ -9,21 +9,25 @@ import { useRequest } from '@/src/context/requestContext'
 import timeAgo from '@/src/utils/timeAgo'
 
 export default function RequestFeed() {
-  const { requests, loading } = useRequest()
+  const { requests, loading, filters, updateFilters } = useRequest()
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState({
-    subject: [],
-    timeRange: 'all',
-    sortBy: 'newest',
-    difficulty: 'all'
-  })
+
+  // Update context filters when local filters change
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      updateFilters({
+        searchQuery: searchQuery || null
+      });
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, updateFilters]);
 
   // Helper: active filters summary
   const activeFilters = []
-  if (filters.subject.length) activeFilters.push(...filters.subject)
-  if (filters.timeRange !== 'all') activeFilters.push(`Time: ${filters.timeRange}`)
-  if (filters.sortBy !== 'newest') activeFilters.push(`Sort: ${filters.sortBy}`)
-  if (filters.difficulty !== 'all') activeFilters.push(`Level: ${filters.difficulty}`)
+  if (filters.subject) activeFilters.push(filters.subject)
+  if (filters.status) activeFilters.push(`Status: ${filters.status}`)
+  if (filters.searchQuery) activeFilters.push(`Search: ${filters.searchQuery}`)
 
   return (
     <div className="container mx-auto">
@@ -38,7 +42,7 @@ export default function RequestFeed() {
           
           <FiltersPanel 
             filters={filters}
-            onFilterChange={setFilters}
+            onFilterChange={updateFilters}
           />
 
           {/* Result count and active filters */}
@@ -61,7 +65,7 @@ export default function RequestFeed() {
                   <div key={i} className="animate-pulse bg-gray-100 h-36 rounded-lg" />
                 ))
               ) : requests.length === 0 ? (
-                <div className="col-span-2 text-center text-gray-400">Try a different keyword</div>
+                <div className="col-span-2 text-center text-gray-400">No requests found. Try adjusting your filters or search query.</div>
               ) : (
                 requests.map(req => (
                   <RequestCard
@@ -79,11 +83,13 @@ export default function RequestFeed() {
             </div>
 
             {/* Load More Button */}
-            <div className="text-center mt-8">
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Load More
-              </button>
-            </div>
+            {requests.length > 0 && (
+              <div className="text-center mt-8">
+                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  Load More
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

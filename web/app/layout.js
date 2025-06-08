@@ -16,15 +16,15 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-white min-h-screen text-gray-900">
+      <body className="bg-slate-50 min-h-screen text-gray-900 overflow-visible">
         <AuthProvider>
           <UserProvider>
             <RequestProvider>
               <QuestionProvider>
                 <NotificationProvider>
-                  <div className="flex flex-col min-h-screen">
+                  <div className="flex flex-col min-h-screen bg-slate-50 overflow-visible">
                     <Navbar />
-                    <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 bg-white mt-12">
+                    <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 bg-slate-50 mt-12 overflow-visible">
                       {children}
                     </main>
                     <Footer />

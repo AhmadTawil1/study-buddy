@@ -38,7 +38,6 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <img src="/logo-white.svg" alt="StudyBuddy" className="h-8 w-auto" />
               <span className="text-xl font-bold text-white">StudyBuddy</span>
             </Link>
             <p className="text-gray-400 mb-6 max-w-md">
