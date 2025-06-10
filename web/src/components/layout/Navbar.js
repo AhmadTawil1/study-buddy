@@ -1,4 +1,16 @@
 // src/components/layout/Navbar.js
+//
+// This is the global navigation bar for the StudyBuddy app.
+// It appears at the top of every page (via app/layout.js).
+//
+// Features:
+// - Brand/logo link
+// - Navigation links (Home, Ask, Requests)
+// - User profile menu (with avatar, profile link, logout)
+// - Responsive mobile menu
+//
+// Uses AuthProvider context to show user info and handle login/logout.
+
 "use client"
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
@@ -6,8 +18,10 @@ import Image from 'next/image'
 import { FiUser, FiLogOut, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext'
 import ReactDOM from 'react-dom'
+import NotificationDropdown from './NotificationDropdown'
 
 export default function Navbar() {
+  // State for mobile and profile menus
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const { user, loading, logout } = useAuth()
@@ -15,10 +29,12 @@ export default function Navbar() {
   const dropdownRef = useRef(null)
   const profileButtonRef = useRef(null)
 
+  // Log auth state changes (for debugging)
   useEffect(() => {
     console.log('Navbar Auth State Changed:', { user, loading })
   }, [user, loading])
 
+  // Close profile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -44,8 +60,10 @@ export default function Navbar() {
 
   return (
     <nav className="backdrop-blur bg-white/80 shadow-lg rounded-b-2xl">
+      {/* Main navigation bar content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
+          {/* Brand and desktop nav links */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center group">
               <span className="ml-2 text-2xl font-extrabold text-blue-700 group-hover:text-blue-500 transition-colors">StudyBuddy</span>
@@ -63,68 +81,73 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center">
+          {/* User profile menu (desktop) */}
+          <div className="hidden md:flex items-center space-x-4">
             {loading ? (
               <div>Loading...</div>
             ) : user ? (
-              <div className="ml-3 relative" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  ref={profileButtonRef}
-                  className="flex items-center justify-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white w-11 h-11 shadow-md hover:shadow-lg transition-all ring-2 ring-blue-100"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                >
-                  <span className="sr-only">Open user menu</span>
-                  {user.photoURL ? (
-                    <Image
-                      src={user.photoURL}
-                      alt={user.displayName || "User avatar"}
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-200 to-blue-400 flex items-center justify-center text-blue-700 font-bold text-xl ring-1 ring-blue-300">
-                      <FiUser className="h-7 w-7" />
-                    </div>
-                  )}
-                </button>
-
-                {isProfileMenuOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
-                  <div
-                    ref={dropdownRef}
-                    className="origin-top-right absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-3 bg-white/80 backdrop-blur-lg focus:outline-none z-50 animate-fade-in"
-                    style={{ top: '70px', right: '16px', left: 'auto', position: 'fixed', transform: 'translateX(-30%)' }}
-                    role="menu"
-                    aria-orientation="vertical"
-                    aria-labelledby="user-menu-button"
-                    tabIndex="-1"
+              <>
+                <NotificationDropdown />
+                <div className="ml-3 relative" ref={profileMenuRef}>
+                  <button
+                    type="button"
+                    ref={profileButtonRef}
+                    className="flex items-center justify-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 bg-white w-11 h-11 shadow-md hover:shadow-lg transition-all ring-2 ring-blue-100"
+                    id="user-menu-button"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   >
-                    <Link
-                      href="/profile"
-                      className="block px-6 py-3 text-base text-gray-700 hover:bg-blue-100/60 hover:text-blue-700 rounded-xl transition-colors"
-                      role="menuitem"
+                    <span className="sr-only">Open user menu</span>
+                    {user.photoURL ? (
+                      <Image
+                        src={user.photoURL}
+                        alt={user.displayName || "User avatar"}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-200 to-blue-400 flex items-center justify-center text-blue-700 font-bold text-xl ring-1 ring-blue-300">
+                        <FiUser className="h-7 w-7" />
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Profile dropdown menu (portal) */}
+                  {isProfileMenuOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
+                    <div
+                      ref={dropdownRef}
+                      className="origin-top-right absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl py-3 bg-white/80 backdrop-blur-lg focus:outline-none z-50 animate-fade-in"
+                      style={{ top: '70px', right: '16px', left: 'auto', position: 'fixed', transform: 'translateX(-30%)' }}
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="user-menu-button"
                       tabIndex="-1"
-                      onClick={() => setIsProfileMenuOpen(false)}
                     >
-                      Your Profile
-                    </Link>
-                    <div className="h-px bg-gray-100 my-1" />
-                    <button
-                      onClick={() => { logout(); setIsProfileMenuOpen(false); }}
-                      className="block w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-blue-100/60 hover:text-blue-700 rounded-xl transition-colors"
-                      role="menuitem"
-                      tabIndex="-1"
-                    >
-                      Logout
-                    </button>
-                  </div>,
-                  document.body
-                )}
-              </div>
+                      <Link
+                        href="/profile"
+                        className="block px-6 py-3 text-base text-gray-700 hover:bg-blue-100/60 hover:text-blue-700 rounded-xl transition-colors"
+                        role="menuitem"
+                        tabIndex="-1"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                      >
+                        Your Profile
+                      </Link>
+                      <div className="h-px bg-gray-100 my-1" />
+                      <button
+                        onClick={() => { logout(); setIsProfileMenuOpen(false); }}
+                        className="block w-full text-left px-6 py-3 text-base text-gray-700 hover:bg-blue-100/60 hover:text-blue-700 rounded-xl transition-colors"
+                        role="menuitem"
+                        tabIndex="-1"
+                      >
+                        Logout
+                      </button>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              </>
             ) : (
               <div className="flex items-center space-x-4">
                 <Link href="/login" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-base font-medium transition-colors">
@@ -137,6 +160,7 @@ export default function Navbar() {
             )}
           </div>
 
+          {/* Mobile menu button */}
           <div className="flex md:hidden items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -167,6 +191,9 @@ export default function Navbar() {
             <div className="block px-3 py-2 text-base font-medium text-gray-900">Loading...</div>
           ) : user ? (
             <div className="space-y-1">
+              <div className="px-3 py-2">
+                <NotificationDropdown />
+              </div>
               <Link href="/profile" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
                 Your Profile
               </Link>
