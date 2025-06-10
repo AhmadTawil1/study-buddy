@@ -19,13 +19,6 @@ export default function DescriptionInput({ value, onChange, onRephrase, loading,
       <div className="flex justify-end mb-1">
         <button
           type="button"
-          className="text-xs text-blue-600 hover:text-blue-700 mr-2"
-          onClick={() => setShowPreview(p => !p)}
-        >
-          {showPreview ? 'Hide Preview' : 'Show Preview'}
-        </button>
-        <button
-          type="button"
           className="text-xs text-blue-600 hover:text-blue-700"
           onClick={handleRephraseDescription}
           disabled={loading || !(value || '').trim()}
@@ -33,19 +26,13 @@ export default function DescriptionInput({ value, onChange, onRephrase, loading,
           {loading ? 'Rephrasing...' : 'Rephrase with AI'}
         </button>
       </div>
-      {showPreview ? (
-        <div className="border rounded p-2 bg-gray-50 text-sm">
-          <ReactMarkdown>{value}</ReactMarkdown>
-        </div>
-      ) : (
-        <textarea
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          rows={6}
-          placeholder="Describe your question in detail..."
-          className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      )}
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        rows={6}
+        placeholder="Describe your question in detail..."
+        className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
     </div>
   )
 } 

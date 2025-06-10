@@ -30,7 +30,6 @@ export default function AskForm() {
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [files, setFiles] = useState([])
   const [codeSnippet, setCodeSnippet] = useState('')
-  const [showPreview, setShowPreview] = useState(false)
   const [showCodeEditor, setShowCodeEditor] = useState(false)
   const [customTag, setCustomTag] = useState('')
   const [clarityScore, setClarityScore] = useState(null)
@@ -248,8 +247,6 @@ export default function AskForm() {
             onChange={setDescription}
             onRephrase={handleRephraseDescription}
             loading={loadingDescription}
-            showPreview={showPreview}
-            setShowPreview={setShowPreview}
           />
 
           {/* File Upload */}
