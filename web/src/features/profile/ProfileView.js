@@ -81,20 +81,20 @@ export default function ProfileView() {
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
       {/* User Banner */}
-      <div className="relative h-48 bg-gradient-to-r from-blue-500 to-purple-600">
+      <div className="relative h-48 bg-gradient-to-r from-indigo-600 to-purple-600">
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-end">
           <div className="relative flex-shrink-0 mb-4 sm:mb-0">
             {profile.avatar ? (
               <img 
                 src={profile.avatar} 
                 alt={profile.name} 
-                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white"
+                className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-lg"
               />
             ) : (
               <UserCircleIcon className="w-24 h-24 sm:w-32 sm:h-32 text-white" />
             )}
-            <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-100">
-              <PencilIcon className="w-5 h-5 text-gray-600" />
+            <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors">
+              <PencilIcon className="w-5 h-5 text-indigo-600" />
             </button>
           </div>
           <div className="sm:ml-6 text-white text-center sm:text-left">
@@ -109,37 +109,37 @@ export default function ProfileView() {
       <div className="p-4 sm:p-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-blue-50 p-4 rounded-lg text-center">
-            <QuestionMarkCircleIcon className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-blue-700">{stats.questionsAsked}</div>
-            <div className="text-sm text-gray-600">Questions Asked</div>
+          <div className="bg-indigo-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
+            <QuestionMarkCircleIcon className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-indigo-700">{stats.questionsAsked}</div>
+            <div className="text-sm text-indigo-600">Questions Asked</div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <ChatBubbleLeftRightIcon className="w-8 h-8 text-green-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-green-700">{stats.questionsAnswered}</div>
-            <div className="text-sm text-gray-600">Questions Answered</div>
+          <div className="bg-emerald-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
+            <ChatBubbleLeftRightIcon className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-emerald-700">{stats.questionsAnswered}</div>
+            <div className="text-sm text-emerald-600">Questions Answered</div>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg text-center">
-            <TrophyIcon className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-yellow-700">{stats.upvotesEarned}</div>
-            <div className="text-sm text-gray-600">Upvotes Earned</div>
+          <div className="bg-amber-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
+            <TrophyIcon className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-amber-700">{stats.upvotesEarned}</div>
+            <div className="text-sm text-amber-600">Upvotes Earned</div>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg text-center">
-            <TrophyIcon className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-purple-700">{stats.averageRating.toFixed(1)}</div>{/* Display with 1 decimal place */}
-            <div className="text-sm text-gray-600">Avg. Rating</div>
+          <div className="bg-purple-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
+            <TrophyIcon className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-purple-700">{stats.averageRating.toFixed(1)}</div>
+            <div className="text-sm text-purple-600">Avg. Rating</div>
           </div>
-          <div className="bg-red-50 p-4 rounded-lg text-center">
-            <TrophyIcon className="w-8 h-8 text-red-500 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-red-700">#{stats.rank}</div>
-            <div className="text-sm text-gray-600">Rank</div>
+          <div className="bg-rose-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
+            <TrophyIcon className="w-8 h-8 text-rose-600 mx-auto mb-2" />
+            <div className="text-2xl font-bold text-rose-700">#{stats.rank}</div>
+            <div className="text-sm text-rose-600">Rank</div>
           </div>
         </div>
 
         {/* Recent Activity Feed */}
         <div className="mb-8">
-          <h3 className="font-semibold text-gray-700 mb-2 flex items-center">
-            <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2 text-blue-500" /> Recent Activity
+          <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
+            <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2 text-indigo-600" /> Recent Activity
           </h3>
           <ol className="relative border-l border-gray-200 ml-4">
             {recentActivity.length === 0 ? (
@@ -147,7 +147,9 @@ export default function ProfileView() {
             ) : (
               recentActivity.map((activity, idx) => (
                 <li key={idx} className="mb-6 ml-6">
-                  <span className={`absolute -left-3 flex items-center justify-center w-6 h-6 rounded-full ring-8 ring-white ${activity.type === 'answered' ? 'bg-green-400' : 'bg-blue-400'}`}>
+                  <span className={`absolute -left-3 flex items-center justify-center w-6 h-6 rounded-full ring-8 ring-white ${
+                    activity.type === 'answered' ? 'bg-emerald-500' : 'bg-indigo-500'
+                  }`}>
                     {activity.type === 'answered' ? (
                       <ChatBubbleLeftRightIcon className="w-4 h-4 text-white" />
                     ) : (
@@ -170,30 +172,30 @@ export default function ProfileView() {
 
         {/* Tabs */}
         <Tab.Group>
-          <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
+          <Tab.List className="flex space-x-1 rounded-xl bg-indigo-50 p-1">
             <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
               ${selected 
-                ? 'bg-blue-100 text-blue-700 shadow'
-                : 'text-blue-700 hover:bg-blue-50'
+                ? 'bg-white text-indigo-700 shadow-sm'
+                : 'text-indigo-600 hover:bg-white/50'
               }`
             }>
               My Questions
             </Tab>
             <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
               ${selected 
-                ? 'bg-green-100 text-green-700 shadow'
-                : 'text-green-700 hover:bg-green-50'
+                ? 'bg-white text-emerald-700 shadow-sm'
+                : 'text-emerald-600 hover:bg-white/50'
               }`
             }>
               My Answers
             </Tab>
             <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5
+              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
               ${selected 
-                ? 'bg-purple-100 text-purple-700 shadow'
-                : 'text-purple-700 hover:bg-purple-50'
+                ? 'bg-white text-purple-700 shadow-sm'
+                : 'text-purple-600 hover:bg-white/50'
               }`
             }>
               Saved Questions
@@ -206,9 +208,9 @@ export default function ProfileView() {
                   <p className="text-gray-500">No questions asked yet.</p>
                 ) : (
                   myQuestions.map(q => (
-                    <div key={q.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-400">
-                        <QuestionMarkCircleIcon className="w-5 h-5 text-white" />
+                    <div key={q.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
+                        <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-600" />
                       </span>
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">Asked: {q.title}</div>
@@ -229,12 +231,12 @@ export default function ProfileView() {
                   <p className="text-gray-500">No answers provided yet.</p>
                 ) : (
                   myAnswers.map(a => (
-                    <div key={a.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-green-400">
-                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-white" />
+                    <div key={a.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100">
+                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-emerald-600" />
                       </span>
                       <div className="flex-1">
-                        <div className="font-medium">Answered: {a.questionTitle}</div>
+                        <div className="font-medium text-gray-900">Answered: {a.questionTitle}</div>
                         <div className="text-xs text-gray-500">
                           {a.createdAt && !isNaN(new Date(a.createdAt))
                             ? formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })
@@ -252,8 +254,8 @@ export default function ProfileView() {
                   <p className="text-gray-500">No saved questions yet.</p>
                 ) : (
                   savedQuestions.map(q => (
-                    <div key={q.id} className="p-4 bg-gray-50 rounded-lg">
-                      <h3 className="font-medium">{q.title}</h3>
+                    <div key={q.id} className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                      <h3 className="font-medium text-gray-900">{q.title}</h3>
                       <p className="text-sm text-gray-600">{q.description}</p>
                     </div>
                   ))
@@ -264,26 +266,26 @@ export default function ProfileView() {
         </Tab.Group>
 
         {/* Account Management */}
-        <div className="mt-8 border-t pt-8">
-          <h3 className="text-xl font-semibold mb-4">Account Management</h3>
+        <div className="mt-8 border-t border-gray-200 pt-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Account Management</h3>
           <div className="space-y-4">
-            <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+            <button className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors">
               <BellIcon className="w-5 h-5" />
               <span>Notification Preferences</span>
             </button>
-            <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600">
+            <button className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors">
               <ShieldExclamationIcon className="w-5 h-5" />
               <span>Change Password</span>
             </button>
             <button 
               onClick={logout}
-              className="flex items-center space-x-2 text-gray-700 hover:text-red-600"
+              className="flex items-center space-x-2 text-gray-700 hover:text-rose-600 transition-colors"
             >
               <ArrowRightOnRectangleIcon className="w-5 h-5" />
               <span>Logout</span>
             </button>
-            <div className="pt-4 border-t border-red-200">
-              <button className="flex items-center space-x-2 text-red-600 hover:text-red-700">
+            <div className="pt-4 border-t border-gray-200">
+              <button className="flex items-center space-x-2 text-rose-600 hover:text-rose-700 transition-colors">
                 <TrashIcon className="w-5 h-5" />
                 <span>Delete Account</span>
               </button>
@@ -292,15 +294,15 @@ export default function ProfileView() {
         </div>
 
         {/* Social/Academic Links */}
-        <div className="mt-8 border-t pt-8">
-          <h3 className="text-xl font-semibold mb-4">Social / Academic Links</h3>
+        <div className="mt-8 border-t border-gray-200 pt-8">
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Social / Academic Links</h3>
           <div className="flex flex-col gap-4">
             <div className="flex gap-4">
-              <button className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
                 <FaGithub className="w-5 h-5" />
                 <span>Link GitHub</span>
               </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-700 text-white rounded hover:bg-blue-800">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm">
                 <FaLinkedin className="w-5 h-5" />
                 <span>Link LinkedIn</span>
               </button>
@@ -308,11 +310,19 @@ export default function ProfileView() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                <input type="text" placeholder="Enter your student ID" className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                <input 
+                  type="text" 
+                  placeholder="Enter your student ID" 
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" 
+                />
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">University</label>
-                <input type="text" placeholder="Enter your university" className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                <input 
+                  type="text" 
+                  placeholder="Enter your university" 
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" 
+                />
               </div>
             </div>
           </div>
