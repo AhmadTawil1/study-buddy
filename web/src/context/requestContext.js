@@ -1,3 +1,15 @@
+// src/context/requestContext.js
+//
+// RequestProvider manages help request data and filters for the StudyBuddy app.
+// It provides the list of requests, loading state, filters, and logic to create/update requests via context.
+// Used globally in app/layout.js to make requests data available everywhere.
+//
+// Features:
+// - Subscribes to Firestore for real-time requests updates
+// - Supports client-side search and filtering
+// - Provides createRequest and updateRequest logic
+// - Exposes custom hook for use in components
+
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -41,6 +53,10 @@ export const RequestProvider = ({ children }) => {
     return () => unsubscribe();
   }, [filters]);
 
+  /**
+   * Create a new help request in Firestore
+   * @param {Object} requestData - Data for the new request
+   */
   const createRequest = async (requestData) => {
     try {
       const newRequest = await requestService.createRequest({
@@ -54,6 +70,11 @@ export const RequestProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Update an existing help request in Firestore
+   * @param {string} requestId - ID of the request
+   * @param {Object} updateData - Fields to update
+   */
   const updateRequest = async (requestId, updateData) => {
     try {
       await requestService.updateRequest(requestId, updateData);
@@ -63,6 +84,10 @@ export const RequestProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Update the filters for requests
+   * @param {Object} newFilters - New filter values
+   */
   const updateFilters = (newFilters) => {
     setFilters(prev => ({
       ...prev,
@@ -86,6 +111,10 @@ export const RequestProvider = ({ children }) => {
   );
 };
 
+/**
+ * Custom hook to access request context
+ * @returns {Object} Request context containing requests, loading, filters, and logic
+ */
 export const useRequest = () => {
   const context = useContext(RequestContext);
   if (context === undefined) {

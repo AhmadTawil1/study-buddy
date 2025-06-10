@@ -1,3 +1,14 @@
+// src/context/notificationContext.js
+//
+// NotificationProvider manages notifications for the StudyBuddy app.
+// It provides the list of notifications, unread count, loading state, and logic to mark/read/delete notifications via context.
+// Used globally in app/layout.js to make notifications available everywhere.
+//
+// Features:
+// - Subscribes to Firestore for real-time notifications updates
+// - Provides markAsRead, markAllAsRead, deleteNotification logic
+// - Exposes custom hook for use in components
+
 'use client'
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
@@ -6,6 +17,10 @@ import { useAuth } from '@/src/context/authContext';
 
 const NotificationContext = createContext();
 
+/**
+ * Custom hook to access notification context
+ * @returns {Object} Notification context containing notifications, unreadCount, loading, and logic
+ */
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (!context) {
@@ -41,6 +56,10 @@ export const NotificationProvider = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
+  /**
+   * Mark a notification as read
+   * @param {string} notificationId - ID of the notification
+   */
   const markAsRead = async (notificationId) => {
     try {
       await notificationService.markAsRead(notificationId);
@@ -49,6 +68,9 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Mark all notifications as read for the current user
+   */
   const markAllAsRead = async () => {
     if (!user) return;
     try {
@@ -58,6 +80,10 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Delete a notification
+   * @param {string} notificationId - ID of the notification
+   */
   const deleteNotification = async (notificationId) => {
     try {
       await notificationService.deleteNotification(notificationId);

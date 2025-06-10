@@ -1,3 +1,15 @@
+// src/context/authContext.js
+//
+// AuthProvider manages authentication state for the StudyBuddy app.
+// It provides the current user, loading state, and logout function to the app via context.
+// Used globally in app/layout.js to make auth state available everywhere.
+//
+// Features:
+// - Listens for Firebase Auth state changes
+// - Ensures user profile exists in Firestore
+// - Provides login/logout logic
+// - Exposes custom hooks for use in components
+
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut, getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, OAuthProvider } from 'firebase/auth'
@@ -78,6 +90,7 @@ export function AuthProvider({ children }) {
  */
 export const useAuth = () => useContext(AuthContext)
 
+// Social login helpers
 export const signInWithGoogle = async () => {
   const auth = getAuth();
   const provider = new GoogleAuthProvider();

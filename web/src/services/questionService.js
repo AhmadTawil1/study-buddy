@@ -17,6 +17,7 @@ import {
   arrayRemove,
   deleteDoc
 } from 'firebase/firestore';
+import { notificationService } from '@/src/services/notificationService';
 
 export const questionService = {
   // Get all questions with optional filters
@@ -139,6 +140,16 @@ export const questionService = {
       updatedAt: serverTimestamp(),
       answersCount: increment(1) // Increment answer count
     });
+    // Notify question owner if someone else answers
+    if (requestData.userId && answerData.userId !== requestData.userId) {
+      await notificationService.createNotification({
+        userId: requestData.userId,
+        type: 'answer',
+        questionId: requestId,
+        answerId: answerDoc.id,
+        message: `Your question "${requestData.title}" received a new answer!`
+      });
+    }
     return {
       id: answerDoc.id,
       ...newAnswer
@@ -155,7 +166,7 @@ export const questionService = {
   },
 
   // Vote on a question
-  voteQuestion: async (questionId, voteType) => {
+  voteQuestion: async (questionId, voteType, userId) => {
     const questionRef = doc(db, 'questions', questionId);
     const updates = {};
     
@@ -166,6 +177,19 @@ export const questionService = {
     }
 
     await updateDoc(questionRef, updates);
+    // Notify question owner if someone else upvotes
+    if (voteType === 'up' && userId) {
+      const questionSnap = await getDoc(questionRef);
+      const questionData = questionSnap.data();
+      if (questionData.userId && userId !== questionData.userId) {
+        await notificationService.createNotification({
+          userId: questionData.userId,
+          type: 'upvote',
+          questionId,
+          message: `Your question "${questionData.title}" received an upvote!`
+        });
+      }
+    }
   },
 
   // Vote on an answer

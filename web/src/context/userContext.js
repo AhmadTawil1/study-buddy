@@ -1,3 +1,15 @@
+// src/context/userContext.js
+//
+// UserProvider manages user profile data for the StudyBuddy app.
+// It provides the current Firebase user, user profile from Firestore, loading state, and update logic via context.
+// Used globally in app/layout.js to make user data available everywhere.
+//
+// Features:
+// - Listens for Firebase Auth state changes
+// - Fetches user profile from Firestore
+// - Provides updateUserProfile to update Firestore user data
+// - Exposes custom hook for use in components
+
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -35,6 +47,10 @@ export const UserProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  /**
+   * Update the user's profile in Firestore and local state
+   * @param {Object} updates - Fields to update
+   */
   const updateUserProfile = async (updates) => {
     if (!user) return;
 
@@ -68,6 +84,10 @@ export const UserProvider = ({ children }) => {
   );
 };
 
+/**
+ * Custom hook to access user context
+ * @returns {Object} User context containing user, userProfile, loading, and updateUserProfile
+ */
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {

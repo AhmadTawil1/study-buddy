@@ -1,4 +1,14 @@
 // src/components/layout/Footer.js
+//
+// This is the global footer for the StudyBuddy app.
+// It appears at the bottom of every page (via app/layout.js).
+//
+// Features:
+// - Brand/logo
+// - Social media links
+// - Quick links (docs, contact, terms, etc.)
+// - Language selector
+// - Copyright notice
 
 "use client"
 import Link from 'next/link'
