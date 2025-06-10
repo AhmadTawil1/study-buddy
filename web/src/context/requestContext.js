@@ -24,8 +24,15 @@ export const RequestProvider = ({ children }) => {
     console.log('RequestContext: subscribing to requests with filters:', filters);
     const unsubscribe = requestService.subscribeToRequests(
       (updatedRequests) => {
-        console.log('Fetched requests:', updatedRequests);
-        setRequests(updatedRequests);
+        let filteredRequests = updatedRequests;
+        if (filters.searchQuery && filters.searchQuery.trim() !== '') {
+          const q = filters.searchQuery.trim().toLowerCase();
+          filteredRequests = updatedRequests.filter(req =>
+            (req.title && req.title.toLowerCase().includes(q)) ||
+            (req.description && req.description.toLowerCase().includes(q))
+          );
+        }
+        setRequests(filteredRequests);
         setLoading(false);
       },
       filters

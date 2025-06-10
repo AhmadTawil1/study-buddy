@@ -11,7 +11,7 @@ import { uploadFiles } from '@/src/services/storageService'
 import { questionService } from '@/src/services/questionService'
 import calculateClarityScore from '@/src/utils/clarityScore'
 import { addTag, removeTag } from '@/src/utils/tags'
-import { handleFiles, removeFile } from '@/src/utils/fileUtils'
+import { handleFiles as handleFilesUtil, removeFile as removeFileUtil } from '@/src/utils/fileUtils'
 import TitleInput from './components/TitleInput'
 import DescriptionInput from './components/DescriptionInput'
 import FileUpload from './components/FileUpload'
@@ -77,20 +77,16 @@ export default function AskForm() {
     e.stopPropagation()
     setDragActive(false)
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(e.dataTransfer.files)
+      setFiles(prev => handleFilesUtil(e.dataTransfer.files, prev))
     }
   }
 
   const handleFiles = (fileList) => {
-    const newFiles = Array.from(fileList).filter(file => {
-      const validTypes = ['image/jpeg', 'image/png', 'application/pdf', 'text/plain', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-      return validTypes.includes(file.type)
-    })
-    setFiles(prev => [...prev, ...newFiles])
+    setFiles(prev => handleFilesUtil(fileList, prev))
   }
 
   const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index))
+    setFiles(prev => removeFileUtil(prev, index))
   }
 
   const addTag = (tag) => {
@@ -135,7 +131,15 @@ export default function AskForm() {
     let fileDownloadURLs = []
     try {
       if (files.length > 0) {
-        fileDownloadURLs = await uploadFiles(files, user.uid)
+        console.log('Uploading files:', files)
+        fileDownloadURLs = await uploadFiles(files, `users/${user.uid}/uploads`, (index, progress) => {
+          console.log(`File ${files[index].name} progress: ${progress}%`)
+          const fileName = files[index].name
+          setFiles(prev => prev.map(file => 
+            file.name === fileName ? { ...file, uploadProgress: progress } : file
+          ))
+        })
+        console.log('File upload complete:', fileDownloadURLs)
       }
 
       const request = {
@@ -153,8 +157,9 @@ export default function AskForm() {
         clarityScore: calculateClarityScore(title),
       }
 
-      // Create the question/request and get its ID
+      console.log('Creating request:', request)
       const createdRequest = await requestService.createRequest(request)
+      console.log('Request created:', createdRequest)
       const questionId = createdRequest.id
 
       // Call the AI answer API
@@ -164,6 +169,7 @@ export default function AskForm() {
         body: JSON.stringify({ question: title + '\n' + description })
       })
       const { answer: aiAnswer } = await aiRes.json()
+      console.log('AI answer:', aiAnswer)
 
       // Save the AI answer as a normal answer
       await questionService.addAnswer(questionId, {
@@ -173,6 +179,7 @@ export default function AskForm() {
         userId: 'ai-bot',
         requestId: questionId
       })
+      console.log('AI answer saved')
 
       setSuccess(true)
       setTimeout(() => {
@@ -180,9 +187,9 @@ export default function AskForm() {
       }, 1200)
     } catch (err) {
       setError(`Submission failed: ${err.message || 'An unexpected error occurred. Please try again.'}`)
-    } finally {
-      setLoading(false)
+      console.error('Submission failed:', err)
     }
+    setLoading(false)
   }
 
   const handleFileSelect = (file) => {

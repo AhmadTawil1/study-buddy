@@ -5,7 +5,6 @@ import { FiUpload, FiX, FiLoader } from 'react-icons/fi'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function FileUpload({ files, setFiles, dragActive, setDragActive, onFilesAdd, onFileRemove }) {
-  const [uploadingFiles, setUploadingFiles] = useState({})
   const [error, setError] = useState('')
   const fileInputRef = useRef(null)
 
@@ -46,25 +45,8 @@ export default function FileUpload({ files, setFiles, dragActive, setDragActive,
     })
 
     if (newFiles.length > 0) {
-      setFiles(prev => [...prev, ...newFiles])
-      // Set uploading state for each new file
-      const newUploadingFiles = {}
-      newFiles.forEach(file => {
-        newUploadingFiles[file.name] = true
-      })
-      setUploadingFiles(prev => ({ ...prev, ...newUploadingFiles }))
+      onFilesAdd(newFiles)
     }
-  }
-
-  const removeFile = (index) => {
-    setFiles(prev => prev.filter((_, i) => i !== index))
-    // Remove from uploading state
-    const fileName = files[index].name
-    setUploadingFiles(prev => {
-      const newState = { ...prev }
-      delete newState[fileName]
-      return newState
-    })
   }
 
   return (
@@ -127,15 +109,23 @@ export default function FileUpload({ files, setFiles, dragActive, setDragActive,
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-700">{file.name}</span>
-                {uploadingFiles[file.name] && (
-                  <FiLoader className="animate-spin text-blue-600" />
+                {file.uploadProgress !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-600 transition-all duration-300"
+                        style={{ width: `${file.uploadProgress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500">{Math.round(file.uploadProgress)}%</span>
+                  </div>
                 )}
               </div>
               <button
                 type="button"
-                onClick={() => removeFile(index)}
+                onClick={() => onFileRemove(index)}
                 className="text-red-600 hover:text-red-700"
-                disabled={uploadingFiles[file.name]}
+                disabled={file.uploadProgress !== undefined && file.uploadProgress < 100}
               >
                 <FiX />
               </button>

@@ -32,6 +32,12 @@ export const requestService = {
     if (filters.userId) {
       q = query(q, where('userId', '==', filters.userId));
     }
+    if (filters.searchQuery) {
+      q = query(q,
+        where('title', '>=', filters.searchQuery),
+        where('title', '<=', filters.searchQuery + '\uf8ff')
+      );
+    }
 
     q = query(q, orderBy('createdAt', 'desc'));
     
@@ -57,8 +63,10 @@ export const requestService = {
       q = query(q, where('userId', '==', filters.userId));
     }
     if (filters.searchQuery) {
-      // Temporarily do not filter by searchTerms to show all requests
-      // You can implement search logic here later if needed
+      q = query(q,
+        where('title', '>=', filters.searchQuery),
+        where('title', '<=', filters.searchQuery + '\uf8ff')
+      );
     }
 
     q = query(q, orderBy('createdAt', 'desc'));

@@ -36,6 +36,8 @@ export default function SearchBar({ value, onChange, onSuggestionClick }) {
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search help requests..."
           className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+          onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
         />
         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
       </div>

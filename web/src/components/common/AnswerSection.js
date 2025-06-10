@@ -65,11 +65,6 @@ export default function AnswerSection({ answers, requestId }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Answers ({answers.length})</h2>
-        {user && (
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
-            <span>I Can Help</span>
-          </button>
-        )}
       </div>
 
       <div className="space-y-4">

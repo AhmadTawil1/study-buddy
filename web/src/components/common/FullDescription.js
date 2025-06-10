@@ -1,4 +1,3 @@
-// ... existing code ...
 "use client"
 export default function FullDescription({ description, files, aiSummary }) {
   return (
@@ -8,7 +7,21 @@ export default function FullDescription({ description, files, aiSummary }) {
       {files && files.length > 0 && (
         <div>
           <h3 className="font-semibold mb-1 text-gray-800">Attachments</h3>
-          {/* Render files here */}
+          <ul className="space-y-2">
+            {files.map((url, idx) => (
+              <li key={idx}>
+                {url.match(/\.(jpg|jpeg|png|gif|webp)/i) ? (
+                  <a href={url} target="_blank" rel="noopener noreferrer">
+                    <img src={url} alt={`Attachment ${idx + 1}`} className="max-h-40 rounded border mb-1" />
+                  </a>
+                ) : (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    {`Attachment ${idx + 1}`}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       {aiSummary && (
