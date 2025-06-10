@@ -1,12 +1,5 @@
 export function handleFiles(fileList, prevFiles = []) {
-  const validTypes = [
-    'image/jpeg',
-    'image/png',
-    'application/pdf',
-    'text/plain',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ];
-  const newFiles = Array.from(fileList).filter(file => validTypes.includes(file.type));
+  const newFiles = Array.from(fileList);
   return [...prevFiles, ...newFiles];
 }
 

@@ -29,21 +29,7 @@ export default function FileUpload({ files, setFiles, dragActive, setDragActive,
 
   const handleFiles = (fileList) => {
     setError('')
-    const newFiles = Array.from(fileList).filter(file => {
-      const validTypes = [
-        'image/jpeg',
-        'image/png',
-        'application/pdf',
-        'text/plain',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ]
-      if (!validTypes.includes(file.type)) {
-        setError(`File type ${file.type} is not supported`)
-        return false
-      }
-      return true
-    })
-
+    const newFiles = Array.from(fileList)
     if (newFiles.length > 0) {
       onFilesAdd(newFiles)
     }
@@ -80,7 +66,7 @@ export default function FileUpload({ files, setFiles, dragActive, setDragActive,
             </span>
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            Supports: Images, PDFs, .txt, .docx
+            Supports: Any file type
           </p>
         </label>
       </div>
