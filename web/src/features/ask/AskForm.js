@@ -25,7 +25,7 @@ const CODE_LANGUAGES = [
   { id: 'cpp', name: 'C++' },
   { id: 'java', name: 'Java' },
   { id: 'python', name: 'Python' },
-  { id: 'python', name: 'Python3' }, // Using 'python' id for Python3 for Monaco compatibility
+  { id: 'python3', name: 'Python3' },
   { id: 'c', name: 'C' },
   { id: 'csharp', name: 'C#' },
   { id: 'javascript', name: 'JavaScript' },
