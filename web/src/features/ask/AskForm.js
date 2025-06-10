@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/src/context/authContext'
 import { rephraseQuestion } from '@/src/services/aiService'
@@ -17,9 +17,31 @@ import DescriptionInput from './components/DescriptionInput'
 import FileUpload from './components/FileUpload'
 import TagInput from './components/TagInput'
 import PrivacyToggle from './components/PrivacyToggle'
+import Editor from '@monaco-editor/react'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
+const CODE_LANGUAGES = [
+  { id: 'cpp', name: 'C++' },
+  { id: 'java', name: 'Java' },
+  { id: 'python', name: 'Python' },
+  { id: 'python', name: 'Python3' }, // Using 'python' id for Python3 for Monaco compatibility
+  { id: 'c', name: 'C' },
+  { id: 'csharp', name: 'C#' },
+  { id: 'javascript', name: 'JavaScript' },
+  { id: 'typescript', name: 'TypeScript' },
+  { id: 'php', name: 'PHP' },
+  { id: 'swift', name: 'Swift' },
+  { id: 'kotlin', name: 'Kotlin' },
+  { id: 'dart', name: 'Dart' },
+  { id: 'go', name: 'Go' },
+  { id: 'ruby', name: 'Ruby' },
+  { id: 'scala', name: 'Scala' },
+  { id: 'rust', name: 'Rust' },
+  { id: 'racket', name: 'Racket' },
+  { id: 'erlang', name: 'Erlang' },
+  { id: 'elixir', name: 'Elixir' }
+]
 
 export default function AskForm() {
   const [title, setTitle] = useState('')
@@ -40,6 +62,29 @@ export default function AskForm() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
+  const [codeLanguage, setCodeLanguage] = useState('plaintext')
+
+  useEffect(() => {
+    if (showCodeEditor && codeSnippet === '') {
+      const comment = getCommentPrefix(codeLanguage);
+    }
+  }, [showCodeEditor, codeLanguage]);
+
+  const getCommentPrefix = (language) => {
+    switch (language) {
+      case 'python':
+      case 'ruby':
+      case 'racket': // Assuming Racket uses # for single-line comments
+      case 'elixir': // Assuming Elixir uses # for single-line comments
+        return '#';
+      case 'html':
+        return '<!--';
+      case 'sql':
+        return '--';
+      default: // C++, Java, JavaScript, TypeScript, C#, PHP, Swift, Kotlin, Dart, Go, Rust, Erlang
+        return '//';
+    }
+  };
 
   const fileInputRef = useRef(null)
   const router = useRouter()
@@ -97,16 +142,6 @@ export default function AskForm() {
 
   const removeTag = (tagToRemove) => {
     setTags(prev => prev.filter(tag => tag !== tagToRemove))
-  }
-
-  const calculateClarityScore = (text) => {
-    // Simple scoring based on length, question marks, and specific words
-    let score = 5 // Base score
-    if (text.length > 20) score += 1
-    if (text.includes('?')) score += 1
-    if (text.includes('how') || text.includes('what') || text.includes('why')) score += 1
-    if (text.length > 50) score += 1
-    return Math.min(10, score)
   }
 
   const handleSubmit = async (e) => {
@@ -283,14 +318,37 @@ export default function AskForm() {
               {showCodeEditor ? 'Hide Code Editor' : 'Add Code Snippet'}
             </button>
             {showCodeEditor && (
-              <div className="mt-2">
-                <textarea
-                  value={codeSnippet}
-                  onChange={e => setCodeSnippet(e.target.value)}
-                  placeholder="Paste your code here..."
-                  className="w-full border border-gray-300 px-4 py-2 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={4}
-                />
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-700">Language:</label>
+                  <select
+                    value={codeLanguage}
+                    onChange={(e) => setCodeLanguage(e.target.value)}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {CODE_LANGUAGES.map(lang => (
+                      <option key={lang.id} value={lang.id}>{lang.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="border rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                  <Editor
+                    height="100%"
+                    defaultLanguage={codeLanguage}
+                    language={codeLanguage}
+                    value={codeSnippet}
+                    onChange={setCodeSnippet}
+                    theme="vs-light"
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 14,
+                      lineNumbers: 'on',
+                      roundedSelection: false,
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
