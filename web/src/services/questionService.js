@@ -115,10 +115,17 @@ export const questionService = {
   addAnswer: async (requestId, answerData) => {
     // Support both questions and requests collections
     const requestRef = doc(db, 'requests', requestId);
+    const requestSnap = await getDoc(requestRef);
+    if (!requestSnap.exists()) {
+      throw new Error('Question not found');
+    }
+    const requestData = requestSnap.data();
+    
     const answersRef = collection(db, 'answers');
     const newAnswer = {
       ...answerData,
       requestId,
+      questionTitle: requestData.title,
       createdAt: serverTimestamp(),
       upvotes: 0,
       downvotes: 0,

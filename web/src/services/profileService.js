@@ -1,5 +1,5 @@
 import { db } from '@/src/firebase/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 
 export const profileService = {
   getUserProfile: async (userId) => {
@@ -31,7 +31,30 @@ export const profileService = {
         return acc;
       }, {})
     );
-    return uniqueAnswers;
+
+    // Fetch question titles for answers that don't have them
+    const answersWithTitles = await Promise.all(
+      uniqueAnswers.map(async (answer) => {
+        if (answer.questionTitle) return answer;
+        
+        try {
+          const requestRef = doc(db, 'requests', answer.requestId);
+          const requestSnap = await getDoc(requestRef);
+          if (requestSnap.exists()) {
+            const requestData = requestSnap.data();
+            // Update the answer with the question title
+            const answerRef = doc(db, 'answers', answer.id);
+            await updateDoc(answerRef, { questionTitle: requestData.title });
+            return { ...answer, questionTitle: requestData.title };
+          }
+        } catch (error) {
+          console.error('Error fetching question title:', error);
+        }
+        return answer;
+      })
+    );
+
+    return answersWithTitles;
   },
   getUserSavedQuestions: async (userId) => {
     const savedQuery = query(collection(db, 'savedQuestions'), where('userId', '==', userId));
