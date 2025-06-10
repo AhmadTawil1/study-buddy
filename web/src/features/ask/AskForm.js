@@ -200,7 +200,11 @@ export default function AskForm() {
       const aiRes = await fetch('/api/ai-answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: title + '\n' + description })
+        body: JSON.stringify({
+          question: title + '\n' + description,
+          codeSnippet: codeSnippet,
+          codeLanguage: codeLanguage
+        })
       })
       const { answer: aiAnswer } = await aiRes.json()
       console.log('AI answer:', aiAnswer)
