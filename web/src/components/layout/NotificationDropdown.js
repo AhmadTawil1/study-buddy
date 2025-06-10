@@ -3,16 +3,25 @@ import { useNotifications } from '@/src/context/notificationContext';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import ReactDOM from 'react-dom';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationDropdown() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
+  const router = useRouter();
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -21,11 +30,21 @@ export default function NotificationDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleNotificationClick = async (notification) => {
+  const handleNotificationClick = async (notification, e) => {
+    e.preventDefault();
     if (!notification.read) {
       await markAsRead(notification.id);
     }
+    // Redirect to the correct post (try questionId, requestId, or fallback)
+    const postId = notification.requestId || notification.questionId || notification.id;
+    router.push(`/requests/${postId}`);
     setIsOpen(false);
+  };
+
+  const handleMarkAllAsRead = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await markAllAsRead();
   };
 
   const getNotificationIcon = (type) => {
@@ -40,7 +59,7 @@ export default function NotificationDropdown() {
   };
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative" ref={buttonRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
@@ -53,14 +72,18 @@ export default function NotificationDropdown() {
         )}
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+      {isOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
+        <div
+          ref={dropdownRef}
+          className="origin-top-right absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-[1000]"
+          style={{ top: '70px', right: '16px', left: 'auto', position: 'fixed', transform: 'translateX(-30%)' }}
+        >
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllAsRead}
                   className="text-sm text-indigo-600 hover:text-indigo-800"
                 >
                   Mark all as read
@@ -76,10 +99,10 @@ export default function NotificationDropdown() {
               </div>
             ) : (
               notifications.map((notification) => (
-                <Link
+                <a
                   key={notification.id}
-                  href={`/questions/${notification.questionId}`}
-                  onClick={() => handleNotificationClick(notification)}
+                  href={`/requests/${notification.requestId || notification.questionId || notification.id}`}
+                  onClick={(e) => handleNotificationClick(notification, e)}
                   className={`block p-4 border-b border-gray-100 hover:bg-gray-50 ${
                     !notification.read ? 'bg-blue-50' : ''
                   }`}
@@ -96,11 +119,12 @@ export default function NotificationDropdown() {
                       <span className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
                     )}
                   </div>
-                </Link>
+                </a>
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
