@@ -124,7 +124,13 @@ export default function RequestDetails({ params }) {
           author: request.author || "Jane Doe",
           timeAgo: formatDate(request.createdAt)
         }} />
-        <FullDescription description={request.description} files={request.fileURLs || []} aiSummary={request.aiSummary} />
+        <FullDescription 
+          description={request.description} 
+          files={request.fileURLs || []} 
+          aiSummary={request.aiSummary}
+          codeSnippet={request.codeSnippet}
+          codeLanguage={request.codeLanguage}
+        />
         <AnswerSection answers={answers} requestId={request.id} />
         <AISuggestions question={request.title} description={request.description} />
       </div>

@@ -1,9 +1,35 @@
 "use client"
-export default function FullDescription({ description, files, aiSummary }) {
+import Editor from '@monaco-editor/react'
+
+export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage }) {
   return (
     <div className="mb-6">
       <h2 className="font-semibold text-lg text-gray-800 mb-2">Description</h2>
       <p className="mb-4 text-gray-800 whitespace-pre-line">{description}</p>
+      
+      {codeSnippet && (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2 text-gray-800">Code Snippet</h3>
+          <div className="border rounded-lg overflow-hidden" style={{ height: '300px' }}>
+            <Editor
+              height="100%"
+              language={codeLanguage || 'plaintext'}
+              value={codeSnippet}
+              theme="vs-light"
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {files && files.length > 0 && (
         <div>
           <h3 className="font-semibold mb-1 text-gray-800">Attachments</h3>
