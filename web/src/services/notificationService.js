@@ -13,7 +13,8 @@ import {
   updateDoc,
   serverTimestamp,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  writeBatch
 } from 'firebase/firestore';
 
 export const notificationService = {
@@ -86,7 +87,7 @@ export const notificationService = {
     );
 
     const snapshot = await getDocs(q);
-    const batch = db.batch();
+    const batch = writeBatch(db);
 
     snapshot.docs.forEach(doc => {
       batch.update(doc.ref, {
