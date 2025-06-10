@@ -1,5 +1,5 @@
-// ... existing code ...
 "use client"
+import Link from 'next/link'
 export default function Sidebar({ relatedQuestions, aiSuggestions }) {
   return (
     <aside className="sticky top-8">
@@ -10,7 +10,9 @@ export default function Sidebar({ relatedQuestions, aiSuggestions }) {
             <li key={q.id}><a href={`/requests/${q.id}`} className="text-blue-600 hover:underline">{q.title}</a></li>
           ))}
         </ul>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 w-full mb-4">Ask a new question</button>
+        <Link href="/ask" className="block">
+          <button className="bg-blue-600 text-white px-4 py-2 rounded font-semibold hover:bg-blue-700 w-full mb-4">Ask a new question</button>
+        </Link>
         <div className="bg-blue-50 p-3 rounded">
           <strong className="text-gray-800">AI Suggestions:</strong>
           <div className="text-gray-700">{aiSuggestions}</div>
