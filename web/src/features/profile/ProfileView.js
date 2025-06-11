@@ -23,6 +23,8 @@ import {
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
 import { profileService } from '@/src/services/profileService'
+import { requestService } from '@/src/services/requestService'
+import { useRouter } from 'next/navigation'
 
 export default function ProfileView() {
   const { user, logout } = useAuth()
@@ -37,6 +39,7 @@ export default function ProfileView() {
     averageRating: 0,
     rank: 0
   })
+  const router = useRouter()
 
   useEffect(() => {
     if (!user) return
@@ -51,13 +54,21 @@ export default function ProfileView() {
       setProfile(profileData)
       setMyQuestions(questions)
       setMyAnswers(answers)
-      setSavedQuestions(saved)
+      // Fetch details for saved questions
+      const savedQuestionDetails = await Promise.all(
+        saved.map(async (savedQ) => {
+          const req = await requestService.getRequestById(savedQ.requestId);
+          return req ? { ...req, savedAt: savedQ.savedAt } : null; // Include savedAt for sorting/display
+        })
+      );
+      setSavedQuestions(savedQuestionDetails.filter(Boolean)); // Filter out nulls
       const statsData = await profileService.getUserStats(user.uid, user.email)
       setStats({
         ...statsData,
         questionsAsked: questions.length,
         questionsAnswered: answers.length
       })
+      console.log('[ProfileView] Saved question details after fetching:', savedQuestionDetails);
     }
     fetchData()
   }, [user])
@@ -201,66 +212,97 @@ export default function ProfileView() {
               Saved Questions
             </Tab>
           </Tab.List>
-          <Tab.Panels className="mt-4">
-            <Tab.Panel>
-              <div className="space-y-4">
+          <Tab.Panels className="mt-2">
+            <Tab.Panel
+              className={
+                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+              }
+            >
+              <ul className="space-y-4">
                 {myQuestions.length === 0 ? (
-                  <p className="text-gray-500">No questions asked yet.</p>
+                  <li className="text-gray-500">No questions asked yet.</li>
                 ) : (
-                  myQuestions.map(q => (
-                    <div key={q.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100">
-                        <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-600" />
-                      </span>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">Asked: {q.title}</div>
-                        <div className="text-xs text-gray-500">
-                          {q.createdAt && !isNaN(new Date(q.createdAt))
-                            ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })
-                            : ''}
-                        </div>
-                      </div>
-                    </div>
+                  myQuestions.map((q) => (
+                    <li
+                      key={q.id}
+                      onClick={() => router.push(`/requests/${q.id}`)}
+                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
+                    >
+                      <h3 className="text-sm font-medium leading-5 text-gray-900">
+                        {q.title}
+                      </h3>
+                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
+                        <li>{q.subject}</li>
+                        <li>&middot;</li>
+                        <li>{formatDate(q.createdAt?.toDate())}</li>
+                      </ul>
+                      <span
+                        className={'absolute inset-0 rounded-md'}
+                      />
+                    </li>
                   ))
                 )}
-              </div>
+              </ul>
             </Tab.Panel>
-            <Tab.Panel>
-              <div className="space-y-4">
+            <Tab.Panel
+              className={
+                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+              }
+            >
+              <ul className="space-y-4">
                 {myAnswers.length === 0 ? (
-                  <p className="text-gray-500">No answers provided yet.</p>
+                  <li className="text-gray-500">No answers provided yet.</li>
                 ) : (
-                  myAnswers.map(a => (
-                    <div key={a.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100">
-                        <ChatBubbleLeftRightIcon className="w-5 h-5 text-emerald-600" />
-                      </span>
-                      <div className="flex-1">
-                        <div className="font-medium text-gray-900">Answered: {a.questionTitle}</div>
-                        <div className="text-xs text-gray-500">
-                          {a.createdAt && !isNaN(new Date(a.createdAt))
-                            ? formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })
-                            : ''}
-                        </div>
-                      </div>
-                    </div>
+                  myAnswers.map((a) => (
+                    <li
+                      key={a.id}
+                      onClick={() => router.push(`/requests/${a.requestId}`)}
+                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
+                    >
+                      <h3 className="text-sm font-medium leading-5 text-gray-900">
+                        {a.questionTitle || a.content?.substring(0, 50) + '...'}
+                      </h3>
+                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
+                        <li>Answered on {formatDate(a.createdAt?.toDate())}</li>
+                      </ul>
+                      <span
+                        className={'absolute inset-0 rounded-md'}
+                      />
+                    </li>
                   ))
                 )}
-              </div>
+              </ul>
             </Tab.Panel>
-            <Tab.Panel>
-              <div className="space-y-4">
+            <Tab.Panel
+              className={
+                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
+              }
+            >
+              <ul className="space-y-4">
                 {savedQuestions.length === 0 ? (
-                  <p className="text-gray-500">No saved questions yet.</p>
+                  <li className="text-gray-500">No saved questions yet.</li>
                 ) : (
-                  savedQuestions.map(q => (
-                    <div key={q.id} className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-                      <h3 className="font-medium text-gray-900">{q.title}</h3>
-                      <p className="text-sm text-gray-600">{q.description}</p>
-                    </div>
+                  savedQuestions.map((q) => (
+                    <li
+                      key={q.id}
+                      onClick={() => router.push(`/requests/${q.id}`)}
+                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
+                    >
+                      <h3 className="text-sm font-medium leading-5 text-gray-900">
+                        {q.title}
+                      </h3>
+                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
+                        <li>{q.subject}</li>
+                        <li>&middot;</li>
+                        <li>Saved on {formatDate(q.savedAt?.toDate())}</li>
+                      </ul>
+                      <span
+                        className={'absolute inset-0 rounded-md'}
+                      />
+                    </li>
                   ))
                 )}
-              </div>
+              </ul>
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>

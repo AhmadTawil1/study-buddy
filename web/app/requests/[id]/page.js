@@ -10,6 +10,8 @@ import FullDescription from '@/src/components/common/FullDescription'
 import AnswerSection from '@/src/components/common/AnswerSection'
 import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { requestService } from '@/src/services/requestService';
+import { questionService } from '@/src/services/questionService';
 
 function AISuggestions({ question, description }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -58,6 +60,7 @@ export default function RequestDetails({ params }) {
   const [error, setError] = useState(null)
   const [answers, setAnswers] = useState([])
   const [answersLoading, setAnswersLoading] = useState(true)
+  const [isSavedByCurrentUser, setIsSavedByCurrentUser] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -67,26 +70,52 @@ export default function RequestDetails({ params }) {
 
   useEffect(() => {
     if (user && !loading && id) {
-      // Real-time listener for the request
-      const ref = doc(db, 'requests', id);
-      const unsubRequest = onSnapshot(ref, (snap) => {
-        if (!snap.exists()) {
-          setError('Request not found');
-          setRequest(null);
-        } else {
-          setRequest({ id: snap.id, ...snap.data(), createdAt: snap.data().createdAt?.toDate() });
+      console.log('[RequestDetails] User is authenticated and ID is available.');
+       // Real-time listener for the request
+       const ref = doc(db, 'requests', id);
+       const unsubRequest = onSnapshot(ref, async (snap) => {
+         if (!snap.exists()) {
+           setError('Request not found');
+           setRequest(null);
+         } else {
+           const requestData = snap.data();
+           setRequest({
+             id: snap.id,
+             ...requestData,
+             createdAtFormatted: requestData.createdAt ? requestService.formatTimestampWithHour(requestData.createdAt) : null,
+             createdAtFullDate: requestData.createdAt ? requestData.createdAt.toDate().toLocaleDateString() : null,
+           });
+           console.log('[RequestDetails] Main request data set.');
+         }
+         setRequestLoading(false);
+       }, (e) => {
+         setError('Failed to load request');
+         setRequest(null);
+         setRequestLoading(false);
+       });
+
+      // Effect to check if the current user has saved this request
+      const checkSavedStatus = async () => {
+        if (user && id) {
+          console.log(`[RequestDetails] Checking saved status (separate effect) for user: ${user.uid}, request: ${id}`);
+          const savedRef = doc(db, 'users', user.uid, 'savedQuestions', id);
+          const savedSnap = await getDoc(savedRef);
+          const isSaved = savedSnap.exists();
+          setIsSavedByCurrentUser(isSaved);
+          console.log('[RequestDetails] isSavedByCurrentUser set to:', isSaved);
         }
-        setRequestLoading(false);
-      }, (e) => {
-        setError('Failed to load request');
-        setRequest(null);
-        setRequestLoading(false);
-      });
+      };
+      checkSavedStatus();
 
       // Real-time listener for answers
       const q = query(collection(db, 'answers'), where('requestId', '==', id));
       const unsubAnswers = onSnapshot(q, (querySnapshot) => {
-        const answersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt?.toDate() }));
+        const answersData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAtFormatted: doc.data().createdAt ? questionService.formatTimestampWithHour(doc.data().createdAt) : null,
+          createdAtFullDate: doc.data().createdAt ? doc.data().createdAt.toDate().toLocaleDateString() : null
+        }));
         setAnswers(answersData);
         setAnswersLoading(false);
       });
@@ -122,7 +151,7 @@ export default function RequestDetails({ params }) {
         <QuestionOverview request={{
           ...request,
           author: request.author || "Jane Doe",
-          timeAgo: formatDate(request.createdAt)
+          isSavedByCurrentUser: isSavedByCurrentUser
         }} />
         <FullDescription 
           description={request.description} 

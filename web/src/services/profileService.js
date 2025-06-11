@@ -7,6 +7,25 @@ export const profileService = {
     const userSnap = await getDoc(userRef);
     return userSnap.exists() ? userSnap.data() : null;
   },
+  
+  // New: Get public profile for a given userId (simplified for other users' views)
+  getPublicUserProfile: async (userId) => {
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      return {
+        id: userSnap.id,
+        name: userData.name || 'Anonymous',
+        email: userData.email,
+        avatar: userData.avatar || null,
+        joinDate: userData.joinDate || null,
+        // Add any other public fields you want to display
+      };
+    }
+    return null;
+  },
+
   getUserQuestions: async (userId) => {
     const questionsQuery = query(collection(db, 'requests'), where('userId', '==', userId));
     const questionsSnap = await getDocs(questionsQuery);
@@ -57,9 +76,12 @@ export const profileService = {
     return answersWithTitles;
   },
   getUserSavedQuestions: async (userId) => {
-    const savedQuery = query(collection(db, 'savedQuestions'), where('userId', '==', userId));
+    console.log(`[profileService.getUserSavedQuestions] Fetching saved questions for user: ${userId}`);
+    const savedQuery = query(collection(db, 'users', userId, 'savedQuestions'));
     const savedSnap = await getDocs(savedQuery);
-    return savedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const savedDocs = savedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('[profileService.getUserSavedQuestions] Raw saved documents fetched:', savedDocs);
+    return savedDocs;
   },
   getUserStats: async (userId, userEmail) => {
     // Fetch answers for upvotes and ratings (by userId or author/authorEmail)

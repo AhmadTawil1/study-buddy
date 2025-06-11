@@ -141,7 +141,7 @@ export const questionService = {
       answersCount: increment(1) // Increment answer count
     });
     // Notify question owner if someone else answers
-    if (requestData.userId && answerData.userId !== requestData.userId) {
+    if (requestData.userId && answerData.userId && answerData.userId !== requestData.userId && answerData.userId !== 'ai-bot') {
       await notificationService.createNotification({
         userId: requestData.userId,
         type: 'answer',
@@ -200,11 +200,19 @@ export const questionService = {
     const data = answerSnap.data();
     const upvotedBy = data.upvotedBy || [];
     if (voteType === 'up') {
-      if (upvotedBy.includes(userId)) return; // already upvoted
-      await updateDoc(answerRef, {
-        upvotes: increment(1),
-        upvotedBy: arrayUnion(userId)
-      });
+      if (upvotedBy.includes(userId)) {
+        // Remove upvote
+        await updateDoc(answerRef, {
+          upvotes: increment(-1),
+          upvotedBy: arrayRemove(userId)
+        });
+      } else {
+        // Add upvote
+        await updateDoc(answerRef, {
+          upvotes: increment(1),
+          upvotedBy: arrayUnion(userId)
+        });
+      }
     } else if (voteType === 'down') {
       await updateDoc(answerRef, {
         downvotes: increment(1)
@@ -308,10 +316,13 @@ export const questionService = {
   subscribeToReplies: (answerId, callback) => {
     const repliesRef = collection(db, 'replies');
     const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
+
     return onSnapshot(q, (snapshot) => {
       const replies = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        createdAtFormatted: questionService.formatTimestampWithHour(doc.data().createdAt),
+        createdAtFullDate: doc.data().createdAt?.toDate().toLocaleDateString()
       }));
       callback(replies);
     });
@@ -357,5 +368,30 @@ export const questionService = {
     }
     
     await deleteDoc(replyRef);
+  },
+
+  // Format timestamp with hour
+  formatTimestampWithHour: (timestamp) => {
+    const date = timestamp.toDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return formattedTime;
+  },
+
+  // Subscribe to answers for a request by requestId
+  subscribeToAnswersByRequestId: (requestId, callback) => {
+    const answersRef = collection(db, 'answers');
+    const q = query(answersRef, where('requestId', '==', requestId));
+
+    return onSnapshot(q, (snapshot) => {
+      const answers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAtFormatted: questionService.formatTimestampWithHour(doc.data().createdAt),
+        createdAtFullDate: doc.data().createdAt?.toDate().toLocaleDateString()
+      }));
+      callback(answers);
+    });
   }
 }; 

@@ -14,7 +14,11 @@ import {
   serverTimestamp,
   getCountFromServer,
   increment,
-  arrayUnion
+  arrayUnion,
+  arrayRemove,
+  Timestamp,
+  deleteDoc,
+  setDoc
 } from 'firebase/firestore';
 
 export const requestService = {
@@ -32,19 +36,47 @@ export const requestService = {
     if (filters.userId) {
       q = query(q, where('userId', '==', filters.userId));
     }
-    if (filters.searchQuery) {
-      q = query(q,
-        where('title', '>=', filters.searchQuery),
-        where('title', '<=', filters.searchQuery + '\uf8ff')
-      );
+    // Time range filter
+    if (filters.timeRange && filters.timeRange !== 'all') {
+      let fromDate = null;
+      const now = new Date();
+      if (filters.timeRange === '24h') {
+        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '7d') {
+        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '30d') {
+        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (fromDate) {
+        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
+      }
+    }
+    // Combined Unanswered filter and Sorting
+    if (filters.unanswered) {
+      q = query(q, where('answersCount', '<=', 1));
+      // Firestore requires the first orderBy field to match the range filter field.
+      // If unanswered is active, answersCount must be first in orderBy.
+      if (filters.sortBy === 'newest') {
+        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
+      } else if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc')); // This will satisfy range filter too
+      } else {
+        q = query(q, orderBy('answersCount', 'asc')); // Default sort for unanswered
+      }
+    } else {
+      // Original sorting logic for when unanswered is not active
+      if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc'));
+      } else {
+        q = query(q, orderBy('createdAt', 'desc'));
+      }
     }
 
-    q = query(q, orderBy('createdAt', 'desc'));
-    
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
     }));
   },
 
@@ -62,21 +94,49 @@ export const requestService = {
     if (filters.userId) {
       q = query(q, where('userId', '==', filters.userId));
     }
-    if (filters.searchQuery) {
-      q = query(q,
-        where('title', '>=', filters.searchQuery),
-        where('title', '<=', filters.searchQuery + '\uf8ff')
-      );
+    // Time range filter
+    if (filters.timeRange && filters.timeRange !== 'all') {
+      let fromDate = null;
+      const now = new Date();
+      if (filters.timeRange === '24h') {
+        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '7d') {
+        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '30d') {
+        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (fromDate) {
+        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
+      }
     }
-
-    q = query(q, orderBy('createdAt', 'desc'));
+    // Combined Unanswered filter and Sorting
+    if (filters.unanswered) {
+      q = query(q, where('answersCount', '<=', 1));
+      // Firestore requires the first orderBy field to match the range filter field.
+      // If unanswered is active, answersCount must be first in orderBy.
+      if (filters.sortBy === 'newest') {
+        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
+      } else if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc')); // This will satisfy range filter too
+      } else {
+        q = query(q, orderBy('answersCount', 'asc')); // Default sort for unanswered
+      }
+    } else {
+      // Original sorting logic for when unanswered is not active
+      if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc'));
+      } else {
+        q = query(q, orderBy('createdAt', 'desc'));
+      }
+    }
 
     return onSnapshot(
       q,
       (snapshot) => {
         const requests = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
         }));
         callback(requests);
       },
@@ -279,18 +339,46 @@ export const requestService = {
     if (!requestSnap.exists()) return;
     const data = requestSnap.data();
     const upvotedBy = data.upvotedBy || [];
-    if (upvotedBy.includes(userId)) return; // already upvoted
-    await updateDoc(requestRef, {
-      upvotes: increment(1),
-      upvotedBy: arrayUnion(userId)
-    });
+    if (upvotedBy.includes(userId)) {
+      // Remove upvote
+      await updateDoc(requestRef, {
+        upvotes: increment(-1),
+        upvotedBy: arrayRemove(userId)
+      });
+    } else {
+      // Add upvote
+      await updateDoc(requestRef, {
+        upvotes: increment(1),
+        upvotedBy: arrayUnion(userId)
+      });
+    }
   },
 
-  // Save a request for a user
+  // Format timestamp with hour
+  formatTimestampWithHour: (timestamp) => {
+    const date = timestamp.toDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return formattedTime;
+  },
+
+  // Save or unsave a request for a user
   saveRequestForUser: async (userId, requestId) => {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      bookmarks: arrayUnion(requestId)
-    });
+    console.log(`[saveRequestForUser] Attempting to save/unsave for user: ${userId}, request: ${requestId}`);
+    const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
+    const savedSnap = await getDoc(savedRef);
+
+    if (savedSnap.exists()) {
+      console.log('[saveRequestForUser] Document exists, unsaving...');
+      await deleteDoc(savedRef);
+      console.log('[saveRequestForUser] Request unsaved successfully.');
+      return false; // Indicate unsaved
+    } else {
+      console.log('[saveRequestForUser] Document does not exist, saving...');
+      await setDoc(savedRef, { requestId, savedAt: serverTimestamp() });
+      console.log('[saveRequestForUser] Request saved successfully.');
+      return true; // Indicate saved
+    }
   }
 }; 

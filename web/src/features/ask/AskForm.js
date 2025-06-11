@@ -178,6 +178,7 @@ export default function AskForm() {
 
       const request = {
         title,
+        title_lowercase: title.toLowerCase(),
         description,
         subject,
         tags,
