@@ -1,5 +1,5 @@
 "use client"
-import { FiBookmark, FiShare2, FiThumbsUp, FiMessageSquare, FiEye } from 'react-icons/fi'
+import { FiBookmark, FiShare2, FiThumbsUp, FiMessageSquare, FiEdit, FiSave, FiX } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext';
 import { requestService } from '@/src/services/requestService';
 import { useState, useEffect } from 'react';
@@ -84,11 +84,64 @@ export default function QuestionOverview({ request }) {
     setError("");
   };
 
+  const handleSaveTitle = async () => {
+    if (!editTitle.trim()) {
+      setError("Title cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await requestService.updateRequest(request.id, { title: editTitle, title_lowercase: editTitle.toLowerCase() });
+      setEditing(false);
+      setSaving(false);
+    } catch (err) {
+      console.error("Error updating title:", err);
+      setError(`Failed to save title: ${err.message || 'An unexpected error occurred.'}`);
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
+          {editing ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="text-2xl font-bold text-gray-900 w-full border-b border-gray-300 focus:border-blue-500 outline-none"
+              />
+              <button
+                onClick={handleSaveTitle}
+                disabled={saving}
+                className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? <FiSave className="animate-spin" /> : <FiSave />} Save
+              </button>
+              <button
+                onClick={handleCancel}
+                className="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md text-sm"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
+              {isOwner && (
+                <button
+                  onClick={handleEdit}
+                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                >
+                  <FiEdit className="w-4 h-4" /> Edit
+                </button>
+              )}
+            </div>
+          )}
+          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
             <span>by <Link href={`/profile/${request.userId}`} className="hover:underline text-blue-700 font-medium">{request.author}</Link></span>
             <span>&middot;</span>
@@ -115,10 +168,6 @@ export default function QuestionOverview({ request }) {
         <div className="flex items-center gap-1">
           <FiMessageSquare className="w-4 h-4" />
           <span>{request.answersCount || 0} answers</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <FiEye className="w-4 h-4" />
-          <span>{request.views || 0} views</span>
         </div>
       </div>
 

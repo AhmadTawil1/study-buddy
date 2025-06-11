@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/src/context/authContext'
 import formatDate from '@/src/utils/formatDate'
-import { Tab, Switch } from '@headlessui/react'
+import { Tab } from '@headlessui/react'
 import { 
   UserCircleIcon, 
   PencilIcon, 
@@ -18,8 +18,7 @@ import {
   ArrowRightOnRectangleIcon,
   TrashIcon,
   ClockIcon,
-  HandThumbUpIcon,
-  LockClosedIcon
+  HandThumbUpIcon
 } from '@heroicons/react/24/outline'
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
@@ -43,8 +42,6 @@ export default function ProfileView({ userId: propUserId }) {
     rank: 0
   })
   const router = useRouter()
-  const [profileVisibility, setProfileVisibility] = useState('public')
-  const [savingVisibility, setSavingVisibility] = useState(false)
 
   // Determine which userId to use
   const userId = propUserId || (user ? user.uid : null)
@@ -60,20 +57,6 @@ export default function ProfileView({ userId: propUserId }) {
     }
   }
 
-  const handleVisibilityToggle = async () => {
-    if (!user) return
-    setSavingVisibility(true)
-    const newVisibility = profileVisibility === 'public' ? 'private' : 'public'
-    try {
-      await profileService.updateUserProfile(user.uid, { profileVisibility: newVisibility })
-      setProfileVisibility(newVisibility)
-      setProfile(prev => ({ ...prev, profileVisibility: newVisibility }))
-    } catch (e) {
-      // Optionally show error
-    }
-    setSavingVisibility(false)
-  }
-
   useEffect(() => {
     if (!userId) return
     const fetchData = async () => {
@@ -84,7 +67,6 @@ export default function ProfileView({ userId: propUserId }) {
         requestService.getSavedQuestions(userId)
       ])
       setProfile(profileData)
-      setProfileVisibility(profileData.profileVisibility || 'public')
       setMyQuestions(questions)
       setMyAnswers(answers)
       
@@ -123,31 +105,6 @@ export default function ProfileView({ userId: propUserId }) {
 
   if (!user || !profile) return <p>Loading...</p>
 
-  const isPrivate = profile.profileVisibility === 'private' && !isOwner
-
-  if (isPrivate) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-lg p-8 mt-8">
-          <LockClosedIcon className="w-12 h-12 text-gray-400 mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">This profile is private.</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
-            <div className="bg-emerald-50 p-4 rounded-lg text-center shadow-sm">
-              <ChatBubbleLeftRightIcon className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-emerald-700">{stats.questionsAnswered}</div>
-              <div className="text-sm text-emerald-600">Questions Answered</div>
-            </div>
-            <div className="bg-amber-50 p-4 rounded-lg text-center shadow-sm">
-              <TrophyIcon className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-amber-700">{stats.upvotesEarned}</div>
-              <div className="text-sm text-amber-600">Upvotes Earned</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* User Banner */}
@@ -167,41 +124,18 @@ export default function ProfileView({ userId: propUserId }) {
               <PencilIcon className="w-5 h-5 text-indigo-600" />
             </button>
           </div>
-          <div className="sm:ml-6 text-white text-center sm:text-left">
+          <div className="text-white ml-4">
             <h2 className="text-2xl sm:text-3xl font-bold">{profile.name}</h2>
-            {(profile.profileVisibility === 'public' || isOwner) && (
-              <p className="text-sm opacity-90">{profile.email}</p>
-            )}
+            <p className="text-sm opacity-90">{profile.email}</p>
             {profile.joinDate && (
               <p className="text-sm opacity-80">Joined: {formatDate(profile.joinDate?.toDate ? profile.joinDate.toDate() : profile.joinDate)}</p>
-            )}
-            {/* Profile visibility toggle for owner */}
-            {isOwner && (
-              <div className="mt-2 flex items-center gap-2 justify-center sm:justify-start">
-                <Switch
-                  checked={profileVisibility === 'public'}
-                  onChange={handleVisibilityToggle}
-                  className={`${profileVisibility === 'public' ? 'bg-green-500' : 'bg-gray-400'}
-                    relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
-                  disabled={savingVisibility}
-                >
-                  <span className="sr-only">Toggle profile visibility</span>
-                  <span
-                    className={`${profileVisibility === 'public' ? 'translate-x-6' : 'translate-x-1'}
-                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                  />
-                </Switch>
-                <span className="text-xs font-medium">
-                  {profileVisibility === 'public' ? 'Public Profile' : 'Private Profile'}
-                </span>
-              </div>
             )}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="p-4 sm:p-6">
+      <div className="mt-8">
         {/* Stats Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-indigo-50 p-4 rounded-lg text-center shadow-sm hover:shadow-md transition-shadow">
@@ -296,7 +230,7 @@ export default function ProfileView({ userId: propUserId }) {
               Saved Questions
             </Tab>
           </Tab.List>
-          <Tab.Panels className="mt-2">
+          <Tab.Panels>
             <Tab.Panel
               className={
                 'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
@@ -392,7 +326,7 @@ export default function ProfileView({ userId: propUserId }) {
         </Tab.Group>
 
         {/* Account Management */}
-        <div className="mt-8 border-t border-gray-200 pt-8">
+        <div className="mt-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Account Management</h3>
           <div className="space-y-4">
             <button className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors">
@@ -420,7 +354,7 @@ export default function ProfileView({ userId: propUserId }) {
         </div>
 
         {/* Social/Academic Links */}
-        <div className="mt-8 border-t border-gray-200 pt-8">
+        <div className="mt-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Social / Academic Links</h3>
           <div className="flex flex-col gap-4">
             <div className="flex gap-4">
@@ -452,53 +386,6 @@ export default function ProfileView({ userId: propUserId }) {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Saved Questions Section */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Questions</h2>
-          {savedQuestions.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-lg shadow">
-              <p className="text-gray-600">You haven't saved any questions yet.</p>
-            </div>
-          ) : (
-            <div className="grid gap-6">
-              {savedQuestions.map((question) => (
-                <div key={question.id} className="bg-white rounded-lg shadow p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        <Link href={`/requests/${question.id}`} className="hover:text-blue-600">
-                          {question.title}
-                        </Link>
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>{question.answersCount || 0} answers</span>
-                        <span>•</span>
-                        <span>Saved {question.savedAt?.toDate ? formatDistanceToNow(question.savedAt.toDate(), { addSuffix: true }) : ''}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleUnsave(question.id)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <FiBookmark className="w-5 h-5 fill-current" />
-                    </button>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {question.tags?.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

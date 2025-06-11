@@ -284,9 +284,9 @@ export const requestService = {
       const contributorCount = {};
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        const authorEmail = data.author || data.authorName || 'Unknown';
-        if (authorEmail !== 'Unknown') {
-          contributorCount[authorEmail] = (contributorCount[authorEmail] || 0) + 1;
+        const authorName = data.authorName || data.author;
+        if (authorName && authorName !== 'Unknown' && authorName !== 'AI Assistant') {
+          contributorCount[authorName] = (contributorCount[authorName] || 0) + 1;
         }
       });
       const sortedContributorEmails = Object.entries(contributorCount)
@@ -305,12 +305,12 @@ export const requestService = {
         const userDataMap = {};
         usersSnapshot.docs.forEach(doc => {
           const data = doc.data();
-          userDataMap[data.email] = { name: data.name, nickname: data.nickname };
+          userDataMap[data.email] = { name: data.name, nickname: data.nickname, id: doc.id };
         });
         const topContributorsWithNames = sortedContributorEmails.map(item => {
           const userData = userDataMap[item.email];
           const displayName = userData?.nickname || userData?.name || item.email;
-          return { name: displayName, answers: item.count };
+          return { name: displayName, answers: item.count, userId: userData?.id };
         });
         callback(topContributorsWithNames);
       }
@@ -357,11 +357,17 @@ export const requestService = {
 
   // Format timestamp with hour
   formatTimestampWithHour: (timestamp) => {
-    const date = timestamp.toDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    return formattedTime;
+    // A Firestore Timestamp object has 'seconds' and 'nanoseconds' properties
+    // and a 'toDate' method. `serverTimestamp()` is a FieldValue, not a Timestamp
+    // until the server writes it back. This check handles both.
+    if (timestamp && typeof timestamp.toDate === 'function' && typeof timestamp.seconds === 'number') {
+      const date = timestamp.toDate();
+      const hours = date.getHours();
+      const minutes = date.getMinutes();
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    // If it's not a valid Firestore Timestamp, return an empty string or handle as needed.
+    return '';
   },
 
   // Save or unsave a request for a user
@@ -419,16 +425,78 @@ export const requestService = {
     });
   },
 
-  // Fetch requests with pagination
-  fetchRequestsPaginated: async (limitNum = 10, lastDoc = null) => {
+  // Paginated fetch for requests with search and filters
+  fetchRequestsPaginated: async (limitNum = 10, lastDoc = null, filters = {}, searchQuery = '') => {
     const requestsRef = collection(db, 'requests');
-    let q = query(requestsRef, orderBy('createdAt', 'desc'), limit(limitNum));
-    if (lastDoc) {
-      q = query(requestsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(limitNum));
+    let q = query(requestsRef);
+
+    // Apply filters
+    if (filters.subject) {
+      q = query(q, where('subject', '==', filters.subject));
     }
+    if (filters.status) {
+      q = query(q, where('status', '==', filters.status));
+    }
+    if (filters.userId) {
+      q = query(q, where('userId', '==', filters.userId));
+    }
+    // Time range filter
+    if (filters.timeRange && filters.timeRange !== 'all') {
+      let fromDate = null;
+      const now = new Date();
+      if (filters.timeRange === '24h') {
+        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '7d') {
+        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      } else if (filters.timeRange === '30d') {
+        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      }
+      if (fromDate) {
+        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
+      }
+    }
+    // Combined Unanswered filter and Sorting
+    if (filters.unanswered) {
+      q = query(q, where('answersCount', '<=', 1));
+      if (filters.sortBy === 'newest') {
+        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
+      } else if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc'));
+      } else {
+        q = query(q, orderBy('answersCount', 'asc'));
+      }
+    } else {
+      if (filters.sortBy === 'most_answered') {
+        q = query(q, orderBy('answersCount', 'desc'));
+      } else {
+        q = query(q, orderBy('createdAt', 'desc'));
+      }
+    }
+
+    // Apply search query (simple title matching for now)
+    if (searchQuery) {
+      const lowerCaseSearchQuery = searchQuery.toLowerCase();
+      // This is a simple starts-with query for title
+      // For more advanced search, consider a dedicated search service (e.g., Algolia, ElasticSearch)
+      q = query(q,
+        where('title_lowercase', '>=', lowerCaseSearchQuery),
+        where('title_lowercase', '<=', lowerCaseSearchQuery + '~ ') // Added space to effectively search for words
+      );
+    }
+    
+    // Pagination
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+    q = query(q, limit(limitNum));
+
     const snapshot = await getDocs(q);
-    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-    return { requests, lastDoc: lastVisible };
+    const requests = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
+    }));
+
+    return { requests, lastDoc: snapshot.docs[snapshot.docs.length - 1] || null };
   }
 }; 

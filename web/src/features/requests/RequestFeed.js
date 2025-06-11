@@ -31,7 +31,7 @@ export default function RequestFeed() {
   const loadRequests = useCallback(async (reset = false) => {
     if (loading || (!reset && !hasMore)) return
     setLoading(true)
-    const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, reset ? null : lastDoc)
+    const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, reset ? null : lastDoc, filters, searchQuery)
     setRequests(prev => {
       if (reset) return newRequests
       const existingIds = new Set(prev.map(r => r.id))
@@ -41,7 +41,7 @@ export default function RequestFeed() {
     setLastDoc(newLastDoc)
     setHasMore(!!newLastDoc && newRequests.length === PAGE_SIZE)
     setLoading(false)
-  }, [loading, hasMore, lastDoc])
+  }, [loading, hasMore, lastDoc, filters, searchQuery])
 
   // Infinite scroll observer
   useEffect(() => {

@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
 import { requestService } from '@/src/services/requestService'
 
 const TIME_RANGES = [
@@ -76,10 +75,10 @@ export default function FiltersPanel({ filters, onFilterChange }) {
         </label>
         <button
           onClick={clearFilters}
-          className="ml-1 text-gray-400 hover:text-blue-600 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-200"
+          className="ml-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-gray-100 text-gray-700 border-gray-200 hover:bg-red-50 hover:text-red-700"
           title="Clear Filters"
         >
-          <XMarkIcon className="h-4 w-4" />
+          Clear
         </button>
       </div>
     </div>

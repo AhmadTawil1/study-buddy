@@ -34,7 +34,7 @@ export default function SidePanel() {
   return (
     <div className="space-y-6">
       {/* Popular Tags */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow duration-300 ease-in-out">
         <h3 className="font-semibold text-gray-900 mb-4">Popular Tags</h3>
         <div className="space-y-2">
           {loading ? (
@@ -44,17 +44,17 @@ export default function SidePanel() {
           ) : popularTags.map((tag) => (
             <div
               key={tag.name}
-              className="flex justify-between items-center text-sm"
+              className="flex justify-between items-center text-sm px-3 py-2 rounded-md bg-blue-50 text-blue-800 hover:bg-blue-100 transition-colors"
             >
-              <span className="text-gray-700">{tag.name}</span>
-              <span className="text-gray-500">{tag.count} questions</span>
+              <span className="text-blue-800">{tag.name}</span>
+              <span className="text-blue-600">{tag.count} questions</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Top Contributors */}
-      <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition-shadow duration-300 ease-in-out">
         <h3 className="font-semibold text-gray-900 mb-4">Top Contributors</h3>
         <div className="space-y-3">
           {loading ? (
@@ -62,18 +62,19 @@ export default function SidePanel() {
           ) : topContributors.length === 0 ? (
             <div className="text-gray-400">No contributors found</div>
           ) : topContributors.map((contributor) => (
-            <div
+            <Link
               key={contributor.name}
-              className="flex items-center justify-between"
+              href={`/profile/${contributor.userId}`}
+              className="flex items-center justify-between p-3 rounded-md bg-emerald-50 hover:bg-emerald-100 transition-colors duration-300 ease-in-out"
             >
               <div className="flex items-center">
-                <UserCircleIcon className="h-8 w-8 text-gray-400 mr-2" />
-                <span className="text-sm text-gray-700">{contributor.name}</span>
+                <UserCircleIcon className="h-8 w-8 text-emerald-600 mr-2" />
+                <span className="text-sm text-emerald-800 font-medium">{contributor.name}</span>
               </div>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-emerald-600">
                 {contributor.answers} answers
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
