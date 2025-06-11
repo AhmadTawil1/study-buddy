@@ -18,7 +18,8 @@ import {
   arrayRemove,
   Timestamp,
   deleteDoc,
-  setDoc
+  setDoc,
+  startAfter
 } from 'firebase/firestore';
 
 export const requestService = {
@@ -380,5 +381,54 @@ export const requestService = {
       console.log('[saveRequestForUser] Request saved successfully.');
       return true; // Indicate saved
     }
+  },
+
+  // Save a question for a user
+  saveQuestion: async (userId, requestId) => {
+    const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
+    await setDoc(savedRef, {
+      savedAt: serverTimestamp()
+    });
+  },
+
+  // Unsave a question for a user
+  unsaveQuestion: async (userId, requestId) => {
+    const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
+    await deleteDoc(savedRef);
+  },
+
+  // Get all saved questions for a user
+  getSavedQuestions: async (userId) => {
+    const savedRef = collection(db, 'users', userId, 'savedQuestions');
+    const snapshot = await getDocs(savedRef);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      savedAt: doc.data().savedAt
+    }));
+  },
+
+  // Subscribe to saved questions for a user
+  subscribeToSavedQuestions: (userId, callback) => {
+    const savedRef = collection(db, 'users', userId, 'savedQuestions');
+    return onSnapshot(savedRef, (snapshot) => {
+      const savedQuestions = snapshot.docs.map(doc => ({
+        id: doc.id,
+        savedAt: doc.data().savedAt
+      }));
+      callback(savedQuestions);
+    });
+  },
+
+  // Fetch requests with pagination
+  fetchRequestsPaginated: async (limitNum = 10, lastDoc = null) => {
+    const requestsRef = collection(db, 'requests');
+    let q = query(requestsRef, orderBy('createdAt', 'desc'), limit(limitNum));
+    if (lastDoc) {
+      q = query(requestsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(limitNum));
+    }
+    const snapshot = await getDocs(q);
+    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+    return { requests, lastDoc: lastVisible };
   }
 }; 

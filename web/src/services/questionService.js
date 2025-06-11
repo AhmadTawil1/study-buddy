@@ -372,6 +372,9 @@ export const questionService = {
 
   // Format timestamp with hour
   formatTimestampWithHour: (timestamp) => {
+    if (!timestamp || typeof timestamp.toDate !== 'function') {
+      return '';
+    }
     const date = timestamp.toDate();
     const hours = date.getHours();
     const minutes = date.getMinutes();

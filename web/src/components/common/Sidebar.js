@@ -1,9 +1,9 @@
 "use client"
 import Link from 'next/link'
-export default function Sidebar({ relatedQuestions, aiSuggestions }) {
+export default function Sidebar({ relatedQuestions, aiSuggestions, aiVideos }) {
   return (
-    <aside className="sticky top-8">
-      <div className="bg-white rounded-lg shadow p-4 mb-4">
+    <aside className="sticky top-8 space-y-6">
+      <div className="bg-white rounded-lg shadow p-4">
         <h3 className="font-semibold mb-2 text-gray-800">Related Questions</h3>
         <ul className="mb-4">
           {relatedQuestions.map(q => (
@@ -18,6 +18,9 @@ export default function Sidebar({ relatedQuestions, aiSuggestions }) {
           <div className="text-gray-700">{aiSuggestions}</div>
         </div>
       </div>
+
+      {/* AI Suggested Videos & Resources Section */}
+      {aiVideos}
     </aside>
   )
 }

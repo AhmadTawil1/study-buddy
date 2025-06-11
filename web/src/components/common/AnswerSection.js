@@ -5,6 +5,10 @@ import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import ReplySection from './ReplySection';
 import { useRouter } from 'next/navigation';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Link from 'next/link'
+import { format } from 'date-fns'
 
 export default function AnswerSection({ answers, requestId }) {
   const { user } = useAuth();
@@ -74,17 +78,31 @@ export default function AnswerSection({ answers, requestId }) {
                   </span>
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">{ans.author}</div>
+                  <Link href={`/profile/${ans.userId}`} className="font-medium text-blue-700 hover:underline">{ans.author}</Link>
                   <div className="text-sm text-gray-500">{ans.badge}</div>
                   <div className="text-sm text-gray-500">
-                    {ans.createdAtFullDate} at {ans.createdAtFormatted}
+                    {ans.createdAt ? format(ans.createdAt.toDate ? ans.createdAt.toDate() : ans.createdAt, 'PPpp') : ''}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-              {ans.content}
+              {/* Syntax highlighting for code blocks in answer content */}
+              {(() => {
+                const codeBlockMatch = ans.content && ans.content.match(/```(\w+)?\n([\s\S]*?)```/);
+                if (codeBlockMatch) {
+                  const lang = codeBlockMatch[1] || 'plaintext';
+                  const code = codeBlockMatch[2];
+                  return (
+                    <SyntaxHighlighter language={lang} style={oneDark} customStyle={{ borderRadius: '0.5rem', fontSize: 15 }}>
+                      {code}
+                    </SyntaxHighlighter>
+                  );
+                } else {
+                  return ans.content;
+                }
+              })()}
             </div>
 
             <div className="flex items-center gap-4 border-t border-gray-100 pt-4">

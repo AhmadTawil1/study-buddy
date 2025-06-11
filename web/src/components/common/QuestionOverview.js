@@ -1,8 +1,11 @@
 "use client"
-import { FiBookmark, FiShare2, FiThumbsUp } from 'react-icons/fi'
+import { FiBookmark, FiShare2, FiThumbsUp, FiMessageSquare, FiEye } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext';
 import { requestService } from '@/src/services/requestService';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link'
+import { format } from 'date-fns'
 
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
@@ -32,17 +35,17 @@ export default function QuestionOverview({ request }) {
   };
 
   const handleSave = async () => {
-    if (!editTitle.trim()) {
-      setError("Title cannot be empty.");
-      return;
-    }
+    if (!user) return;
     setSaving(true);
-    setError("");
     try {
-      await requestService.updateRequest(request.id, { title: editTitle });
-      setEditing(false);
-    } catch (e) {
-      setError("Failed to update title. Please try again.");
+      if (isRequestSaved) {
+        await requestService.unsaveQuestion(user.uid, request.id);
+      } else {
+        await requestService.saveQuestion(user.uid, request.id);
+      }
+      setIsRequestSaved(!isRequestSaved);
+    } catch (error) {
+      console.error('Error saving/unsaving question:', error);
     }
     setSaving(false);
   };
@@ -82,71 +85,52 @@ export default function QuestionOverview({ request }) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          {editing ? (
-            <div>
-              <input
-                className="text-2xl font-bold text-gray-900 mb-3 w-full border border-gray-300 rounded px-2 py-1"
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                disabled={saving}
-              />
-              <div className="flex gap-2 mt-2">
-                <button onClick={handleSave} className="bg-blue-600 text-white px-3 py-1 rounded" disabled={saving}>Save</button>
-                <button onClick={handleCancel} className="bg-gray-200 px-3 py-1 rounded" disabled={saving}>Cancel</button>
-              </div>
-              {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
-            </div>
-          ) : (
-            <h1 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
-              {request.title}
-              {isOwner && (
-                <button onClick={handleEdit} className="ml-3 text-blue-600 hover:underline text-base">Edit</button>
-              )}
-            </h1>
-          )}
-          <div className="flex items-center gap-3 mb-4">
-            <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{request.subject}</span>
-            <div className="flex items-center text-gray-500 text-sm">
-              <span className="font-medium text-gray-700">{request.authorName || request.author || request.userEmail || "Unknown"}</span>
-              <span className="mx-2">•</span>
-              <span>{request.createdAtFullDate} at {request.createdAtFormatted}</span>
-            </div>
+    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+            <span>by <Link href={`/profile/${request.userId}`} className="hover:underline text-blue-700 font-medium">{request.author}</Link></span>
+            <span>&middot;</span>
+            <span>{request.createdAt ? format(request.createdAt.toDate ? request.createdAt.toDate() : request.createdAt, 'PPpp') : ''}</span>
           </div>
         </div>
+        {user && (
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              isRequestSaved 
+                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <FiBookmark className={`w-5 h-5 ${isRequestSaved ? 'fill-current' : ''}`} />
+            {isRequestSaved ? 'Saved' : 'Save'}
+          </button>
+        )}
       </div>
-      
-      <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
-        <button 
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${request.upvotedBy && user && request.upvotedBy.includes(user.uid) ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
-          onClick={handleUpvote}
-        >
-          <FiThumbsUp className="w-4 h-4" /> 
-          <span className="font-medium">Upvote</span>
-          <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-sm">
-            {request.upvotes || 0}
+
+      <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+        <div className="flex items-center gap-1">
+          <FiMessageSquare className="w-4 h-4" />
+          <span>{request.answersCount || 0} answers</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <FiEye className="w-4 h-4" />
+          <span>{request.views || 0} views</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {request.tags?.map((tag, index) => (
+          <span
+            key={index}
+            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+          >
+            {tag}
           </span>
-        </button>
-        
-        <button 
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-            isRequestSaved ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-          }`}
-          onClick={handleSave}
-        >
-          <FiBookmark className="w-4 h-4" /> 
-          <span className="font-medium">Save</span>
-        </button>
-        
-        <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors" 
-          onClick={handleShare}
-        >
-          <FiShare2 className="w-4 h-4" /> 
-          <span className="font-medium">Share</span>
-        </button>
+        ))}
       </div>
     </div>
   )

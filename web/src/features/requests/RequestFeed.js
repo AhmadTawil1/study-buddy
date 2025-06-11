@@ -1,16 +1,62 @@
 // src/features/requests/RequestFeed.js
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import RequestCard from './RequestCard'
 import SearchBar from './SearchBar'
 import FiltersPanel from './FiltersPanel'
 import SidePanel from './SidePanel'
-import { useRequest } from '@/src/context/requestContext'
+import { requestService } from '@/src/services/requestService'
 import timeAgo from '@/src/utils/timeAgo'
 
+const PAGE_SIZE = 10
+
 export default function RequestFeed() {
-  const { requests, loading, filters, updateFilters } = useRequest()
+  const [requests, setRequests] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [lastDoc, setLastDoc] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filters, setFilters] = useState({})
+  const sentinelRef = useRef(null)
+
+  // Initial load
+  useEffect(() => {
+    setRequests([])
+    setLastDoc(null)
+    setHasMore(true)
+    loadRequests(true)
+    // eslint-disable-next-line
+  }, [searchQuery, filters])
+
+  const loadRequests = useCallback(async (reset = false) => {
+    if (loading || (!reset && !hasMore)) return
+    setLoading(true)
+    const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, reset ? null : lastDoc)
+    setRequests(prev => {
+      if (reset) return newRequests
+      const existingIds = new Set(prev.map(r => r.id))
+      const filtered = newRequests.filter(r => !existingIds.has(r.id))
+      return [...prev, ...filtered]
+    })
+    setLastDoc(newLastDoc)
+    setHasMore(!!newLastDoc && newRequests.length === PAGE_SIZE)
+    setLoading(false)
+  }, [loading, hasMore, lastDoc])
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!hasMore || loading) return
+    const observer = new window.IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting) {
+          loadRequests()
+        }
+      },
+      { threshold: 1 }
+    )
+    if (sentinelRef.current) observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [loadRequests, hasMore, loading])
 
   // Helper: active filters summary
   const activeFilters = []
@@ -27,16 +73,14 @@ export default function RequestFeed() {
             onChange={setSearchQuery}
             onSuggestionClick={(suggestion) => setSearchQuery(suggestion)}
           />
-          
           <FiltersPanel 
             filters={filters}
-            onFilterChange={updateFilters}
+            onFilterChange={setFilters}
           />
-
           {/* Result count and active filters */}
           <div className="flex items-center justify-between mt-4 mb-2">
             <span className="text-xs text-gray-500">
-              {loading ? 'Loading...' : `${requests.length} result${requests.length !== 1 ? 's' : ''}`}
+              {loading && requests.length === 0 ? 'Loading...' : `${requests.length} result${requests.length !== 1 ? 's' : ''}`}
             </span>
             <div className="flex gap-1 flex-wrap">
               {activeFilters.map((f, i) => (
@@ -44,18 +88,31 @@ export default function RequestFeed() {
               ))}
             </div>
           </div>
-
           <div className="mt-2 space-y-4">
             {/* Request Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {loading ? (
+              {loading && requests.length === 0 && (
                 Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="animate-pulse bg-gray-100 h-36 rounded-lg" />
                 ))
-              ) : requests.length === 0 ? (
-                <div className="col-span-2 text-center text-gray-400">No requests found. Try adjusting your filters or search query.</div>
-              ) : (
-                requests.map(req => (
+              )}
+              {!loading && requests.length === 0 && (
+                <div className="col-span-2 text-center text-gray-400">
+                  No requests found. Try adjusting your filters or search query.
+                </div>
+              )}
+              {/* Filter out duplicate IDs before rendering */}
+              {(() => {
+                const uniqueRequests = [];
+                const seenIds = new Set();
+                for (const req of requests) {
+                  if (!seenIds.has(req.id)) {
+                    uniqueRequests.push(req);
+                    seenIds.add(req.id);
+                  }
+                }
+                console.log('Request IDs:', uniqueRequests.map(r => r.id));
+                return uniqueRequests.map(req => (
                   <RequestCard
                     key={req.id}
                     id={req.id}
@@ -63,24 +120,24 @@ export default function RequestFeed() {
                     description={req.description}
                     timeAgo={req.createdAt?.toDate ? timeAgo(req.createdAt.toDate()) : ''}
                     author={req.authorName || 'Unknown'}
+                    userId={req.userId}
+                    createdAt={req.createdAt}
                     tags={req.tags || []}
                     answersCount={req.answersCount || 0}
                   />
-                ))
-              )}
+                ));
+              })()}
             </div>
-
-            {/* Load More Button */}
-            {requests.length > 0 && (
-              <div className="text-center mt-8">
-                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  Load More
-                </button>
-              </div>
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} style={{ height: 1 }} />
+            {loading && requests.length > 0 && (
+              <div className="text-center text-gray-400 py-4">Loading more...</div>
+            )}
+            {!hasMore && requests.length > 0 && (
+              <div className="text-center text-gray-400 py-4">No more requests.</div>
             )}
           </div>
         </div>
-
         {/* Side Panel */}
         <div className="w-full md:w-80">
           <SidePanel />

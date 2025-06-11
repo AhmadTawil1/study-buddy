@@ -18,6 +18,8 @@ import FileUpload from './components/FileUpload'
 import TagInput from './components/TagInput'
 import PrivacyToggle from './components/PrivacyToggle'
 import Editor from '@monaco-editor/react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
@@ -63,6 +65,9 @@ export default function AskForm() {
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [codeLanguage, setCodeLanguage] = useState('plaintext')
+  const [aiAnswer, setAiAnswer] = useState('')
+  const [showAIAssistant, setShowAIAssistant] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
 
   useEffect(() => {
     if (showCodeEditor && codeSnippet === '') {
@@ -220,10 +225,11 @@ export default function AskForm() {
       })
       console.log('AI answer saved')
 
+      setAiAnswer(aiAnswer)
+      setShowAIAssistant(true)
+
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/requests')
-      }, 1200)
+      // Do not redirect yet
     } catch (err) {
       setError(`Submission failed: ${err.message || 'An unexpected error occurred. Please try again.'}`)
       console.error('Submission failed:', err)
@@ -236,6 +242,26 @@ export default function AskForm() {
       handleFiles([file]);
     }
   };
+
+  const regenerateAISuggestion = async () => {
+    setRegenerating(true)
+    try {
+      const aiRes = await fetch('/api/ai-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: title + '\n' + description,
+          codeSnippet: codeSnippet,
+          codeLanguage: codeLanguage
+        })
+      })
+      const { answer: newAiAnswer } = await aiRes.json()
+      setAiAnswer(newAiAnswer)
+    } catch (err) {
+      setError('Failed to regenerate AI suggestion.')
+    }
+    setRegenerating(false)
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -381,6 +407,40 @@ export default function AskForm() {
             </button>
           </div>
         </form>
+
+        {showAIAssistant && aiAnswer && (
+          <div className="mt-8 bg-white border border-blue-200 rounded-xl shadow p-6">
+            <h3 className="text-xl font-bold mb-4 text-blue-800">AI Assistant Answer & Suggestions</h3>
+            <div className="bg-blue-50 rounded-lg p-4 mb-4">
+              <SyntaxHighlighter language="markdown" style={oneDark} customStyle={{ borderRadius: '0.5rem', fontSize: 16 }}>
+                {aiAnswer}
+              </SyntaxHighlighter>
+            </div>
+            {codeSnippet && (
+              <div className="mb-4">
+                <h4 className="font-semibold mb-2 text-blue-700">Code Snippet</h4>
+                <SyntaxHighlighter language={codeLanguage || 'plaintext'} style={oneDark} customStyle={{ borderRadius: '0.5rem', fontSize: 15 }}>
+                  {codeSnippet}
+                </SyntaxHighlighter>
+              </div>
+            )}
+            <div className="flex flex-row gap-4 mt-4">
+              <button
+                className="px-6 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 shadow"
+                onClick={regenerateAISuggestion}
+                disabled={regenerating}
+              >
+                {regenerating ? 'Regenerating...' : 'Regenerate AI Suggestion'}
+              </button>
+              <button
+                className="px-6 py-2 rounded-md bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 shadow"
+                onClick={() => router.push('/requests')}
+              >
+                Go to Requests
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Sidebar */}

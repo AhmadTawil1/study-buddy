@@ -1,27 +1,71 @@
 'use client'
 import Link from 'next/link'
 import { BookmarkIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import pluralize from '@/src/utils/pluralize'
+import { useAuth } from '@/src/context/authContext'
+import { requestService } from '@/src/services/requestService'
+import { format } from 'date-fns'
 
-export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount }) {
-  const [bookmarked, setBookmarked] = useState(false)
+export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount, userId, createdAt }) {
+  const { user } = useAuth()
+  const [isSaved, setIsSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    // Check if this question is saved by the user
+    const checkSaved = async () => {
+      try {
+        const savedQuestions = await requestService.getSavedQuestions(user.uid)
+        setIsSaved(savedQuestions.some(q => q.id === id))
+      } catch (e) {
+        setIsSaved(false)
+      }
+    }
+    checkSaved()
+  }, [user, id])
+
+  const handleSave = async () => {
+    if (!user) return
+    setIsSaving(true)
+    try {
+      if (isSaved) {
+        await requestService.unsaveQuestion(user.uid, id)
+      } else {
+        await requestService.saveQuestion(user.uid, id)
+      }
+      setIsSaved(!isSaved)
+    } catch (e) {
+      // Optionally show error
+    }
+    setIsSaving(false)
+  }
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
-          <p className="text-sm text-gray-500">{timeAgo} • by {author}</p>
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+            <span>by <Link href={`/profile/${userId}`} className="hover:underline text-blue-700 font-medium">{author}</Link></span>
+            <span>&middot;</span>
+            <span>{createdAt ? format(createdAt.toDate ? createdAt.toDate() : createdAt, 'PPpp') : timeAgo}</span>
+          </div>
         </div>
-        <button
-          className={`text-gray-400 hover:text-blue-600 transition-colors ${bookmarked ? 'text-blue-600' : ''}`}
-          title={bookmarked ? 'Bookmarked' : 'Bookmark'}
-          aria-label="Bookmark"
-          onClick={() => setBookmarked(b => !b)}
-        >
-          <BookmarkIcon className="h-5 w-5" />
-        </button>
+        {user && (
+          <button
+            className={`transition-colors rounded-full p-1 border-none outline-none focus:ring-2 focus:ring-blue-200 ${
+              isSaved ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'text-gray-400 hover:text-blue-600'
+            }`}
+            title={isSaved ? 'Bookmarked' : 'Bookmark'}
+            aria-label="Bookmark"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            <BookmarkIcon className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>

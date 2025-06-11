@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/src/context/authContext'
 import formatDate from '@/src/utils/formatDate'
-import { Tab } from '@headlessui/react'
+import { Tab, Switch } from '@headlessui/react'
 import { 
   UserCircleIcon, 
   PencilIcon, 
@@ -18,15 +18,18 @@ import {
   ArrowRightOnRectangleIcon,
   TrashIcon,
   ClockIcon,
-  HandThumbUpIcon
+  HandThumbUpIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline'
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
 import { profileService } from '@/src/services/profileService'
 import { requestService } from '@/src/services/requestService'
 import { useRouter } from 'next/navigation'
+import { FiBookmark } from 'react-icons/fi'
+import Link from 'next/link'
 
-export default function ProfileView() {
+export default function ProfileView({ userId: propUserId }) {
   const { user, logout } = useAuth()
   const [profile, setProfile] = useState(null)
   const [myQuestions, setMyQuestions] = useState([])
@@ -40,38 +43,69 @@ export default function ProfileView() {
     rank: 0
   })
   const router = useRouter()
+  const [profileVisibility, setProfileVisibility] = useState('public')
+  const [savingVisibility, setSavingVisibility] = useState(false)
+
+  // Determine which userId to use
+  const userId = propUserId || (user ? user.uid : null)
+  const isOwner = user && userId === user.uid
+
+  const handleUnsave = async (questionId) => {
+    if (!user) return
+    try {
+      await requestService.unsaveQuestion(user.uid, questionId)
+      setSavedQuestions(prev => prev.filter(q => q.id !== questionId))
+    } catch (error) {
+      console.error('Error unsaving question:', error)
+    }
+  }
+
+  const handleVisibilityToggle = async () => {
+    if (!user) return
+    setSavingVisibility(true)
+    const newVisibility = profileVisibility === 'public' ? 'private' : 'public'
+    try {
+      await profileService.updateUserProfile(user.uid, { profileVisibility: newVisibility })
+      setProfileVisibility(newVisibility)
+      setProfile(prev => ({ ...prev, profileVisibility: newVisibility }))
+    } catch (e) {
+      // Optionally show error
+    }
+    setSavingVisibility(false)
+  }
 
   useEffect(() => {
-    if (!user) return
-
+    if (!userId) return
     const fetchData = async () => {
       const [profileData, questions, answers, saved] = await Promise.all([
-        profileService.getUserProfile(user.uid),
-        profileService.getUserQuestions(user.uid),
-        profileService.getUserAnswers(user.uid, user.email),
-        profileService.getUserSavedQuestions(user.uid)
+        profileService.getUserProfile(userId),
+        profileService.getUserQuestions(userId),
+        profileService.getUserAnswers(userId, user ? user.email : null),
+        requestService.getSavedQuestions(userId)
       ])
       setProfile(profileData)
+      setProfileVisibility(profileData.profileVisibility || 'public')
       setMyQuestions(questions)
       setMyAnswers(answers)
+      
       // Fetch details for saved questions
       const savedQuestionDetails = await Promise.all(
         saved.map(async (savedQ) => {
-          const req = await requestService.getRequestById(savedQ.requestId);
-          return req ? { ...req, savedAt: savedQ.savedAt } : null; // Include savedAt for sorting/display
+          const req = await requestService.getRequestById(savedQ.id);
+          return req ? { ...req, savedAt: savedQ.savedAt } : null;
         })
       );
       setSavedQuestions(savedQuestionDetails.filter(Boolean)); // Filter out nulls
-      const statsData = await profileService.getUserStats(user.uid, user.email)
+      
+      const statsData = await profileService.getUserStats(userId, user ? user.email : null)
       setStats({
         ...statsData,
         questionsAsked: questions.length,
         questionsAnswered: answers.length
       })
-      console.log('[ProfileView] Saved question details after fetching:', savedQuestionDetails);
     }
     fetchData()
-  }, [user])
+  }, [userId, user])
 
   // Build recentActivity dynamically from fetched data
   const recentActivity = [
@@ -89,8 +123,33 @@ export default function ProfileView() {
 
   if (!user || !profile) return <p>Loading...</p>
 
+  const isPrivate = profile.profileVisibility === 'private' && !isOwner
+
+  if (isPrivate) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-lg p-8 mt-8">
+          <LockClosedIcon className="w-12 h-12 text-gray-400 mb-4" />
+          <h2 className="text-xl font-bold text-gray-800 mb-2">This profile is private.</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
+            <div className="bg-emerald-50 p-4 rounded-lg text-center shadow-sm">
+              <ChatBubbleLeftRightIcon className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-emerald-700">{stats.questionsAnswered}</div>
+              <div className="text-sm text-emerald-600">Questions Answered</div>
+            </div>
+            <div className="bg-amber-50 p-4 rounded-lg text-center shadow-sm">
+              <TrophyIcon className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-amber-700">{stats.upvotesEarned}</div>
+              <div className="text-sm text-amber-600">Upvotes Earned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       {/* User Banner */}
       <div className="relative h-48 bg-gradient-to-r from-indigo-600 to-purple-600">
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex flex-col sm:flex-row items-center sm:items-end">
@@ -110,8 +169,33 @@ export default function ProfileView() {
           </div>
           <div className="sm:ml-6 text-white text-center sm:text-left">
             <h2 className="text-2xl sm:text-3xl font-bold">{profile.name}</h2>
-            <p className="text-sm opacity-90">{profile.email}</p>
-            <p className="text-sm opacity-80">Joined: {formatDate(profile.joinDate?.toDate())}</p>
+            {(profile.profileVisibility === 'public' || isOwner) && (
+              <p className="text-sm opacity-90">{profile.email}</p>
+            )}
+            {profile.joinDate && (
+              <p className="text-sm opacity-80">Joined: {formatDate(profile.joinDate?.toDate ? profile.joinDate.toDate() : profile.joinDate)}</p>
+            )}
+            {/* Profile visibility toggle for owner */}
+            {isOwner && (
+              <div className="mt-2 flex items-center gap-2 justify-center sm:justify-start">
+                <Switch
+                  checked={profileVisibility === 'public'}
+                  onChange={handleVisibilityToggle}
+                  className={`${profileVisibility === 'public' ? 'bg-green-500' : 'bg-gray-400'}
+                    relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                  disabled={savingVisibility}
+                >
+                  <span className="sr-only">Toggle profile visibility</span>
+                  <span
+                    className={`${profileVisibility === 'public' ? 'translate-x-6' : 'translate-x-1'}
+                      inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                  />
+                </Switch>
+                <span className="text-xs font-medium">
+                  {profileVisibility === 'public' ? 'Public Profile' : 'Private Profile'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -368,6 +452,53 @@ export default function ProfileView() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Saved Questions Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Questions</h2>
+          {savedQuestions.length === 0 ? (
+            <div className="text-center py-8 bg-white rounded-lg shadow">
+              <p className="text-gray-600">You haven't saved any questions yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {savedQuestions.map((question) => (
+                <div key={question.id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <Link href={`/requests/${question.id}`} className="hover:text-blue-600">
+                          {question.title}
+                        </Link>
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <span>{question.answersCount || 0} answers</span>
+                        <span>•</span>
+                        <span>Saved {question.savedAt?.toDate ? formatDistanceToNow(question.savedAt.toDate(), { addSuffix: true }) : ''}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUnsave(question.id)}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      <FiBookmark className="w-5 h-5 fill-current" />
+                    </button>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {question.tags?.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

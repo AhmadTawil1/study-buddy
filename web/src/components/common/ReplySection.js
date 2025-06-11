@@ -15,12 +15,14 @@ export default function ReplySection({ answerId }) {
 
   useEffect(() => {
     if (!answerId) return;
-    
     const unsubscribe = questionService.subscribeToReplies(answerId, (updatedReplies) => {
       setReplies(updatedReplies);
+      console.log('Replies updated (real-time):', updatedReplies);
     });
-
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) unsubscribe();
+      console.log('Unsubscribed from replies for answerId:', answerId);
+    };
   }, [answerId]);
 
   const handleSubmitReply = async (e) => {
