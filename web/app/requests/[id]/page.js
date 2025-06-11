@@ -159,6 +159,8 @@ export default function RequestDetails({ params }) {
           aiSummary={request.aiSummary}
           codeSnippet={request.codeSnippet}
           codeLanguage={request.codeLanguage}
+          isOwner={user && user.uid === request.userId}
+          requestId={request.id}
         />
         <AnswerSection answers={answers} requestId={request.id} />
         <AISuggestions question={request.title} description={request.description} />

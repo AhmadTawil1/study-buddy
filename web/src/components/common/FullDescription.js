@@ -1,11 +1,67 @@
 "use client"
+import { useState } from 'react';
 import Editor from '@monaco-editor/react'
+import { requestService } from '@/src/services/requestService';
 
-export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage }) {
+export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage, isOwner, requestId }) {
+  const [editing, setEditing] = useState(false);
+  const [editDescription, setEditDescription] = useState(description);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleEdit = () => {
+    setEditing(true);
+    setEditDescription(description);
+    setError("");
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setError("");
+  };
+
+  const handleSave = async () => {
+    if (!editDescription.trim()) {
+      setError("Description cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      await requestService.updateRequest(requestId, { description: editDescription });
+      setEditing(false);
+    } catch (e) {
+      setError("Failed to update description. Please try again.");
+    }
+    setSaving(false);
+  };
+
   return (
     <div className="mb-6">
-      <h2 className="font-semibold text-lg text-gray-800 mb-2">Description</h2>
-      <p className="mb-4 text-gray-800 whitespace-pre-line">{description}</p>
+      <h2 className="font-semibold text-lg text-gray-800 mb-2 flex items-center">
+        Description
+        {isOwner && !editing && (
+          <button onClick={handleEdit} className="ml-3 text-blue-600 hover:underline text-base">Edit</button>
+        )}
+      </h2>
+      {editing ? (
+        <div>
+          <textarea
+            className="mb-2 w-full border border-gray-300 rounded px-2 py-1 text-gray-800"
+            rows={5}
+            value={editDescription}
+            onChange={e => setEditDescription(e.target.value)}
+            disabled={saving}
+          />
+          <div className="flex gap-2 mb-2">
+            <button onClick={handleSave} className="bg-blue-600 text-white px-3 py-1 rounded" disabled={saving}>Save</button>
+            <button onClick={handleCancel} className="bg-gray-200 px-3 py-1 rounded" disabled={saving}>Cancel</button>
+          </div>
+          {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
+        </div>
+      ) : (
+        <p className="mb-4 text-gray-800 whitespace-pre-line">{description}</p>
+      )}
       
       {codeSnippet && (
         <div className="mb-4">

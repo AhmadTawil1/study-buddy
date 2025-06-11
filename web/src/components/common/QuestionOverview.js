@@ -7,6 +7,12 @@ import { useState, useEffect } from 'react';
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
   const [isRequestSaved, setIsRequestSaved] = useState(request.isSavedByCurrentUser);
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(request.title);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const isOwner = user && (user.uid === request.userId);
 
   useEffect(() => {
     console.log('[QuestionOverview] useEffect triggered.');
@@ -26,14 +32,24 @@ export default function QuestionOverview({ request }) {
   };
 
   const handleSave = async () => {
-    if (!request || !request.id || !user) return;
-    try {
-      const savedStatus = await requestService.saveRequestForUser(user.uid, request.id);
-      console.log(`Request is now ${savedStatus ? 'saved' : 'unsaved'}`);
-      setIsRequestSaved(savedStatus);
-    } catch (error) {
-      console.error('Error saving request:', error);
+    if (!editTitle.trim()) {
+      setError("Title cannot be empty.");
+      return;
     }
+    setSaving(true);
+    setError("");
+    try {
+      await requestService.updateRequest(request.id, { title: editTitle });
+      setEditing(false);
+    } catch (e) {
+      setError("Failed to update title. Please try again.");
+    }
+    setSaving(false);
+  };
+
+  const handleCancel = () => {
+    setEditing(false);
+    setError("");
   };
 
   const handleShare = async () => {
@@ -59,11 +75,38 @@ export default function QuestionOverview({ request }) {
     }
   };
 
+  const handleEdit = () => {
+    setEditing(true);
+    setEditTitle(request.title);
+    setError("");
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">{request.title}</h1>
+          {editing ? (
+            <div>
+              <input
+                className="text-2xl font-bold text-gray-900 mb-3 w-full border border-gray-300 rounded px-2 py-1"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                disabled={saving}
+              />
+              <div className="flex gap-2 mt-2">
+                <button onClick={handleSave} className="bg-blue-600 text-white px-3 py-1 rounded" disabled={saving}>Save</button>
+                <button onClick={handleCancel} className="bg-gray-200 px-3 py-1 rounded" disabled={saving}>Cancel</button>
+              </div>
+              {error && <div className="text-red-600 text-sm mt-1">{error}</div>}
+            </div>
+          ) : (
+            <h1 className="text-2xl font-bold text-gray-900 mb-3 flex items-center">
+              {request.title}
+              {isOwner && (
+                <button onClick={handleEdit} className="ml-3 text-blue-600 hover:underline text-base">Edit</button>
+              )}
+            </h1>
+          )}
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">{request.subject}</span>
             <div className="flex items-center text-gray-500 text-sm">
