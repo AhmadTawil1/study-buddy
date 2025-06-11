@@ -12,14 +12,16 @@ import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { requestService } from '@/src/services/requestService';
 import { questionService } from '@/src/services/questionService';
+import { FiArrowRight } from 'react-icons/fi';
 
 function AISuggestions({ question, description }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
-  useEffect(() => {
-    async function fetchSuggestions() {
-      setLoading(true);
+  const fetchSuggestions = async () => {
+    setLoading(true);
+    try {
       const res = await fetch('/api/ai-suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -27,23 +29,60 @@ function AISuggestions({ question, description }) {
       });
       const data = await res.json();
       setSuggestions(data.suggestions || []);
-      setLoading(false);
+      setHasGenerated(true);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
     }
-    if (question && description) fetchSuggestions();
-  }, [question, description]);
+    setLoading(false);
+  };
 
-  if (loading) return <div className="mt-10">Loading AI suggestions...</div>;
-  if (!suggestions.length) return null;
+  if (!hasGenerated) {
+    return (
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-blue-700">AI Suggested Videos & Resources</h2>
+          <button
+            onClick={fetchSuggestions}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Generate <FiArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) return (
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-xl font-bold text-blue-700 mb-3">AI Suggested Videos & Resources</h2>
+      <div className="text-gray-600">Loading suggestions...</div>
+    </div>
+  );
+
+  if (!suggestions.length) return (
+    <div className="bg-white rounded-lg shadow p-4">
+      <h2 className="text-xl font-bold text-blue-700 mb-3">AI Suggested Videos & Resources</h2>
+      <div className="text-gray-600">No suggestions found</div>
+    </div>
+  );
 
   return (
-    <div className="mt-10">
-      <h2 className="text-xl font-bold mb-4">AI Suggested Videos & Resources</h2>
-      <div className="space-y-4">
+    <div className="bg-white rounded-lg shadow p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl font-bold text-blue-700">AI Suggested Videos & Resources</h2>
+        <button
+          onClick={fetchSuggestions}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Regenerate <FiArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="space-y-3">
         {suggestions.map((s, i) => (
-          <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-            <div className="font-semibold text-blue-800">{s.title}</div>
-            <div className="text-gray-700 text-sm">{s.description}</div>
-            <div className="text-blue-600 text-xs mt-1">{s.url}</div>
+          <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+            <div className="font-semibold text-blue-800 text-sm">{s.title}</div>
+            <div className="text-gray-600 text-xs">{s.description}</div>
+            <div className="text-blue-600 text-xs mt-1 truncate">{s.url}</div>
           </a>
         ))}
       </div>
@@ -113,6 +152,7 @@ export default function RequestDetails({ params }) {
         const answersData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
+          createdAt: doc.data().createdAt,
           createdAtFormatted: doc.data().createdAt ? questionService.formatTimestampWithHour(doc.data().createdAt) : null,
           createdAtFullDate: doc.data().createdAt ? doc.data().createdAt.toDate().toLocaleDateString() : null
         }));
@@ -150,7 +190,7 @@ export default function RequestDetails({ params }) {
         <a href="/requests" className="text-blue-600 hover:underline mb-4 block">← Back to Requests</a>
         <QuestionOverview request={{
           ...request,
-          author: request.author || "Jane Doe",
+          author: request.authorName || request.author || user?.email || "Unknown",
           isSavedByCurrentUser: isSavedByCurrentUser
         }} />
         <FullDescription 
@@ -163,10 +203,13 @@ export default function RequestDetails({ params }) {
           requestId={request.id}
         />
         <AnswerSection answers={answers} requestId={request.id} />
-        <AISuggestions question={request.title} description={request.description} />
       </div>
       <div className="w-80">
-        <Sidebar relatedQuestions={[]} aiSuggestions="Consider clarifying if you need social login or just email/password." />
+        <Sidebar 
+          relatedQuestions={[]} 
+          aiSuggestions="Consider clarifying if you need social login or just email/password."
+          aiVideos={<AISuggestions question={request.title} description={request.description} />}
+        />
       </div>
     </div>
   )
