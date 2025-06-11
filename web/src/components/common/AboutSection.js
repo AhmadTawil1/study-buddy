@@ -12,7 +12,7 @@ export default function AboutSection() {
           viewport={{ once: true }}
           className="flex-1 flex justify-center md:justify-start mb-8 md:mb-0"
         >
-          <img src="/file.svg" alt="About StudyBuddy" className="w-40 md:w-56 lg:w-64 drop-shadow-xl max-w-full" />
+          <img src="/logo.png" alt="About StudyBuddy" className="w-40 md:w-56 lg:w-64 drop-shadow-xl max-w-full" />
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 40 }}

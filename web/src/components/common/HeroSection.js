@@ -78,9 +78,9 @@ export default function HeroSection() {
             className="flex-1 flex justify-center md:justify-end mt-12 md:mt-0"
           >
             <img
-              src="/logo.png"
-              alt="StudyBuddy Logo"
-              className="w-64 h-auto max-w-xs drop-shadow-xl"
+              src="/home.jpg"
+              alt="StudyBuddy"
+              className="w-full h-auto max-w-xl object-contain drop-shadow-xl"
             />
           </motion.div>
         </div>
