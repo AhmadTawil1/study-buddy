@@ -225,11 +225,8 @@ export default function AskForm() {
       })
       console.log('AI answer saved')
 
-      setAiAnswer(aiAnswer)
-      setShowAIAssistant(true)
-
       setSuccess(true)
-      // Do not redirect yet
+      router.push('/requests')
     } catch (err) {
       setError(`Submission failed: ${err.message || 'An unexpected error occurred. Please try again.'}`)
       console.error('Submission failed:', err)

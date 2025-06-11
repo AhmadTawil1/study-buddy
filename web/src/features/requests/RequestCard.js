@@ -43,7 +43,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
+    <div className="bg-white rounded-lg shadow-xl hover:shadow-2xl transition-shadow p-6 pt-5 border-t-4 border-blue-200">
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-1">{title}</h3>
@@ -58,6 +58,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
             className={`transition-colors rounded-full p-1 border-none outline-none focus:ring-2 focus:ring-blue-200 ${
               isSaved ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'text-gray-400 hover:text-blue-600'
             }`}
+            style={{ cursor: isSaving ? 'pointer' : '' }}
             title={isSaved ? 'Bookmarked' : 'Bookmark'}
             aria-label="Bookmark"
             onClick={handleSave}
@@ -74,7 +75,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
         {tags.map((tag, index) => (
           <span
             key={index}
-            className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full"
+            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
           >
             {tag}
           </span>

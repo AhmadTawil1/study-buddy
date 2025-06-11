@@ -5,6 +5,7 @@ import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import formatDate from '@/src/utils/formatDate';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function ReplySection({ answerId }) {
   const { user } = useAuth();
@@ -77,7 +78,9 @@ export default function ReplySection({ answerId }) {
                     </span>
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 text-sm">{reply.author}</div>
+                    <Link href={`/profile/${reply.userId}`} className="font-medium text-blue-700 text-sm hover:underline">
+                      {reply.author}
+                    </Link>
                     <div className="text-xs text-gray-500">
                       {reply.createdAtFullDate} at {reply.createdAtFormatted}
                     </div>

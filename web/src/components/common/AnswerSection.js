@@ -78,7 +78,11 @@ export default function AnswerSection({ answers, requestId }) {
                   </span>
                 </div>
                 <div>
-                  <Link href={`/profile/${ans.userId}`} className="font-medium text-blue-700 hover:underline">{ans.author}</Link>
+                  {ans.author === 'AI Assistant' ? (
+                    <div className="font-medium text-blue-700">{ans.author}</div>
+                  ) : (
+                    <Link href={`/profile/${ans.userId}`} className="font-medium text-blue-700 hover:underline">{ans.author}</Link>
+                  )}
                   <div className="text-sm text-gray-500">{ans.badge}</div>
                   <div className="text-sm text-gray-500">
                     {ans.createdAt ? format(ans.createdAt.toDate ? ans.createdAt.toDate() : ans.createdAt, 'PPpp') : ''}
