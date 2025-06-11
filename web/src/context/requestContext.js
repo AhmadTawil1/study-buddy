@@ -28,23 +28,14 @@ export const RequestProvider = ({ children }) => {
     userId: null,
     timeRange: 'all',
     sortBy: 'newest',
-    difficulty: 'all',
-    searchQuery: null
+    unanswered: false
   });
 
   useEffect(() => {
     console.log('RequestContext: subscribing to requests with filters:', filters);
     const unsubscribe = requestService.subscribeToRequests(
       (updatedRequests) => {
-        let filteredRequests = updatedRequests;
-        if (filters.searchQuery && filters.searchQuery.trim() !== '') {
-          const q = filters.searchQuery.trim().toLowerCase();
-          filteredRequests = updatedRequests.filter(req =>
-            (req.title && req.title.toLowerCase().includes(q)) ||
-            (req.description && req.description.toLowerCase().includes(q))
-          );
-        }
-        setRequests(filteredRequests);
+        setRequests(updatedRequests);
         setLoading(false);
       },
       filters

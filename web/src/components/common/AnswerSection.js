@@ -4,11 +4,13 @@ import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import ReplySection from './ReplySection';
+import { useRouter } from 'next/navigation';
 
 export default function AnswerSection({ answers, requestId }) {
   const { user } = useAuth();
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [showReplies, setShowReplies] = useState({});
+  const router = useRouter();
 
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
@@ -33,15 +35,6 @@ export default function AnswerSection({ answers, requestId }) {
       await questionService.voteAnswer(answerId, 'up', user.uid);
     } catch (error) {
       console.error('Error upvoting answer:', error);
-    }
-  };
-
-  const handleMarkAsHelpful = async (answerId, currentStatus) => {
-    if (!answerId) return;
-    try {
-      await questionService.updateAnswer(answerId, { isHelpful: !currentStatus });
-    } catch (error) {
-      console.error('Error marking answer as helpful:', error);
     }
   };
 
@@ -72,7 +65,10 @@ export default function AnswerSection({ answers, requestId }) {
           <div key={ans.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <div 
+                  className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => ans.userId && router.push(`/profile/${ans.userId}`)}
+                >
                   <span className="text-blue-600 font-semibold text-sm">
                     {ans.author.charAt(0).toUpperCase()}
                   </span>
@@ -80,13 +76,11 @@ export default function AnswerSection({ answers, requestId }) {
                 <div>
                   <div className="font-medium text-gray-900">{ans.author}</div>
                   <div className="text-sm text-gray-500">{ans.badge}</div>
+                  <div className="text-sm text-gray-500">
+                    {ans.createdAtFullDate} at {ans.createdAtFormatted}
+                  </div>
                 </div>
               </div>
-              {ans.isHelpful && (
-                <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                  ✓ Helpful
-                </span>
-              )}
             </div>
 
             <div className="prose prose-sm max-w-none text-gray-700 mb-4">
@@ -95,23 +89,13 @@ export default function AnswerSection({ answers, requestId }) {
 
             <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
               <button 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors ${ans.upvotedBy && user && ans.upvotedBy.includes(user.uid) ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
                 onClick={() => handleAnswerUpvote(ans.id)}
-                disabled={ans.upvotedBy && user && ans.upvotedBy.includes(user.uid)}
               >
                 <FiThumbsUp className="w-4 h-4" />
                 <span className="font-medium">Upvote</span>
                 <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full text-sm">
                   {ans.upvotes || 0}
-                </span>
-              </button>
-
-              <button 
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors"
-                onClick={() => handleMarkAsHelpful(ans.id, ans.isHelpful)}
-              >
-                <span className="font-medium">
-                  {ans.isHelpful ? 'Unmark as Helpful' : 'Mark as Helpful'}
                 </span>
               </button>
 

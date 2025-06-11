@@ -2,9 +2,19 @@
 import { FiBookmark, FiShare2, FiThumbsUp } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext';
 import { requestService } from '@/src/services/requestService';
+import { useState, useEffect } from 'react';
 
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
+  const [isRequestSaved, setIsRequestSaved] = useState(request.isSavedByCurrentUser);
+
+  useEffect(() => {
+    console.log('[QuestionOverview] useEffect triggered.');
+    console.log('[QuestionOverview] user (for reference in useEffect):', user);
+    const newSavedStatus = request.isSavedByCurrentUser;
+    console.log('[QuestionOverview] New saved status to set:', newSavedStatus);
+    setIsRequestSaved(newSavedStatus);
+  }, [request.isSavedByCurrentUser, user]);
 
   const handleUpvote = async () => {
     if (!request || !request.id || !user) return;
@@ -18,7 +28,9 @@ export default function QuestionOverview({ request }) {
   const handleSave = async () => {
     if (!request || !request.id || !user) return;
     try {
-      await requestService.saveRequestForUser(user.uid, request.id);
+      const savedStatus = await requestService.saveRequestForUser(user.uid, request.id);
+      console.log(`Request is now ${savedStatus ? 'saved' : 'unsaved'}`);
+      setIsRequestSaved(savedStatus);
     } catch (error) {
       console.error('Error saving request:', error);
     }
@@ -57,7 +69,7 @@ export default function QuestionOverview({ request }) {
             <div className="flex items-center text-gray-500 text-sm">
               <span className="font-medium text-gray-700">{request.authorName || request.author || request.userEmail || "Unknown"}</span>
               <span className="mx-2">•</span>
-              <span>{request.timeAgo}</span>
+              <span>{request.createdAtFullDate} at {request.createdAtFormatted}</span>
             </div>
           </div>
         </div>
@@ -65,9 +77,8 @@ export default function QuestionOverview({ request }) {
       
       <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
         <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-          onClick={handleUpvote} 
-          disabled={request.upvotedBy && user && request.upvotedBy.includes(user.uid)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${request.upvotedBy && user && request.upvotedBy.includes(user.uid) ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+          onClick={handleUpvote}
         >
           <FiThumbsUp className="w-4 h-4" /> 
           <span className="font-medium">Upvote</span>
@@ -77,7 +88,9 @@ export default function QuestionOverview({ request }) {
         </button>
         
         <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors" 
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            isRequestSaved ? 'bg-blue-100 text-blue-700' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+          }`}
           onClick={handleSave}
         >
           <FiBookmark className="w-4 h-4" /> 

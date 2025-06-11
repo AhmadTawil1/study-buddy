@@ -12,22 +12,10 @@ export default function RequestFeed() {
   const { requests, loading, filters, updateFilters } = useRequest()
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Update context filters when local filters change
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      updateFilters({
-        searchQuery: searchQuery || null
-      });
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, updateFilters]);
-
   // Helper: active filters summary
   const activeFilters = []
   if (filters.subject) activeFilters.push(filters.subject)
   if (filters.status) activeFilters.push(`Status: ${filters.status}`)
-  if (filters.searchQuery) activeFilters.push(`Search: ${filters.searchQuery}`)
 
   return (
     <div className="container mx-auto">

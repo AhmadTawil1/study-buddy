@@ -4,12 +4,14 @@ import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import formatDate from '@/src/utils/formatDate';
+import { useRouter } from 'next/navigation';
 
 export default function ReplySection({ answerId }) {
   const { user } = useAuth();
   const [replies, setReplies] = useState([]);
   const [newReplyContent, setNewReplyContent] = useState('');
   const [isReplying, setIsReplying] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (!answerId) return;
@@ -64,7 +66,10 @@ export default function ReplySection({ answerId }) {
             <div key={reply.id} className="bg-gray-50 rounded-lg p-4 ml-8">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div 
+                    className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => reply.userId && router.push(`/profile/${reply.userId}`)}
+                  >
                     <span className="text-blue-600 font-semibold text-xs">
                       {reply.author.charAt(0).toUpperCase()}
                     </span>
@@ -72,7 +77,7 @@ export default function ReplySection({ answerId }) {
                   <div>
                     <div className="font-medium text-gray-900 text-sm">{reply.author}</div>
                     <div className="text-xs text-gray-500">
-                      {reply.createdAt && formatDate(reply.createdAt)}
+                      {reply.createdAtFullDate} at {reply.createdAtFormatted}
                     </div>
                   </div>
                 </div>

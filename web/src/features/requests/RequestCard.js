@@ -40,7 +40,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
       <div className="flex justify-between items-center">
         <div className="flex items-center text-gray-500 text-sm">
           <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
-          {pluralize(answersCount, 'answer')}
+          {pluralize(Math.max(0, answersCount - 1), 'answer')}
         </div>
         <div className="flex gap-2">
           <Link
