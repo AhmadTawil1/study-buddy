@@ -23,6 +23,7 @@ import {
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
 import { formatDistanceToNow } from 'date-fns'
 import { profileService } from '@/src/services/profileService'
+import Link from 'next/link'
 
 export default function ProfileView() {
   const { user, logout } = useAuth()
@@ -68,11 +69,13 @@ export default function ProfileView() {
       type: 'asked',
       description: `Asked: ${q.title}`,
       time: q.createdAt,
+      id: q.id
     })),
     ...myAnswers.map(a => ({
       type: 'answered',
       description: `Answered: ${a.questionTitle || a.content?.substring(0, 50) + '...'}`,
       time: a.createdAt,
+      id: a.requestId || null
     })),
   ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
@@ -157,7 +160,13 @@ export default function ProfileView() {
                     )}
                   </span>
                   <div className="flex flex-col">
-                    <span className="font-medium text-gray-800">{activity.description}</span>
+                    {activity.id ? (
+                      <Link href={`/requests/${activity.id}`} className="font-medium text-gray-800 hover:underline">
+                        {activity.description}
+                      </Link>
+                    ) : (
+                      <span className="font-medium text-gray-800">{activity.description}</span>
+                    )}
                     <span className="text-xs text-gray-500">
                       {activity.time && !isNaN(new Date(activity.time))
                         ? formatDistanceToNow(new Date(activity.time), { addSuffix: true })
@@ -213,7 +222,9 @@ export default function ProfileView() {
                         <QuestionMarkCircleIcon className="w-5 h-5 text-indigo-600" />
                       </span>
                       <div className="flex-1">
-                        <div className="font-medium text-gray-900">Asked: {q.title}</div>
+                        <Link href={`/requests/${q.id}`} className="font-medium text-gray-900 hover:underline">
+                          Asked: {q.title}
+                        </Link>
                         <div className="text-xs text-gray-500">
                           {q.createdAt && !isNaN(new Date(q.createdAt))
                             ? formatDistanceToNow(new Date(q.createdAt), { addSuffix: true })
@@ -231,7 +242,7 @@ export default function ProfileView() {
                   <p className="text-gray-500">No answers provided yet.</p>
                 ) : (
                   myAnswers.map(a => (
-                    <div key={a.id} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                    <Link key={a.id} href={`/requests/${a.requestId}`} className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 hover:underline">
                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100">
                         <ChatBubbleLeftRightIcon className="w-5 h-5 text-emerald-600" />
                       </span>
@@ -243,7 +254,7 @@ export default function ProfileView() {
                             : ''}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>
@@ -254,10 +265,10 @@ export default function ProfileView() {
                   <p className="text-gray-500">No saved questions yet.</p>
                 ) : (
                   savedQuestions.map(q => (
-                    <div key={q.id} className="p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                    <Link key={q.id} href={`/requests/${q.id}`} className="block p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 hover:underline">
                       <h3 className="font-medium text-gray-900">{q.title}</h3>
                       <p className="text-sm text-gray-600">{q.description}</p>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>
