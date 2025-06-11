@@ -4,6 +4,9 @@ import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import ReplySection from './ReplySection';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { coldarkDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function AnswerSection({ answers, requestId }) {
   const { user } = useAuth();
@@ -90,7 +93,27 @@ export default function AnswerSection({ answers, requestId }) {
             </div>
 
             <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-              {ans.content}
+              <ReactMarkdown
+                children={ans.content}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        children={String(children).replace(/\n$/, '')}
+                        style={coldarkDark}
+                        language={match[1]}
+                        PreTag="div"
+                        {...props}
+                      />
+                    ) : (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                }}
+              />
             </div>
 
             <div className="flex items-center gap-4 border-t border-gray-100 pt-4">
