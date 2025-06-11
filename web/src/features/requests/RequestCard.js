@@ -1,11 +1,44 @@
 'use client'
 import Link from 'next/link'
 import { BookmarkIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import pluralize from '@/src/utils/pluralize'
+import { useAuth } from '@/src/context/authContext'
+import { requestService } from '@/src/services/requestService'
 
 export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount }) {
   const [bookmarked, setBookmarked] = useState(false)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    const checkSavedStatus = async () => {
+      if (user && id) {
+        const isSaved = await requestService.isRequestSaved(user.uid, id);
+        setBookmarked(isSaved);
+      }
+    };
+    checkSavedStatus();
+  }, [user, id]);
+
+  const handleSaveToggle = async () => {
+    if (!user) {
+      // Optionally, prompt user to log in
+      alert('Please log in to save questions.');
+      return;
+    }
+    try {
+      if (bookmarked) {
+        await requestService.unsaveRequestForUser(user.uid, id);
+        setBookmarked(false);
+      } else {
+        await requestService.saveRequestForUser(user.uid, id);
+        setBookmarked(true);
+      }
+    } catch (error) {
+      console.error('Error saving/unsaving request:', error);
+      alert('Failed to update saved status.');
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow p-6">
@@ -18,7 +51,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
           className={`text-gray-400 hover:text-blue-600 transition-colors ${bookmarked ? 'text-blue-600' : ''}`}
           title={bookmarked ? 'Bookmarked' : 'Bookmark'}
           aria-label="Bookmark"
-          onClick={() => setBookmarked(b => !b)}
+          onClick={handleSaveToggle}
         >
           <BookmarkIcon className="h-5 w-5" />
         </button>

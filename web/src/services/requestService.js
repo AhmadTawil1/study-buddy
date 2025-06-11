@@ -14,7 +14,9 @@ import {
   serverTimestamp,
   getCountFromServer,
   increment,
-  arrayUnion
+  arrayUnion,
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
 
 export const requestService = {
@@ -288,9 +290,25 @@ export const requestService = {
 
   // Save a request for a user
   saveRequestForUser: async (userId, requestId) => {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      bookmarks: arrayUnion(requestId)
+    const savedQuestionRef = doc(db, 'savedQuestions', `${userId}_${requestId}`);
+    await setDoc(savedQuestionRef, {
+      userId,
+      requestId,
+      savedAt: serverTimestamp(),
     });
+  },
+
+  // Unsave a request for a user
+  unsaveRequestForUser: async (userId, requestId) => {
+    const savedQuestionRef = doc(db, 'savedQuestions', `${userId}_${requestId}`);
+    await deleteDoc(savedQuestionRef);
+  },
+
+  // Check if a request is saved by a user
+  isRequestSaved: async (userId, requestId) => {
+    if (!userId) return false;
+    const savedQuestionRef = doc(db, 'savedQuestions', `${userId}_${requestId}`);
+    const docSnap = await getDoc(savedQuestionRef);
+    return docSnap.exists();
   }
 }; 
