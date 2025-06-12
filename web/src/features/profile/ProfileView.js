@@ -27,6 +27,7 @@ import { requestService } from '@/src/services/requestService'
 import { useRouter } from 'next/navigation'
 import { FiBookmark } from 'react-icons/fi'
 import Link from 'next/link'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function ProfileView({ userId: propUserId }) {
   const { user, logout } = useAuth()
@@ -42,6 +43,7 @@ export default function ProfileView({ userId: propUserId }) {
     rank: 0
   })
   const router = useRouter()
+  const { colors, mode } = useTheme()
 
   // Determine which userId to use
   const userId = propUserId || (user ? user.uid : null)
@@ -166,28 +168,28 @@ export default function ProfileView({ userId: propUserId }) {
         </div>
 
         {/* Recent Activity Feed */}
-        <div className="mb-8">
-          <h3 className="font-semibold text-gray-800 mb-4 flex items-center">
-            <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2 text-indigo-600" /> Recent Activity
+        <div className="mb-12 px-4">
+          <h3 className="font-semibold mb-6 flex items-center text-lg" style={{ color: mode === 'dark' ? '#E5E7EB' : colors.button }}>
+            <ChatBubbleLeftRightIcon className="w-5 h-5 mr-2" style={{ color: mode === 'dark' ? '#3b82f6' : colors.button }} /> Recent Activity
           </h3>
-          <ol className="relative border-l border-gray-200 ml-4">
+          <ol className="relative border-l ml-4" style={{ borderColor: colors.inputBorder }}>
             {recentActivity.length === 0 ? (
-              <li className="text-gray-500 ml-4">No recent activity.</li>
+              <li className="ml-4" style={{ color: mode === 'dark' ? '#E5E7EB' : colors.inputPlaceholder }}>No recent activity.</li>
             ) : (
               recentActivity.map((activity, idx) => (
-                <li key={idx} className="mb-6 ml-6">
-                  <span className={`absolute -left-3 flex items-center justify-center w-6 h-6 rounded-full ring-8 ring-white ${
-                    activity.type === 'answered' ? 'bg-emerald-500' : 'bg-indigo-500'
-                  }`}>
+                <li key={idx} className="mb-8 ml-6">
+                  <span className="absolute -left-3 flex items-center justify-center w-7 h-7 rounded-full ring-8" style={{ ringColor: colors.card, background: activity.type === 'answered' ? '#22c55e' : '#3b82f6' }}>
                     {activity.type === 'answered' ? (
-                      <ChatBubbleLeftRightIcon className="w-4 h-4 text-white" />
+                      <ChatBubbleLeftRightIcon className="w-4 h-4" style={{ color: '#fff' }} />
                     ) : (
-                      <QuestionMarkCircleIcon className="w-4 h-4 text-white" />
+                      <QuestionMarkCircleIcon className="w-4 h-4" style={{ color: '#fff' }} />
                     )}
                   </span>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-gray-800">{activity.description}</span>
-                    <span className="text-xs text-gray-500">
+                  <div className="flex flex-col bg-opacity-80 rounded-lg p-4 shadow-sm" style={{ background: colors.inputBg }}>
+                    <span className="font-medium mb-1" style={{ color: mode === 'dark' ? '#fff' : colors.text }}>
+                      {activity.description}
+                    </span>
+                    <span className="text-xs" style={{ color: mode === 'dark' ? '#E5E7EB' : colors.inputPlaceholder }}>
                       {activity.time && !isNaN(new Date(activity.time))
                         ? formatDistanceToNow(new Date(activity.time), { addSuffix: true })
                         : ''}
@@ -200,130 +202,123 @@ export default function ProfileView({ userId: propUserId }) {
         </div>
 
         {/* Tabs */}
-        <Tab.Group>
-          <Tab.List className="flex space-x-1 rounded-xl bg-indigo-50 p-1">
-            <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
-              ${selected 
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-indigo-600 hover:bg-white/50'
-              }`
-            }>
-              My Questions
-            </Tab>
-            <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
-              ${selected 
-                ? 'bg-white text-emerald-700 shadow-sm'
-                : 'text-emerald-600 hover:bg-white/50'
-              }`
-            }>
-              My Answers
-            </Tab>
-            <Tab className={({ selected }) =>
-              `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors
-              ${selected 
-                ? 'bg-white text-purple-700 shadow-sm'
-                : 'text-purple-600 hover:bg-white/50'
-              }`
-            }>
-              Saved Questions
-            </Tab>
-          </Tab.List>
-          <Tab.Panels>
-            <Tab.Panel
-              className={
-                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
-              }
-            >
-              <ul className="space-y-4">
-                {myQuestions.length === 0 ? (
-                  <li className="text-gray-500">No questions asked yet.</li>
-                ) : (
-                  myQuestions.map((q) => (
-                    <li
-                      key={q.id}
-                      onClick={() => router.push(`/requests/${q.id}`)}
-                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
-                    >
-                      <h3 className="text-sm font-medium leading-5 text-gray-900">
-                        {q.title}
-                      </h3>
-                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
-                        <li>{q.subject}</li>
-                        <li>&middot;</li>
-                        <li>{formatDate(q.createdAt?.toDate())}</li>
-                      </ul>
-                      <span
-                        className={'absolute inset-0 rounded-md'}
-                      />
-                    </li>
-                  ))
-                )}
-              </ul>
-            </Tab.Panel>
-            <Tab.Panel
-              className={
-                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
-              }
-            >
-              <ul className="space-y-4">
-                {myAnswers.length === 0 ? (
-                  <li className="text-gray-500">No answers provided yet.</li>
-                ) : (
-                  myAnswers.map((a) => (
-                    <li
-                      key={a.id}
-                      onClick={() => router.push(`/requests/${a.requestId}`)}
-                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
-                    >
-                      <h3 className="text-sm font-medium leading-5 text-gray-900">
-                        {a.questionTitle || a.content?.substring(0, 50) + '...'}
-                      </h3>
-                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
-                        <li>Answered on {formatDate(a.createdAt?.toDate())}</li>
-                      </ul>
-                      <span
-                        className={'absolute inset-0 rounded-md'}
-                      />
-                    </li>
-                  ))
-                )}
-              </ul>
-            </Tab.Panel>
-            <Tab.Panel
-              className={
-                'rounded-xl bg-white p-3 ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2'
-              }
-            >
-              <ul className="space-y-4">
-                {savedQuestions.length === 0 ? (
-                  <li className="text-gray-500">No saved questions yet.</li>
-                ) : (
-                  savedQuestions.map((q) => (
-                    <li
-                      key={q.id}
-                      onClick={() => router.push(`/requests/${q.id}`)}
-                      className="relative rounded-md p-3 hover:bg-gray-100 cursor-pointer transition-colors"
-                    >
-                      <h3 className="text-sm font-medium leading-5 text-gray-900">
-                        {q.title}
-                      </h3>
-                      <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4 text-gray-500">
-                        <li>{q.subject}</li>
-                        <li>&middot;</li>
-                        <li>Saved on {formatDate(q.savedAt?.toDate())}</li>
-                      </ul>
-                      <span
-                        className={'absolute inset-0 rounded-md'}
-                      />
-                    </li>
-                  ))
-                )}
-              </ul>
-            </Tab.Panel>
-          </Tab.Panels>
-        </Tab.Group>
+        <div className="rounded-2xl shadow-xl p-4 mb-8" style={{ background: mode === 'dark' ? '#181a20' : colors.card }}>
+          <Tab.Group>
+            <Tab.List className="flex space-x-1 rounded-xl p-1" style={{ background: mode === 'dark' ? '#23272f' : '#e0e7ef' }}>
+              <Tab className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors ` +
+                (selected
+                  ? 'bg-gray-900 text-white border-b-2 border-blue-400 shadow-sm'
+                  : 'text-blue-400 hover:text-blue-200')
+              }>
+                My Questions
+              </Tab>
+              <Tab className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors ` +
+                (selected
+                  ? 'bg-gray-900 text-white border-b-2 border-green-400 shadow-sm'
+                  : 'text-green-400 hover:text-green-200')
+              }>
+                My Answers
+              </Tab>
+              <Tab className={({ selected }) =>
+                `w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition-colors ` +
+                (selected
+                  ? 'bg-gray-900 text-white border-b-2 border-purple-400 shadow-sm'
+                  : 'text-purple-400 hover:text-purple-200')
+              }>
+                Saved Questions
+              </Tab>
+            </Tab.List>
+            <Tab.Panels>
+              <Tab.Panel
+                className="rounded-xl p-3 mt-2"
+                style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
+              >
+                <ul className="space-y-4">
+                  {myQuestions.length === 0 ? (
+                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No questions asked yet.</li>
+                  ) : (
+                    myQuestions.map((q) => (
+                      <li
+                        key={q.id}
+                        onClick={() => router.push(`/requests/${q.id}`)}
+                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                      >
+                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                          {q.title}
+                        </h3>
+                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                          <li>{q.subject}</li>
+                          <li>&middot;</li>
+                          <li>{formatDate(q.createdAt?.toDate())}</li>
+                        </ul>
+                        <span className={'absolute inset-0 rounded-md'} />
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </Tab.Panel>
+              <Tab.Panel
+                className="rounded-xl p-3 mt-2"
+                style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
+              >
+                <ul className="space-y-4">
+                  {myAnswers.length === 0 ? (
+                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No answers provided yet.</li>
+                  ) : (
+                    myAnswers.map((a) => (
+                      <li
+                        key={a.id}
+                        onClick={() => router.push(`/requests/${a.requestId}`)}
+                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                      >
+                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                          {a.questionTitle || a.content?.substring(0, 50) + '...'}
+                        </h3>
+                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                          <li>Answered on {formatDate(a.createdAt?.toDate())}</li>
+                        </ul>
+                        <span className={'absolute inset-0 rounded-md'} />
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </Tab.Panel>
+              <Tab.Panel
+                className="rounded-xl p-3 mt-2"
+                style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
+              >
+                <ul className="space-y-4">
+                  {savedQuestions.length === 0 ? (
+                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No saved questions yet.</li>
+                  ) : (
+                    savedQuestions.map((q) => (
+                      <li
+                        key={q.id}
+                        onClick={() => router.push(`/requests/${q.id}`)}
+                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                      >
+                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                          {q.title}
+                        </h3>
+                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                          <li>{q.subject}</li>
+                          <li>&middot;</li>
+                          <li>Saved on {formatDate(q.savedAt?.toDate())}</li>
+                        </ul>
+                        <span className={'absolute inset-0 rounded-md'} />
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </Tab.Panel>
+            </Tab.Panels>
+          </Tab.Group>
+        </div>
 
         {/* Account Management */}
         <div className="mt-8">

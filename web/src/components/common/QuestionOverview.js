@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { useTheme } from '@/src/context/themeContext';
 
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ export default function QuestionOverview({ request }) {
   const [editTitle, setEditTitle] = useState(request.title);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const { colors } = useTheme();
 
   const isOwner = user && (user.uid === request.userId);
 
@@ -103,7 +105,7 @@ export default function QuestionOverview({ request }) {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+    <div className="rounded-xl shadow-lg p-6 mb-6" style={{ background: colors.card, color: colors.text }}>
       <div className="flex justify-between items-start mb-4">
         <div>
           {editing ? (
@@ -112,38 +114,42 @@ export default function QuestionOverview({ request }) {
                 type="text"
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="text-2xl font-bold text-gray-900 w-full border-b border-gray-300 focus:border-blue-500 outline-none"
+                className="text-2xl font-bold w-full border-b focus:border-blue-500 outline-none"
+                style={{ color: colors.text, borderColor: colors.inputBorder }}
               />
               <button
                 onClick={handleSaveTitle}
                 disabled={saving}
-                className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+                className="px-3 py-1 rounded-md text-sm disabled:opacity-50"
+                style={{ background: colors.button, color: colors.buttonSecondaryText }}
               >
                 {saving ? <FiSave className="animate-spin" /> : <FiSave />} Save
               </button>
               <button
                 onClick={handleCancel}
-                className="text-gray-600 hover:text-gray-900 px-2 py-1 rounded-md text-sm"
+                className="px-2 py-1 rounded-md text-sm"
+                style={{ color: colors.inputPlaceholder }}
               >
                 <FiX className="w-5 h-5" />
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-gray-900">{request.title}</h1>
+              <h1 className="text-2xl font-bold" style={{ color: colors.text }}>{request.title}</h1>
               {isOwner && (
                 <button
                   onClick={handleEdit}
-                  className="text-blue-600 hover:text-blue-800 text-sm flex items-center gap-1"
+                  className="text-sm flex items-center gap-1"
+                  style={{ color: colors.button }}
                 >
                   <FiEdit className="w-4 h-4" /> Edit
                 </button>
               )}
             </div>
           )}
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-            <span>by <Link href={`/profile/${request.userId}`} className="hover:underline text-blue-700 font-medium">{request.author}</Link></span>
+          {error && <p className="text-sm mt-1" style={{ color: '#ef4444' }}>{error}</p>}
+          <div className="flex items-center gap-2 text-xs mt-1" style={{ color: colors.inputPlaceholder }}>
+            <span>by <Link href={`/profile/${request.userId}`} className="hover:underline font-medium" style={{ color: colors.button }}>{request.author}</Link></span>
             <span>&middot;</span>
             <span>{request.createdAt ? format(request.createdAt.toDate ? request.createdAt.toDate() : request.createdAt, 'PPpp') : ''}</span>
           </div>
@@ -152,22 +158,19 @@ export default function QuestionOverview({ request }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              isRequestSaved 
-                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors`}
+            style={{ background: isRequestSaved ? (colors.mode === 'dark' ? '#1e293b' : '#bfdbfe') : colors.inputBg, color: isRequestSaved ? colors.button : colors.inputPlaceholder }}
           >
             <FiBookmark className={`w-5 h-5 ${isRequestSaved ? 'fill-current' : ''}`} />
-            {isRequestSaved ? 'Saved' : 'Save'}
+            <span style={{ color: isRequestSaved ? colors.button : colors.inputPlaceholder }}>{isRequestSaved ? 'Saved' : 'Save'}</span>
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+      <div className="flex items-center gap-4 text-sm mb-4" style={{ color: colors.inputPlaceholder }}>
         <div className="flex items-center gap-1">
           <FiMessageSquare className="w-4 h-4" />
-          <span>{request.answersCount || 0} answers</span>
+          <span style={{ color: colors.inputPlaceholder }}>{request.answersCount || 0} answers</span>
         </div>
       </div>
 
@@ -175,7 +178,8 @@ export default function QuestionOverview({ request }) {
         {request.tags?.map((tag, index) => (
           <span
             key={index}
-            className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+            className="px-3 py-1 rounded-full text-sm"
+            style={{ background: colors.mode === 'dark' ? '#1e293b' : '#dbeafe', color: colors.button }}
           >
             {tag}
           </span>

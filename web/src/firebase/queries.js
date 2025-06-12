@@ -9,7 +9,8 @@ import {
   where, 
   Timestamp, 
   doc, 
-  updateDoc 
+  updateDoc,
+  startAfter
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -40,24 +41,35 @@ class FirebaseError extends Error {
 }
 
 /**
- * Fetches the latest questions from the requests collection
- * @returns {Promise<Array>} Array of question objects
+ * Fetches the latest questions from the requests collection with pagination
+ * @param {number} pageLimit - Number of questions to fetch
+ * @param {object} startAfterDoc - The last document from the previous page
+ * @returns {Promise<{questions: Array, lastDoc: object}>}
  */
-export const fetchLatestQuestions = async () => {
+export const fetchLatestQuestions = async (pageLimit = LIMITS.LATEST_QUESTIONS, startAfterDoc = null) => {
   try {
     const questionsRef = collection(db, COLLECTIONS.REQUESTS)
-    const q = query(
-      questionsRef, 
-      orderBy('createdAt', 'desc'), 
-      limit(LIMITS.LATEST_QUESTIONS)
+    let q = query(
+      questionsRef,
+      orderBy('createdAt', 'desc'),
+      limit(pageLimit)
     )
+    if (startAfterDoc) {
+      q = query(
+        questionsRef,
+        orderBy('createdAt', 'desc'),
+        startAfter(startAfterDoc),
+        limit(pageLimit)
+      )
+    }
     const querySnapshot = await getDocs(q)
-
-    return querySnapshot.docs.map(doc => ({
+    const questions = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate()
     }))
+    const lastDoc = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+    return { questions, lastDoc }
   } catch (error) {
     throw new FirebaseError('Error fetching latest questions', error)
   }

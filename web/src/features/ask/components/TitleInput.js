@@ -1,15 +1,16 @@
 'use client'
 
-import React from 'react'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { rephraseQuestion } from '@/src/services/aiService'
 import calculateClarityScore from '@/src/utils/clarityScore'
+import { useTheme } from '@/src/context/themeContext'
 
 const MAX_TITLE_LENGTH = 100
 
 export default function TitleInput({ value, onChange, onRephrase, loading, clarityScore, maxLength }) {
   const [aiTitle, setAiTitle] = useState('')
+  const { colors } = useTheme();
 
   const handleRephraseTitle = async () => {
     if (!value.trim()) return
@@ -21,13 +22,13 @@ export default function TitleInput({ value, onChange, onRephrase, loading, clari
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="block text-sm font-medium mb-1" style={{ color: colors.text }}>
         Title
-        <span className="text-gray-500 ml-2">
+        <span className="ml-2" style={{ color: colors.inputPlaceholder }}>
           {(value || '').length}/{maxLength}
         </span>
         {clarityScore !== undefined && (
-          <span className="ml-2 text-xs text-blue-500">Clarity: {clarityScore}/10</span>
+          <span className="ml-2 text-xs" style={{ color: colors.button }}>Clarity: {clarityScore}/10</span>
         )}
       </label>
       <div className="relative">
@@ -37,6 +38,7 @@ export default function TitleInput({ value, onChange, onRephrase, loading, clari
           onChange={e => onChange(e.target.value.slice(0, maxLength))}
           placeholder="Enter your question title"
           className="w-full border border-gray-300 px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          style={{ color: colors.inputText, background: colors.inputBg, borderColor: colors.inputBorder }}
         />
         <button
           type="button"
@@ -48,7 +50,7 @@ export default function TitleInput({ value, onChange, onRephrase, loading, clari
         </button>
       </div>
       {value && (
-        <div className="mt-2 text-sm text-gray-500">
+        <div className="mt-2 text-sm" style={{ color: colors.inputPlaceholder }}>
           Avoid vague titles like "Help me please"
         </div>
       )}
@@ -65,7 +67,7 @@ export default function TitleInput({ value, onChange, onRephrase, loading, clari
               />
             ))}
           </div>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm" style={{ color: colors.inputPlaceholder }}>
             {clarityScore}/10 {clarityScore >= 7 ? '😊' : '🤔'}
           </span>
         </div>

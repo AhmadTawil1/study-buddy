@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { FiUsers, FiMessageSquare, FiTrendingUp } from 'react-icons/fi'
 import { fetchCommunityStats, fetchTrendingTopics } from '@/src/firebase/queries'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function CommunitySnapshot() {
   const [stats, setStats] = useState({
@@ -12,6 +13,7 @@ export default function CommunitySnapshot() {
   })
   const [trendingTopics, setTrendingTopics] = useState([])
   const [loading, setLoading] = useState(true)
+  const { colors, mode } = useTheme()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,18 +42,18 @@ export default function CommunitySnapshot() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-gradient-to-b from-white to-blue-50">
+      <section className="py-16" style={{ background: mode === 'dark' ? 'linear-gradient(90deg, #23272f 0%, #181a20 100%)' : 'linear-gradient(90deg, #f4f6fb 0%, #e5ecf6 100%)' }}>
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="text-center mb-12">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto animate-pulse"></div>
+            <div className="h-8" style={{ background: colors.inputBg, borderRadius: 8, margin: '0 auto 16px' }}></div>
+            <div className="h-4" style={{ background: colors.inputBg, borderRadius: 8, margin: '0 auto' }}></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-xl shadow-lg p-8 text-center animate-pulse">
-                <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+              <div key={i} className="rounded-xl shadow-lg p-8 text-center animate-pulse" style={{ background: colors.card }}>
+                <div className="w-16 h-16" style={{ background: colors.inputBg, borderRadius: '50%', margin: '0 auto 16px' }}></div>
+                <div className="h-8" style={{ background: colors.inputBg, borderRadius: 8, margin: '0 auto 8px' }}></div>
+                <div className="h-4" style={{ background: colors.inputBg, borderRadius: 8, margin: '0 auto' }}></div>
               </div>
             ))}
           </div>
@@ -61,7 +63,7 @@ export default function CommunitySnapshot() {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-b from-white to-blue-50">
+    <section className="py-16" style={{ background: mode === 'dark' ? 'linear-gradient(90deg, #23272f 0%, #181a20 100%)' : 'linear-gradient(90deg, #f4f6fb 0%, #e5ecf6 100%)' }}>
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -70,8 +72,8 @@ export default function CommunitySnapshot() {
           viewport={{ once: true }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Growing Community</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold mb-4" style={{ color: colors.text }}>Our Growing Community</h2>
+          <p className="text-lg max-w-2xl mx-auto" style={{ color: colors.inputPlaceholder }}>
             Join thousands of students and helpers who are already part of our learning community
           </p>
         </motion.div>
@@ -85,13 +87,14 @@ export default function CommunitySnapshot() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
-              className="bg-white rounded-xl shadow-lg p-8 text-center"
+              className="rounded-xl shadow-lg p-8 text-center"
+              style={{ background: colors.card, color: colors.text }}
             >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <stat.icon className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: colors.button + '22' }}>
+                <stat.icon className="w-8 h-8" style={{ color: colors.button }} />
               </div>
-              <div className="text-4xl font-bold text-gray-900 mb-2">{stat.value}</div>
-              <div className="text-gray-600">{stat.label}</div>
+              <div className="text-4xl font-bold mb-2" style={{ color: colors.button }}>{stat.value}</div>
+              <div style={{ color: colors.inputPlaceholder }}>{stat.label}</div>
             </motion.div>
           ))}
         </div>
@@ -102,9 +105,10 @@ export default function CommunitySnapshot() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           viewport={{ once: true }}
-          className="bg-white rounded-xl shadow-lg p-8"
+          className="rounded-xl shadow-lg p-8"
+          style={{ background: colors.card, color: colors.text }}
         >
-          <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Trending Topics</h3>
+          <h3 className="text-xl font-bold mb-6 text-center" style={{ color: colors.button }}>Trending Topics</h3>
           <div className="flex flex-wrap justify-center gap-3">
             {trendingTopics.map((topic, index) => (
               <motion.span
@@ -113,7 +117,8 @@ export default function CommunitySnapshot() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
                 viewport={{ once: true }}
-                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-medium hover:bg-blue-100 transition cursor-pointer"
+                className="px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer"
+                style={{ background: colors.inputBg, color: colors.button }}
               >
                 {topic}
               </motion.span>

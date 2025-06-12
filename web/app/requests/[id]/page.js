@@ -12,12 +12,16 @@ import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { requestService } from '@/src/services/requestService';
 import { questionService } from '@/src/services/questionService';
-import { FiArrowRight } from 'react-icons/fi';
+import { FiArrowRight, FiArrowLeft } from 'react-icons/fi';
+import Card from '@/src/components/common/Card'
+import { useTheme } from '@/src/context/themeContext';
+import SidePanel from '@/src/features/requests/SidePanel';
 
 function AISuggestions({ question, description }) {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
+  const { colors } = useTheme();
 
   const fetchSuggestions = async () => {
     setLoading(true);
@@ -36,57 +40,34 @@ function AISuggestions({ question, description }) {
     setLoading(false);
   };
 
-  if (!hasGenerated) {
-    return (
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-blue-700">AI Suggested Videos & Resources</h2>
-          <button
-            onClick={fetchSuggestions}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Generate <FiArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-xl font-bold text-blue-700 mb-3">AI Suggested Videos & Resources</h2>
-      <div className="text-gray-600">Loading suggestions...</div>
-    </div>
-  );
-
-  if (!suggestions.length) return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-xl font-bold text-blue-700 mb-3">AI Suggested Videos & Resources</h2>
-      <div className="text-gray-600">No suggestions found</div>
-    </div>
-  );
-
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <Card className="p-6" bgColor={colors.card}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-bold text-blue-700">AI Suggested Videos & Resources</h2>
+        <h2 className="text-lg font-bold" style={{ color: colors.text }}>AI Suggested Videos & Resources</h2>
         <button
           onClick={fetchSuggestions}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
+          style={{ background: colors.button, color: colors.buttonSecondaryText }}
         >
-          Regenerate <FiArrowRight className="w-4 h-4" />
+          {hasGenerated ? 'Regenerate' : 'Generate'} <FiArrowRight className="w-4 h-4" />
         </button>
       </div>
-      <div className="space-y-3">
-        {suggestions.map((s, i) => (
-          <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
-            <div className="font-semibold text-blue-800 text-sm">{s.title}</div>
-            <div className="text-gray-600 text-xs">{s.description}</div>
-            <div className="text-blue-600 text-xs mt-1 truncate">{s.url}</div>
-          </a>
-        ))}
-      </div>
-    </div>
+      {loading && <div style={{ color: colors.inputPlaceholder }}>Loading suggestions...</div>}
+      {!loading && hasGenerated && suggestions.length === 0 && (
+        <div style={{ color: colors.inputPlaceholder }}>No suggestions found</div>
+      )}
+      {!loading && suggestions.length > 0 && (
+        <div className="space-y-3">
+          {suggestions.map((s, i) => (
+            <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg transition" style={{ background: colors.inputBg, color: colors.text }}>
+              <div className="font-semibold text-sm" style={{ color: colors.button }}>{s.title}</div>
+              <div className="text-xs" style={{ color: colors.inputPlaceholder }}>{s.description}</div>
+              <div className="text-xs mt-1 truncate" style={{ color: colors.button }}>{s.url}</div>
+            </a>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -100,6 +81,7 @@ export default function RequestDetails({ params }) {
   const [answers, setAnswers] = useState([])
   const [answersLoading, setAnswersLoading] = useState(true)
   const [isSavedByCurrentUser, setIsSavedByCurrentUser] = useState(false);
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -168,48 +150,68 @@ export default function RequestDetails({ params }) {
   }, [user, loading, id]);
 
   if (loading || !user) {
-    return <div className="min-h-screen py-12 px-4 text-center">Loading or redirecting...</div>
+    return <div className="min-h-screen flex items-center justify-center" style={{ background: colors.page, color: colors.text }}>Loading or redirecting...</div>
   }
 
   if (requestLoading) {
-    return <div className="min-h-screen py-12 px-4 text-center">Loading request...</div>
+    return <div className="min-h-screen flex items-center justify-center" style={{ background: colors.page, color: colors.text }}>Loading request...</div>
   }
 
   if (error) {
-    return <div className="min-h-screen py-12 px-4 text-center text-red-600">❌ {error}</div>
+    return <div className="min-h-screen flex items-center justify-center text-red-600" style={{ background: colors.page }}>❌ {error}</div>
   }
 
   if (!request) {
-     return <div className="min-h-screen py-12 px-4 text-center text-red-600">Request not found</div>
+     return <div className="min-h-screen flex items-center justify-center text-red-600" style={{ background: colors.page }}>Request not found</div>
   }
 
   // Only ONE return below this line!
   return (
-    <div className="flex gap-8 items-start max-w-6xl mx-auto py-12 px-4">
-      <div className="flex-1">
-        <a href="/requests" className="text-blue-600 hover:underline mb-4 block">← Back to Requests</a>
-        <QuestionOverview request={{
-          ...request,
-          author: request.authorName || request.author || user?.email || "Unknown",
-          isSavedByCurrentUser: isSavedByCurrentUser
-        }} />
-        <FullDescription 
-          description={request.description} 
-          files={request.fileURLs || []} 
-          aiSummary={request.aiSummary}
-          codeSnippet={request.codeSnippet}
-          codeLanguage={request.codeLanguage}
-          isOwner={user && user.uid === request.userId}
-          requestId={request.id}
-        />
-        <AnswerSection answers={answers} requestId={request.id} />
-      </div>
-      <div className="w-80">
-        <Sidebar 
-          relatedQuestions={[]} 
-          aiSuggestions="Consider clarifying if you need social login or just email/password."
-          aiVideos={<AISuggestions question={request.title} description={request.description} />}
-        />
+    <div className="min-h-screen py-8 px-2 transition-colors duration-300" style={{ background: colors.page, color: colors.text }}>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-8">
+        {/* Main Content */}
+        <div className="flex flex-col gap-8">
+          <button
+            onClick={() => router.push('/requests')}
+            className="flex items-center gap-2 text-sm font-medium mb-2 self-start px-3 py-2 rounded-lg transition-colors"
+            style={{ color: colors.button, background: colors.inputBg, border: `1px solid ${colors.inputBorder}` }}
+          >
+            <FiArrowLeft /> Back to Requests
+          </button>
+          <Card bgColor={colors.card} className="p-6">
+            <QuestionOverview request={{
+              ...request,
+              author: request.authorName || request.author || user?.email || "Unknown",
+              isSavedByCurrentUser: isSavedByCurrentUser
+            }} />
+          </Card>
+          <Card bgColor={colors.card} className="p-6">
+            <FullDescription 
+              description={request.description} 
+              files={request.fileURLs || []} 
+              aiSummary={request.aiSummary}
+              codeSnippet={request.codeSnippet}
+              codeLanguage={request.codeLanguage}
+              isOwner={user && user.uid === request.userId}
+              requestId={request.id}
+            />
+          </Card>
+          <Card bgColor={colors.card} className="p-6">
+            <AnswerSection answers={answers} requestId={request.id} />
+          </Card>
+        </div>
+        {/* Sidebar */}
+        <Sidebar className="flex flex-col gap-8" style={{ border: '2px solid red', background: 'rgba(255, 0, 0, 0.1)' }}>
+          <SidePanel />
+          <AISuggestions question={request.title} description={request.description} />
+          <Card bgColor={colors.card} className="p-6">
+            <h3 style={{ color: colors.text, fontWeight: 600, fontSize: '1.1rem', marginBottom: 12 }}>Related Questions</h3>
+            <div style={{ color: colors.inputPlaceholder, fontSize: '0.95rem' }}>
+              {/* TODO: Replace with real related questions */}
+              <div>No related questions yet.</div>
+            </div>
+          </Card>
+        </Sidebar>
       </div>
     </div>
   )

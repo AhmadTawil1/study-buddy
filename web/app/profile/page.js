@@ -3,10 +3,12 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/src/context/authContext'
 import ProfileView from '@/src/features/profile/ProfileView'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function ProfilePage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -19,7 +21,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="py-12 px-4">
+    <div style={{ minHeight: '100vh', background: colors.page, color: colors.text }}>
       <ProfileView />
     </div>
   )

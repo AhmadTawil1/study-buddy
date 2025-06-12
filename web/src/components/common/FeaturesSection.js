@@ -1,5 +1,6 @@
 "use client"
 import { motion } from 'framer-motion'
+import { useTheme } from '@/src/context/themeContext'
 
 const features = [
   {
@@ -20,10 +21,19 @@ const features = [
 ]
 
 export default function FeaturesSection() {
+  const { colors, mode } = useTheme();
   return (
-    <section className="bg-indigo-50 py-20 md:py-28 w-full">
+    <section
+      className="py-20 md:py-28 w-full"
+      style={{
+        background: mode === 'dark'
+          ? 'linear-gradient(90deg, #23272f 0%, #181a20 100%)'
+          : 'linear-gradient(90deg, #f4f6fb 0%, #e5ecf6 100%)',
+        color: colors.text
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-14 text-blue-800">Key Features</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-14" style={{ color: colors.button }}>Key Features</h2>
         <div className="grid md:grid-cols-3 gap-14">
           {features.map((f, i) => (
             <motion.div
@@ -32,11 +42,12 @@ export default function FeaturesSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
               viewport={{ once: true }}
-              className="bg-white p-8 md:p-10 rounded-2xl shadow-xl flex flex-col items-center text-center hover:shadow-2xl transition"
+              className="p-8 md:p-10 rounded-2xl shadow-xl flex flex-col items-center text-center hover:shadow-2xl transition"
+              style={{ background: colors.card, color: colors.text }}
             >
               <div className="text-6xl mb-6">{f.icon}</div>
-              <h3 className="text-xl md:text-2xl font-semibold mb-3 text-blue-700">{f.title}</h3>
-              <p className="text-gray-700 text-base md:text-lg">{f.description}</p>
+              <h3 className="text-xl md:text-2xl font-semibold mb-3" style={{ color: colors.button }}>{f.title}</h3>
+              <p className="text-base md:text-lg" style={{ color: colors.inputPlaceholder }}>{f.description}</p>
             </motion.div>
           ))}
         </div>

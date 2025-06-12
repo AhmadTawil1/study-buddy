@@ -19,6 +19,7 @@ import { FiUser, FiLogOut, FiMenu, FiX } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext'
 import ReactDOM from 'react-dom'
 import NotificationDropdown from './NotificationDropdown'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function Navbar() {
   // State for mobile and profile menus
@@ -28,6 +29,7 @@ export default function Navbar() {
   const profileMenuRef = useRef(null)
   const dropdownRef = useRef(null)
   const profileButtonRef = useRef(null)
+  const { mode, toggleMode, colors } = useTheme();
 
   // Log auth state changes (for debugging)
   useEffect(() => {
@@ -59,27 +61,41 @@ export default function Navbar() {
   }, [isProfileMenuOpen]);
 
   return (
-    <nav className="backdrop-blur bg-white/80 shadow-lg rounded-b-2xl">
+    <nav
+      className="backdrop-blur shadow-lg rounded-b-2xl"
+      style={{ background: colors.card, color: colors.text }}
+    >
       {/* Main navigation bar content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Brand and desktop nav links */}
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center group">
-              <span className="ml-2 text-2xl font-extrabold text-blue-700 group-hover:text-blue-500 transition-colors">StudyBuddy</span>
+              <span className="ml-2 text-2xl font-extrabold" style={{ color: colors.button }}>StudyBuddy</span>
             </Link>
             <div className="hidden md:ml-8 md:flex md:space-x-6">
-              <Link href="/" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-base font-medium transition-colors">
+              <Link href="/" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                 Home
               </Link>
-              <Link href="/ask" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-base font-medium transition-colors">
+              <Link href="/ask" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                 Ask
               </Link>
-              <Link href="/requests" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-base font-medium transition-colors">
+              <Link href="/requests" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                 Requests
               </Link>
             </div>
           </div>
+
+          {/* Dark mode toggle button */}
+          <button
+            onClick={toggleMode}
+            className="ml-4 px-3 py-2 rounded-lg border text-lg shadow transition-colors"
+            style={{ background: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }}
+            aria-label="Toggle dark mode"
+            title="Toggle dark mode"
+          >
+            {mode === 'dark' ? '🌙' : '☀️'}
+          </button>
 
           {/* User profile menu (desktop) */}
           <div className="hidden md:flex items-center space-x-4">
@@ -164,7 +180,8 @@ export default function Navbar() {
           <div className="flex md:hidden items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition"
+              className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset transition"
+              style={{ color: colors.text, background: colors.inputBg }}
             >
               <span className="sr-only">Open main menu</span>
               {isMobileMenuOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
@@ -175,14 +192,14 @@ export default function Navbar() {
 
       {/* Mobile menu with smooth transition */}
       <div className={`md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} id="mobile-menu">
-        <div className="pt-2 pb-3 space-y-1 bg-white/90 rounded-b-2xl shadow-xl">
-          <Link href="/" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl" style={{ background: colors.card }}>
+          <Link href="/" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
             Home
           </Link>
-          <Link href="/ask" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+          <Link href="/ask" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
             Ask
           </Link>
-          <Link href="/requests" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+          <Link href="/requests" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
             Requests
           </Link>
         </div>
