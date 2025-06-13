@@ -15,7 +15,8 @@ import {
   increment,
   arrayUnion,
   arrayRemove,
-  deleteDoc
+  deleteDoc,
+  setDoc
 } from 'firebase/firestore';
 import { notificationService } from '@/src/services/notificationService';
 
@@ -89,6 +90,7 @@ export const questionService = {
     const questionsRef = collection(db, 'questions');
     const newQuestion = {
       ...questionData,
+      title_lowercase: questionData.title ? questionData.title.toLowerCase() : '',
       createdAt: serverTimestamp(),
       upvotes: 0,
       downvotes: 0,
@@ -121,38 +123,84 @@ export const questionService = {
       throw new Error('Question not found');
     }
     const requestData = requestSnap.data();
-    
+
     const answersRef = collection(db, 'answers');
-    const newAnswer = {
-      ...answerData,
-      requestId,
-      questionTitle: requestData.title,
-      createdAt: serverTimestamp(),
-      upvotes: 0,
-      downvotes: 0,
-      isAccepted: false,
-      upvotedBy: [],
-      replies: [] // Initialize empty replies array
-    };
-    const answerDoc = await addDoc(answersRef, newAnswer);
-    await updateDoc(requestRef, {
-      answers: arrayUnion(answerDoc.id),
-      updatedAt: serverTimestamp(),
-      answersCount: increment(1) // Increment answer count
-    });
-    // Notify question owner if someone else answers
+    let answerDocRef;
+    let newAnswerData = {}; // Initialize with default values
+
+    if (answerData.userId === 'ai-bot') {
+      // For AI answers, use a deterministic ID to ensure uniqueness per request
+      const aiAnswerId = `${requestId}_ai_answer`;
+      answerDocRef = doc(db, 'answers', aiAnswerId);
+      const aiAnswerSnap = await getDoc(answerDocRef);
+
+      if (aiAnswerSnap.exists()) {
+        console.log('AI answer already exists for this request. Updating existing.');
+        await updateDoc(answerDocRef, {
+          ...answerData,
+          requestId,
+          questionTitle: requestData.title,
+          updatedAt: serverTimestamp(),
+        });
+        return { id: aiAnswerId, ...answerData, ...aiAnswerSnap.data() };
+      } else {
+        console.log('Adding new AI answer.');
+        newAnswerData = {
+          ...answerData,
+          requestId,
+          questionTitle: requestData.title,
+          createdAt: serverTimestamp(),
+          upvotes: 0,
+          downvotes: 0,
+          isAccepted: false,
+          upvotedBy: [],
+          replies: [] // Initialize empty replies array
+        };
+        await setDoc(answerDocRef, newAnswerData);
+        // Only update requestRef if it's a truly new AI answer
+        await updateDoc(requestRef, {
+          answers: arrayUnion(answerDocRef.id),
+          updatedAt: serverTimestamp()
+          // Do NOT increment answersCount for AI answers
+        });
+      }
+    } else {
+      // For human answers, continue with addDoc
+      newAnswerData = {
+        ...answerData,
+        requestId,
+        questionTitle: requestData.title,
+        createdAt: serverTimestamp(),
+        upvotes: 0,
+        downvotes: 0,
+        isAccepted: false,
+        upvotedBy: [],
+        replies: [] // Initialize empty replies array
+      };
+      const humanAnswerDoc = await addDoc(answersRef, newAnswerData);
+      answerDocRef = humanAnswerDoc;
+      // Update requestRef for human answers
+      await updateDoc(requestRef, {
+        answers: arrayUnion(answerDocRef.id),
+        updatedAt: serverTimestamp(),
+        answersCount: increment(1) // Increment answer count
+      });
+    }
+
+    // Notification logic remains outside the conditional adding/updating for simplicity
     if (requestData.userId && answerData.userId && answerData.userId !== requestData.userId && answerData.userId !== 'ai-bot') {
       await notificationService.createNotification({
         userId: requestData.userId,
         type: 'answer',
         questionId: requestId,
-        answerId: answerDoc.id,
+        answerId: answerDocRef.id,
         message: `Your question "${requestData.title}" received a new answer!`
       });
     }
+
     return {
-      id: answerDoc.id,
-      ...newAnswer
+      id: answerDocRef.id,
+      ...newAnswerData
     };
   },
 

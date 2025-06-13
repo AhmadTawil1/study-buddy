@@ -2,10 +2,12 @@
 import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 import { requestService } from '@/src/services/requestService'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function SearchBar({ value, onChange, onSuggestionClick }) {
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const { colors } = useTheme();
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -36,6 +38,7 @@ export default function SearchBar({ value, onChange, onSuggestionClick }) {
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search help requests..."
           className="w-full px-4 py-3 pl-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder }}
           onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
         />
