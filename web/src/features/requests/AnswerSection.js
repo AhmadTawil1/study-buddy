@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
-import { FiThumbsUp, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { FiThumbsUp, FiTrash2, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
 import ReplySection from './ReplySection';
 import { useRouter } from 'next/navigation';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -10,6 +10,8 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext';
+import FileUpload from '@/src/components/common/FileUpload';
+import { uploadFiles } from '@/src/services/storageService';
 
 export default function AnswerSection({ answers, requestId }) {
   const { user } = useAuth();
@@ -17,6 +19,8 @@ export default function AnswerSection({ answers, requestId }) {
   const [showReplies, setShowReplies] = useState({});
   const [aiAnswer, setAiAnswer] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const { colors } = useTheme();
 
@@ -60,17 +64,39 @@ export default function AnswerSection({ answers, requestId }) {
     e.preventDefault();
     if (!newAnswerContent.trim() || !user) return;
 
+    setIsSubmitting(true);
     try {
+      let attachments = [];
+      if (files.length > 0) {
+        const fileDownloadURLs = await uploadFiles(
+          files,
+          `users/${user.uid}/answers/${requestId}`,
+          (index, progress) => {
+            const fileName = files[index].name;
+            setFiles(prev => prev.map(file => 
+              file.name === fileName ? { ...file, uploadProgress: progress } : file
+            ));
+          }
+        );
+        attachments = fileDownloadURLs.map((url, index) => ({
+          name: files[index].name,
+          url
+        }));
+      }
+
       await questionService.addAnswer(requestId, {
         author: user.displayName || user.email,
         badge: 'Contributor',
         content: newAnswerContent,
         userId: user.uid,
+        attachments
       });
       setNewAnswerContent('');
+      setFiles([]);
     } catch (error) {
       console.error('Error adding answer:', error);
     }
+    setIsSubmitting(false);
   };
 
   const handleAnswerUpvote = async (answerId) => {
@@ -122,36 +148,34 @@ export default function AnswerSection({ answers, requestId }) {
               color: ans.author === 'AI Assistant' ? (colors.mode === 'dark' ? '#fff' : '#22304a') : colors.text
             }}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-blue-200 dark:bg-gray-700"
-                  onClick={() => ans.userId && router.push(`/profile/${ans.userId}`)}
-                >
-                  <span className="font-semibold text-sm text-blue-600 dark:text-blue-400">
-                    {ans.author.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  {ans.author === 'AI Assistant' ? (
-                    <div className="flex items-center gap-2 font-medium text-blue-600 dark:text-blue-400">
-                      <span>{ans.author}</span>
-                      <span className="bg-blue-600 text-white dark:bg-blue-500 dark:text-white rounded-md px-2 py-0.5 text-xs font-semibold flex items-center">
-                        🤖 AI
-                      </span>
-                    </div>
-                  ) : (
-                    <Link href={`/profile/${ans.userId}`} className="font-medium hover:underline text-blue-600 dark:text-blue-400">{ans.author}</Link>
-                  )}
-                  <div className="text-sm text-gray-500 dark:text-gray-400">{ans.badge}</div>
-                  <div className="text-sm text-gray-400 dark:text-gray-500">
-                    {ans.createdAt ? format(ans.createdAt.toDate ? ans.createdAt.toDate() : ans.createdAt, 'PPpp') : ''}
+            <div className="flex items-center gap-3 mb-4">
+              <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity bg-blue-200 dark:bg-gray-700"
+                onClick={() => ans.userId && router.push(`/profile/${ans.userId}`)}
+              >
+                <span className="font-semibold text-sm text-blue-600 dark:text-blue-400">
+                  {ans.author.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                {ans.author === 'AI Assistant' ? (
+                  <div className="flex items-center gap-2 font-medium text-blue-600 dark:text-blue-400">
+                    <span>{ans.author}</span>
+                    <span className="bg-blue-600 text-white dark:bg-blue-500 dark:text-white rounded-md px-2 py-0.5 text-xs font-semibold flex items-center">
+                      🤖 AI
+                    </span>
                   </div>
+                ) : (
+                  <Link href={`/profile/${ans.userId}`} className="font-medium hover:underline text-blue-600 dark:text-blue-400">{ans.author}</Link>
+                )}
+                <div className="text-sm text-gray-500 dark:text-gray-400">{ans.badge}</div>
+                <div className="text-sm text-gray-400 dark:text-gray-500">
+                  {ans.createdAt ? format(ans.createdAt.toDate ? ans.createdAt.toDate() : ans.createdAt, 'PPpp') : ''}
                 </div>
               </div>
             </div>
 
-            <div className="prose prose-sm max-w-none mb-4 text-gray-800 dark:text-gray-100" style={{ color: ans.author === 'AI Assistant' ? (colors.mode === 'dark' ? '#fff' : '#22304a') : colors.text }}>
+            <div className="mb-4">
               {/* Syntax highlighting for code blocks in answer content */}
               {(() => {
                 const codeBlockMatch = ans.content && ans.content.match(/```(\w+)?\n([\s\S]*?)```/);
@@ -169,7 +193,29 @@ export default function AnswerSection({ answers, requestId }) {
               })()}
             </div>
 
-            <div className="flex items-center gap-4 border-t pt-4" style={{ borderColor: colors.inputBorder }}>
+            {/* Attachments */}
+            {ans.attachments && ans.attachments.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-2" style={{ color: colors.text }}>Attachments</h4>
+                <div className="space-y-2">
+                  {ans.attachments.map((attachment, idx) => (
+                    <a
+                      key={idx}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm hover:underline"
+                      style={{ color: colors.button }}
+                    >
+                      <FiPaperclip className="w-4 h-4" />
+                      {attachment.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 mt-4">
               <button 
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 border dark:border-gray-600"
                 style={{ background: ans.upvotedBy && user && ans.upvotedBy.includes(user.uid) ? (colors.mode === 'dark' ? '#1e293b' : '#bfdbfe') : undefined, color: ans.upvotedBy && user && ans.upvotedBy.includes(user.uid) ? colors.button : undefined }}
@@ -190,7 +236,7 @@ export default function AnswerSection({ answers, requestId }) {
                 <span className="font-medium">Reply</span>
               </button>
 
-              {user && (ans.userId === user.uid || ans.author === user.email || ans.authorEmail === user.email) && (
+              {user && (ans.userId === user.uid || user.isAdmin) && (
                 <button 
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors"
                   style={{ background: colors.mode === 'dark' ? '#7f1d1d' : '#fee2e2', color: colors.mode === 'dark' ? '#f87171' : '#b91c1c' }}
@@ -221,12 +267,25 @@ export default function AnswerSection({ answers, requestId }) {
               onChange={(e) => setNewAnswerContent(e.target.value)}
               rows="6"
             />
+            
+            {/* File Upload */}
+            <div className="mb-4">
+              <FileUpload
+                files={files}
+                onFilesAdd={(newFiles) => setFiles(prev => [...prev, ...newFiles])}
+                onFileRemove={(index) => setFiles(prev => prev.filter((_, i) => i !== index))}
+                label="Attach Files"
+                supportedTypes="Images, PDFs, and documents"
+              />
+            </div>
+
             <button 
               type="submit" 
               className="px-6 py-2.5 rounded-lg font-medium transition-colors"
               style={{ background: colors.button, color: colors.buttonSecondaryText }}
+              disabled={isSubmitting}
             >
-              <span style={{ color: colors.buttonSecondaryText }}>Submit Answer</span>
+              {isSubmitting ? 'Submitting...' : 'Submit Answer'}
             </button>
           </form>
         </div>

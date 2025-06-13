@@ -5,9 +5,9 @@ import { useAuth } from '@/src/context/authContext'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/src/firebase/firebase'
 import formatDate from '@/src/utils/formatDate'
-import QuestionOverview from '@/src/components/common/QuestionOverview'
-import FullDescription from '@/src/components/common/FullDescription'
-import AnswerSection from '@/src/components/common/AnswerSection'
+import QuestionOverview from '@/src/features/requests/QuestionOverview'
+import FullDescription from '@/src/features/requests/FullDescription'
+import AnswerSection from '@/src/features/requests/AnswerSection'
 import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { requestService } from '@/src/services/requestService';
