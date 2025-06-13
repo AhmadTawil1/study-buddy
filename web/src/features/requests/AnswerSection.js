@@ -29,7 +29,6 @@ export default function AnswerSection({ answers, requestId }) {
     const hasAI = answers.some(ans => ans.author === 'AI Assistant');
     if (!hasAI && requestId) {
       const fetchAI = async () => {
-        setAiLoading(true);
         try {
           // Fetch question details for AI
           const res = await fetch(`/api/ai-answer`, {
@@ -38,27 +37,25 @@ export default function AnswerSection({ answers, requestId }) {
             body: JSON.stringify({ question: window?.questionTitleAndDescription || '' })
           });
           const data = await res.json();
-          setAiAnswer({
-            id: 'ai',
+          
+          // Save the AI answer to the database
+          await questionService.addAnswer(requestId, {
             author: 'AI Assistant',
-            badge: 'AI Assistant',
+            badge: 'AI',
             content: data.answer,
-            createdAt: new Date(),
-            upvotes: 0,
-            upvotedBy: [],
-            userId: null
+            userId: 'ai-bot',
+            requestId: requestId
           });
         } catch (e) {
-          setAiAnswer(null);
+          console.error('Error generating AI answer:', e);
         }
-        setAiLoading(false);
       };
       fetchAI();
     }
   }, [answers, requestId]);
 
   // Helper to combine AI answer and user answers
-  const allAnswers = aiAnswer ? [aiAnswer, ...answers] : answers;
+  const allAnswers = answers;
 
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
@@ -131,11 +128,11 @@ export default function AnswerSection({ answers, requestId }) {
       </div>
 
       <div className="space-y-4">
-        {aiLoading && (
+        {/* {aiLoading && (
           <div className="rounded-lg shadow-sm border p-6" style={{ background: colors.card, borderColor: colors.inputBorder, color: colors.inputPlaceholder }}>
             Generating AI answer...
           </div>
-        )}
+        )} */}
         {allAnswers.map(ans => (
           <div
             key={ans.id}
