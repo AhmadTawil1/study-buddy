@@ -167,6 +167,7 @@ export const requestService = {
     const requestsRef = collection(db, 'requests');
     const newRequest = {
       ...requestData,
+      title_lowercase: requestData.title ? requestData.title.toLowerCase() : '',
       createdAt: serverTimestamp(),
       status: 'open',
       responses: []

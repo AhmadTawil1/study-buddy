@@ -225,6 +225,9 @@ export default function AskForm() {
       })
       console.log('AI answer saved')
 
+      // Wait a moment to ensure the answer is saved before redirecting
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
       setSuccess(true)
       router.push('/requests')
     } catch (err) {
