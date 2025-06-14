@@ -1,14 +1,16 @@
-// src/context/userContext.js
-//
-// UserProvider manages user profile data for the StudyBuddy app.
-// It provides the current Firebase user, user profile from Firestore, loading state, and update logic via context.
-// Used globally in app/layout.js to make user data available everywhere.
-//
-// Features:
-// - Listens for Firebase Auth state changes
-// - Fetches user profile from Firestore
-// - Provides updateUserProfile to update Firestore user data
-// - Exposes custom hook for use in components
+/**
+ * userContext.js
+ * 
+ * This module provides user state management for the StudyBuddy application.
+ * It implements a context system that handles:
+ * - Firebase Authentication state
+ * - Firestore user profile data
+ * - Profile updates and synchronization
+ * - Loading states and error handling
+ * 
+ * The context is used globally in the application to provide
+ * consistent access to user data across all components.
+ */
 
 'use client'
 
@@ -17,25 +19,54 @@ import { auth } from '@/src/firebase/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/src/firebase/firebase';
 
+/**
+ * UserContext
+ * 
+ * Context object that will hold the user state and related functions.
+ * Initialized as undefined and will be populated by the UserProvider.
+ */
 const UserContext = createContext();
 
+/**
+ * UserProvider Component
+ * 
+ * Manages user authentication state and profile data.
+ * Provides user information and update capabilities to child components.
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to be wrapped with user context
+ */
 export const UserProvider = ({ children }) => {
+  // State for Firebase Auth user
   const [user, setUser] = useState(null);
+  // Loading state for initial data fetch
   const [loading, setLoading] = useState(true);
+  // State for user profile data from Firestore
   const [userProfile, setUserProfile] = useState(null);
 
+  /**
+   * Effect hook to handle authentication state changes
+   * - Listens for Firebase Auth state changes
+   * - Fetches user profile from Firestore when user is authenticated
+   * - Cleans up subscription on unmount
+   */
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       setUser(user);
       
       if (user) {
-        // Fetch user profile from Firestore
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          setUserProfile({
-            id: userDoc.id,
-            ...userDoc.data()
-          });
+        try {
+          // Fetch user profile from Firestore
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserProfile({
+              id: userDoc.id,
+              ...userDoc.data()
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          setUserProfile(null);
         }
       } else {
         setUserProfile(null);
@@ -44,20 +75,30 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, []);
 
   /**
-   * Update the user's profile in Firestore and local state
-   * @param {Object} updates - Fields to update
+   * Updates the user's profile in Firestore and local state
+   * 
+   * @param {Object} updates - Object containing fields to update
+   * @returns {Promise<boolean>} - True if update was successful, false otherwise
+   * 
+   * Example usage:
+   * ```js
+   * const { updateUserProfile } = useUser();
+   * await updateUserProfile({ displayName: 'New Name' });
+   * ```
    */
   const updateUserProfile = async (updates) => {
-    if (!user) return;
+    if (!user) return false;
 
     try {
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, updates);
       
+      // Update local state with new data
       setUserProfile(prev => ({
         ...prev,
         ...updates
@@ -70,11 +111,12 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Context value containing user state and functions
   const value = {
-    user,
-    userProfile,
-    loading,
-    updateUserProfile
+    user,           // Firebase Auth user object
+    userProfile,    // User profile data from Firestore
+    loading,        // Loading state for initial data fetch
+    updateUserProfile // Function to update user profile
   };
 
   return (
@@ -86,7 +128,19 @@ export const UserProvider = ({ children }) => {
 
 /**
  * Custom hook to access user context
- * @returns {Object} User context containing user, userProfile, loading, and updateUserProfile
+ * 
+ * @returns {Object} User context containing:
+ *   - user: Firebase Auth user object
+ *   - userProfile: User profile data from Firestore
+ *   - loading: Loading state for initial data fetch
+ *   - updateUserProfile: Function to update user profile
+ * 
+ * @throws {Error} If used outside of UserProvider
+ * 
+ * Example usage:
+ * ```js
+ * const { user, userProfile, loading, updateUserProfile } = useUser();
+ * ```
  */
 export const useUser = () => {
   const context = useContext(UserContext);
