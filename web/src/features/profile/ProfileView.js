@@ -1,8 +1,8 @@
 // src/features/profile/ProfileView.js
 'use client'
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/src/context/authContext'
-import formatDate from '@/src/utils/formatDate'
+import { useRouter } from 'next/navigation'
+import { formatDistanceToNow } from 'date-fns'
 import { Tab } from '@headlessui/react'
 import { 
   UserCircleIcon, 
@@ -10,27 +10,27 @@ import {
   TrophyIcon, 
   QuestionMarkCircleIcon,
   ChatBubbleLeftRightIcon,
-  BookmarkIcon,
   BellIcon,
-  LinkIcon,
-  AcademicCapIcon,
   ShieldExclamationIcon,
   ArrowRightOnRectangleIcon,
-  TrashIcon,
-  ClockIcon,
-  HandThumbUpIcon
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import { FaGithub, FaLinkedin } from 'react-icons/fa'
-import { formatDistanceToNow } from 'date-fns'
+
+// Context and Services
+import { useAuth } from '@/src/context/authContext'
+import { useTheme } from '@/src/context/themeContext'
 import { profileService } from '@/src/services/profileService'
 import { requestService } from '@/src/services/requestService'
-import { useRouter } from 'next/navigation'
-import { FiBookmark } from 'react-icons/fi'
-import Link from 'next/link'
-import { useTheme } from '@/src/context/themeContext'
+
+// Utils
+import formatDate from '@/src/utils/formatDate'
 
 export default function ProfileView({ userId: propUserId }) {
   const { user, logout } = useAuth()
+  const { colors, mode } = useTheme()
+  const router = useRouter()
+
   const [profile, setProfile] = useState(null)
   const [myQuestions, setMyQuestions] = useState([])
   const [myAnswers, setMyAnswers] = useState([])
@@ -42,8 +42,6 @@ export default function ProfileView({ userId: propUserId }) {
     averageRating: 0,
     rank: 0
   })
-  const router = useRouter()
-  const { colors, mode } = useTheme()
 
   // Determine which userId to use
   const userId = propUserId || (user ? user.uid : null)
@@ -79,7 +77,7 @@ export default function ProfileView({ userId: propUserId }) {
           return req ? { ...req, savedAt: savedQ.savedAt } : null;
         })
       );
-      setSavedQuestions(savedQuestionDetails.filter(Boolean)); // Filter out nulls
+      setSavedQuestions(savedQuestionDetails.filter(Boolean));
       
       const statsData = await profileService.getUserStats(userId, user ? user.email : null)
       setStats({
@@ -103,7 +101,8 @@ export default function ProfileView({ userId: propUserId }) {
       description: `Answered: ${a.questionTitle || a.content?.substring(0, 50) + '...'}`,
       time: a.createdAt,
     })),
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  .slice(0, 6); // Only show the 6 most recent activities
 
   if (!user || !profile) return <p>Loading...</p>
 
@@ -235,86 +234,92 @@ export default function ProfileView({ userId: propUserId }) {
                 className="rounded-xl p-3 mt-2"
                 style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
               >
-                <ul className="space-y-4">
-                  {myQuestions.length === 0 ? (
-                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No questions asked yet.</li>
-                  ) : (
-                    myQuestions.map((q) => (
-                      <li
-                        key={q.id}
-                        onClick={() => router.push(`/requests/${q.id}`)}
-                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
-                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
-                      >
-                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
-                          {q.title}
-                        </h3>
-                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
-                          <li>{q.subject}</li>
-                          <li>&middot;</li>
-                          <li>{formatDate(q.createdAt?.toDate())}</li>
-                        </ul>
-                        <span className={'absolute inset-0 rounded-md'} />
-                      </li>
-                    ))
-                  )}
-                </ul>
+                <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <ul className="space-y-4">
+                    {myQuestions.length === 0 ? (
+                      <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No questions asked yet.</li>
+                    ) : (
+                      myQuestions.map((q) => (
+                        <li
+                          key={q.id}
+                          onClick={() => router.push(`/requests/${q.id}`)}
+                          className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                          style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                        >
+                          <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                            {q.title}
+                          </h3>
+                          <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                            <li>{q.subject}</li>
+                            <li>&middot;</li>
+                            <li>{formatDate(q.createdAt?.toDate())}</li>
+                          </ul>
+                          <span className={'absolute inset-0 rounded-md'} />
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               </Tab.Panel>
               <Tab.Panel
                 className="rounded-xl p-3 mt-2"
                 style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
               >
-                <ul className="space-y-4">
-                  {myAnswers.length === 0 ? (
-                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No answers provided yet.</li>
-                  ) : (
-                    myAnswers.map((a) => (
-                      <li
-                        key={a.id}
-                        onClick={() => router.push(`/requests/${a.requestId}`)}
-                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
-                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
-                      >
-                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
-                          {a.questionTitle || a.content?.substring(0, 50) + '...'}
-                        </h3>
-                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
-                          <li>Answered on {formatDate(a.createdAt?.toDate())}</li>
-                        </ul>
-                        <span className={'absolute inset-0 rounded-md'} />
-                      </li>
-                    ))
-                  )}
-                </ul>
+                <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <ul className="space-y-4">
+                    {myAnswers.length === 0 ? (
+                      <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No answers provided yet.</li>
+                    ) : (
+                      myAnswers.map((a) => (
+                        <li
+                          key={a.id}
+                          onClick={() => router.push(`/requests/${a.requestId}`)}
+                          className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                          style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                        >
+                          <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                            {a.questionTitle || a.content?.substring(0, 50) + '...'}
+                          </h3>
+                          <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                            <li>Answered on {formatDate(a.createdAt?.toDate())}</li>
+                          </ul>
+                          <span className={'absolute inset-0 rounded-md'} />
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               </Tab.Panel>
               <Tab.Panel
                 className="rounded-xl p-3 mt-2"
                 style={{ background: mode === 'dark' ? '#23272f' : '#fff', color: mode === 'dark' ? '#F3F4F6' : colors.text }}
               >
-                <ul className="space-y-4">
-                  {savedQuestions.length === 0 ? (
-                    <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No saved questions yet.</li>
-                  ) : (
-                    savedQuestions.map((q) => (
-                      <li
-                        key={q.id}
-                        onClick={() => router.push(`/requests/${q.id}`)}
-                        className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
-                        style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
-                      >
-                        <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
-                          {q.title}
-                        </h3>
-                        <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
-                          <li>{q.subject}</li>
-                          <li>&middot;</li>
-                          <li>Saved on {formatDate(q.savedAt?.toDate())}</li>
-                        </ul>
-                        <span className={'absolute inset-0 rounded-md'} />
-                      </li>
-                    ))
-                  )}
-                </ul>
+                <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  <ul className="space-y-4">
+                    {savedQuestions.length === 0 ? (
+                      <li style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>No saved questions yet.</li>
+                    ) : (
+                      savedQuestions.map((q) => (
+                        <li
+                          key={q.id}
+                          onClick={() => router.push(`/requests/${q.id}`)}
+                          className="relative rounded-md p-3 hover:bg-gray-800/60 cursor-pointer transition-colors"
+                          style={{ background: mode === 'dark' ? '#181a20' : '#f3f4f6' }}
+                        >
+                          <h3 className="text-sm font-medium leading-5" style={{ color: mode === 'dark' ? '#fff' : '#111827' }}>
+                            {q.title}
+                          </h3>
+                          <ul className="mt-1 flex space-x-1 text-xs font-normal leading-4" style={{ color: mode === 'dark' ? '#A1A1AA' : '#6B7280' }}>
+                            <li>{q.subject}</li>
+                            <li>&middot;</li>
+                            <li>Saved on {formatDate(q.savedAt?.toDate())}</li>
+                          </ul>
+                          <span className={'absolute inset-0 rounded-md'} />
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>
