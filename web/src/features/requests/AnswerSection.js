@@ -13,7 +13,7 @@ import { useTheme } from '@/src/context/themeContext';
 import FileUpload from '@/src/components/common/FileUpload';
 import { uploadFiles } from '@/src/services/storageService';
 
-export default function AnswerSection({ answers, requestId }) {
+export default function AnswerSection({ answers, requestId, questionTitle, questionDescription }) {
   const { user } = useAuth();
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [showReplies, setShowReplies] = useState({});
@@ -27,18 +27,15 @@ export default function AnswerSection({ answers, requestId }) {
   // Fetch AI answer if not present
   useEffect(() => {
     const hasAI = answers.some(ans => ans.author === 'AI Assistant');
-    if (!hasAI && requestId) {
+    if (!hasAI && requestId && questionTitle) {
       const fetchAI = async () => {
         try {
-          // Fetch question details for AI
           const res = await fetch(`/api/ai-answer`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: window?.questionTitleAndDescription || '' })
+            body: JSON.stringify({ question: `${questionTitle}\n\n${questionDescription || ''}` })
           });
           const data = await res.json();
-          
-          // Save the AI answer to the database
           await questionService.addAnswer(requestId, {
             author: 'AI Assistant',
             badge: 'AI',
@@ -52,7 +49,7 @@ export default function AnswerSection({ answers, requestId }) {
       };
       fetchAI();
     }
-  }, [answers, requestId]);
+  }, [answers, requestId, questionTitle, questionDescription]);
 
   // Helper to combine AI answer and user answers
   const allAnswers = answers;
@@ -136,13 +133,11 @@ export default function AnswerSection({ answers, requestId }) {
         {allAnswers.map(ans => (
           <div
             key={ans.id}
-            className={`rounded-lg shadow-sm border p-6 ${ans.author === 'AI Assistant' ? 'bg-blue-100 dark:bg-gray-800' : ''}`}
+            className={`rounded-lg shadow-sm border p-6`}
             style={{
-              background: ans.author === 'AI Assistant'
-                ? (colors.mode === 'dark' ? undefined : '#e5ecf6')
-                : colors.card,
+              background: colors.card,
               borderColor: colors.inputBorder,
-              color: ans.author === 'AI Assistant' ? (colors.mode === 'dark' ? '#fff' : '#22304a') : colors.text
+              color: colors.text
             }}
           >
             <div className="flex items-center gap-3 mb-4">
@@ -185,7 +180,7 @@ export default function AnswerSection({ answers, requestId }) {
                     </SyntaxHighlighter>
                   );
                 } else {
-                  return <span className="text-gray-800 dark:text-gray-100">{ans.content}</span>;
+                  return <span style={{ color: colors.text }}>{ans.content}</span>;
                 }
               })()}
             </div>

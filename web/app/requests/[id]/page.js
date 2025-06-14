@@ -197,7 +197,7 @@ export default function RequestDetails({ params }) {
             />
           </Card>
           <Card bgColor={colors.card} className="p-6">
-            <AnswerSection answers={answers} requestId={request.id} />
+            <AnswerSection answers={answers} requestId={request.id} questionTitle={request.title} questionDescription={request.description} />
           </Card>
         </div>
         {/* Sidebar */}

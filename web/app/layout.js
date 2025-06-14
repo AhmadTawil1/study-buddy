@@ -56,11 +56,11 @@ export default function RootLayout({ children }) {
                 <QuestionProvider>
                   <NotificationProvider>
                     {/* Main container with flex layout and background */}
-                    <div className="flex flex-col min-h-screen bg-slate-50 overflow-visible">
+                    <div className="flex flex-col min-h-screen overflow-visible">
                       {/* Navigation bar fixed at the top */}
                       <Navbar />
                       {/* Main content area with responsive padding */}
-                      <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 bg-slate-50 mt-12 overflow-visible">
+                      <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 mt-12 overflow-visible">
                         {children}
                       </main>
                       {/* Footer at the bottom */}

@@ -166,7 +166,7 @@ export default function Navbar() {
               </>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link href="/login" className="text-gray-900 hover:text-blue-600 px-3 py-2 text-base font-medium transition-colors">
+                <Link href="/login" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                   Sign In
                 </Link>
                 <Link href="/signup" className="bg-blue-600 text-white px-5 py-2 rounded-lg text-base font-semibold hover:bg-blue-700 transition">
