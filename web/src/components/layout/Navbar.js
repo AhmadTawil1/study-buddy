@@ -63,16 +63,20 @@ export default function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 backdrop-blur shadow-lg transition-shadow duration-300 bg-opacity-95"
+      className="sticky top-0 z-50 backdrop-blur shadow-lg transition-shadow duration-300 bg-opacity-95 border-b border-gray-200"
       style={{ background: colors.card, color: colors.text }}
     >
+      {/* Overlay for mobile menu */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+      )}
       {/* Main navigation bar content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Brand and desktop nav links */}
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center group">
-              <span className="ml-2 text-2xl font-extrabold" style={{ color: colors.button }}>StudyBuddy</span>
+          <div className="flex items-center min-w-0">
+            <Link href="/" className="flex-shrink-0 flex items-center group min-w-0">
+              <span className="ml-2 text-xl sm:text-2xl font-extrabold truncate" style={{ color: colors.button }}>StudyBuddy</span>
             </Link>
             <div className="hidden md:ml-8 md:flex md:space-x-6">
               <Link href="/" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
@@ -88,7 +92,7 @@ export default function Navbar() {
           </div>
 
           {/* User profile menu (desktop) */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {loading ? (
               <div>Loading...</div>
             ) : user ? (
@@ -163,15 +167,14 @@ export default function Navbar() {
                 </Link>
               </>
             )}
-            {/* Modern dark mode toggle switch */}
             <button
               onClick={toggleMode}
-              className="ml-8 flex items-center justify-center w-16 h-9 rounded-full border-2 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-opacity-80 shadow-md"
+              className="ml-4 sm:ml-8 flex items-center justify-center w-12 sm:w-16 h-9 rounded-full border-2 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-opacity-80 shadow-md"
               style={{ background: mode === 'dark' ? colors.inputBg : '#f3f4f6', borderColor: colors.inputBorder }}
               aria-label="Toggle dark mode"
               title="Toggle dark mode"
             >
-              <span className="relative flex items-center w-12 h-6">
+              <span className="relative flex items-center w-10 sm:w-12 h-6">
                 <FaSun className={`absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${mode === 'dark' ? 'text-gray-400' : 'text-yellow-400'}`} />
                 <span
                   className={`absolute left-0 top-0 w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 border-2 flex items-center justify-center ${mode === 'dark' ? 'translate-x-6 bg-gray-700 border-blue-400' : 'translate-x-0 bg-yellow-400 border-yellow-300'}`}
@@ -184,10 +187,10 @@ export default function Navbar() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex md:hidden items-center">
+          <div className="flex md:hidden items-center ml-2">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset transition"
+              className="inline-flex items-center justify-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset transition w-10 h-10"
               style={{ color: colors.text, background: colors.inputBg }}
             >
               <span className="sr-only">Open main menu</span>
@@ -198,42 +201,42 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu with smooth transition */}
-      <div className={`md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} id="mobile-menu">
-        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl" style={{ background: colors.card }}>
-          <Link href="/" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
+      <div className={`fixed left-0 right-0 top-16 md:hidden transition-all duration-300 ease-in-out z-50 ${isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} id="mobile-menu">
+        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl w-full" style={{ background: colors.card }}>
+          <Link href="/" className="block px-6 py-4 text-lg font-medium transition-colors" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
             Home
           </Link>
-          <Link href="/ask" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
+          <Link href="/ask" className="block px-6 py-4 text-lg font-medium transition-colors" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
             Ask
           </Link>
-          <Link href="/requests" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
+          <Link href="/requests" className="block px-6 py-4 text-lg font-medium transition-colors" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
             Requests
           </Link>
         </div>
-        <div className="pt-4 pb-3 border-t border-gray-200 bg-white/90 rounded-b-2xl shadow-xl">
+        <div className="pt-4 pb-3 border-t border-gray-200 bg-white/90 rounded-b-2xl shadow-xl w-full">
           {loading ? (
-            <div className="block px-3 py-2 text-base font-medium text-gray-900">Loading...</div>
+            <div className="block px-6 py-4 text-lg font-medium text-gray-900">Loading...</div>
           ) : user ? (
             <div className="space-y-1">
-              <div className="px-3 py-2">
+              <div className="px-6 py-2">
                 <NotificationDropdown />
               </div>
-              <Link href="/profile" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <Link href="/profile" className="block px-6 py-4 text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                 Your Profile
               </Link>
               <button
-                onClick={logout}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                className="block w-full text-left px-6 py-4 text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors"
               >
                 Logout
               </button>
             </div>
           ) : (
             <div className="space-y-1">
-              <Link href="/login" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <Link href="/login" className="block px-6 py-4 text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                 Sign In
               </Link>
-              <Link href="/signup" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <Link href="/signup" className="block px-6 py-4 text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
                 Register
               </Link>
             </div>
