@@ -371,24 +371,24 @@ export const requestService = {
     return '';
   },
 
-  // Save or unsave a request for a user
-  saveRequestForUser: async (userId, requestId) => {
-    console.log(`[saveRequestForUser] Attempting to save/unsave for user: ${userId}, request: ${requestId}`);
-    const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
-    const savedSnap = await getDoc(savedRef);
+  // // Save or unsave a request for a user
+  // saveRequestForUser: async (userId, requestId) => {
+  //   console.log(`[saveRequestForUser] Attempting to save/unsave for user: ${userId}, request: ${requestId}`);
+  //   const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
+  //   const savedSnap = await getDoc(savedRef);
 
-    if (savedSnap.exists()) {
-      console.log('[saveRequestForUser] Document exists, unsaving...');
-      await deleteDoc(savedRef);
-      console.log('[saveRequestForUser] Request unsaved successfully.');
-      return false; // Indicate unsaved
-    } else {
-      console.log('[saveRequestForUser] Document does not exist, saving...');
-      await setDoc(savedRef, { requestId, savedAt: serverTimestamp() });
-      console.log('[saveRequestForUser] Request saved successfully.');
-      return true; // Indicate saved
-    }
-  },
+  //   if (savedSnap.exists()) {
+  //     console.log('[saveRequestForUser] Document exists, unsaving...');
+  //     await deleteDoc(savedRef);
+  //     console.log('[saveRequestForUser] Request unsaved successfully.');
+  //     return false; // Indicate unsaved
+  //   } else {
+  //     console.log('[saveRequestForUser] Document does not exist, saving...');
+  //     await setDoc(savedRef, { requestId, savedAt: serverTimestamp() });
+  //     console.log('[saveRequestForUser] Request saved successfully.');
+  //     return true; // Indicate saved
+  //   }
+  // },
 
   // Save a question for a user
   saveQuestion: async (userId, requestId) => {

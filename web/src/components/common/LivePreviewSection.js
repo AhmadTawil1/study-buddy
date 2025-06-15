@@ -6,11 +6,13 @@ import { FiArrowRight, FiStar, FiUsers, FiBook } from 'react-icons/fi'
 import { fetchLatestQuestions, fetchTopHelpers, fetchFeaturedSubjects } from '@/src/firebase/queries'
 import { formatDistanceToNow } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext'
+import { requestService } from '@/src/services/requestService'
 
 export default function LivePreviewSection() {
   const [latestQuestions, setLatestQuestions] = useState([])
   const [topHelpers, setTopHelpers] = useState([])
   const [featuredSubjects, setFeaturedSubjects] = useState([])
+  const [unansweredQuestions, setUnansweredQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const { colors, mode } = useTheme();
 
@@ -26,10 +28,14 @@ export default function LivePreviewSection() {
         setLatestQuestions(qs)
         setTopHelpers(helpers)
         setFeaturedSubjects(subjects)
+        // Fetch unanswered questions (answersCount === 0 or isAnswered === false)
+        const unanswered = await requestService.getRequests({ unanswered: true, sortBy: 'newest' })
+        setUnansweredQuestions(unanswered.slice(0, 4))
       } catch (error) {
         setLatestQuestions([])
         setTopHelpers([])
         setFeaturedSubjects([])
+        setUnansweredQuestions([])
       } finally {
         setLoading(false)
       }
@@ -107,18 +113,15 @@ export default function LivePreviewSection() {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold" style={{ color: colors.text }}>Top Helpers</h2>
-              <Link href="/helpers" style={{ color: colors.button }} className="hover:underline flex items-center gap-1">
-                View all <FiArrowRight />
-              </Link>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1">
               {topHelpers.map((helper) => (
                 <div key={helper.id} className="flex items-center gap-4 p-4 rounded-lg transition" style={{ background: colors.inputBg, color: colors.text }}>
                   <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: colors.button + '22' }}>
                     <FiUsers className="w-6 h-6" style={{ color: colors.button }} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium" style={{ color: colors.button }}>{helper.displayName}</h3>
+                    <Link href={`/profile/${helper.id}`} className="font-medium hover:underline" style={{ color: colors.button }}>{helper.displayName}</Link>
                     <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: colors.inputPlaceholder }}>
                       <span>{helper.subjects?.join(", ") || "General"}</span>
                       <span>•</span>
@@ -133,7 +136,7 @@ export default function LivePreviewSection() {
             </div>
           </motion.div>
 
-          {/* Featured Subjects */}
+          {/* Unanswered Questions Section (replaces Featured Subjects) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -143,26 +146,36 @@ export default function LivePreviewSection() {
             style={{ background: colors.card, color: colors.text }}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold" style={{ color: colors.text }}>Featured Subjects</h2>
-              <Link href="/subjects" style={{ color: colors.button }} className="hover:underline flex items-center gap-1">
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: colors.text }}>Unanswered Questions</h2>
+                <div className="text-sm mt-1" style={{ color: colors.inputPlaceholder }}>
+                  Be the one to help a peer by answering their question!
+                </div>
+              </div>
+              <Link href="/requests?filter=unanswered" style={{ color: colors.button }} className="hover:underline flex items-center gap-1">
                 View all <FiArrowRight />
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {featuredSubjects.map((subject) => (
-                <Link
-                  key={subject.id}
-                  href={`/subjects/${subject.name.toLowerCase()}`}
-                  className="flex items-center gap-3 p-4 rounded-lg transition"
-                  style={{ background: colors.inputBg, color: colors.text }}
-                >
-                  <span className="text-2xl">{subject.icon || "📚"}</span>
-                  <div>
-                    <h3 className="font-medium" style={{ color: colors.button }}>{subject.name}</h3>
-                    <p className="text-sm" style={{ color: colors.inputPlaceholder }}>{subject.questionCount || 0} questions</p>
-                  </div>
-                </Link>
-              ))}
+            <div className="space-y-4 flex-1">
+              {unansweredQuestions.length === 0 ? (
+                <div style={{ color: colors.inputPlaceholder }}>No unanswered questions found.</div>
+              ) : (
+                unansweredQuestions.map((question) => (
+                  <Link
+                    key={question.id}
+                    href={`/requests/${question.id}`}
+                    className="block p-4 rounded-lg transition"
+                    style={{ background: colors.inputBg, color: colors.text }}
+                  >
+                    <h3 className="font-medium" style={{ color: colors.button }}>{question.title}</h3>
+                    <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: colors.inputPlaceholder }}>
+                      <span>{question.subject}</span>
+                      <span>•</span>
+                      <span>{question.createdAtFormatted || (question.createdAt ? formatDistanceToNow(new Date(question.createdAt), { addSuffix: true }) : '')}</span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </motion.div>
         </div>
