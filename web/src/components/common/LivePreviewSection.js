@@ -75,8 +75,12 @@ export default function LivePreviewSection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="rounded-xl shadow-lg p-6 flex flex-col h-full"
-            style={{ background: colors.card, color: colors.text }}
+            className="rounded-xl shadow-lg p-6 flex flex-col h-full border"
+            style={{ 
+              background: mode === 'dark' ? '#23272f' : '#fff',
+              color: colors.text,
+              borderColor: mode === 'dark' ? '#2d323c' : '#e5e7eb'
+            }}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold" style={{ color: colors.text }}>Latest Questions</h2>
@@ -89,8 +93,13 @@ export default function LivePreviewSection() {
                 <Link
                   key={question.id}
                   href={`/questions/${question.id}`}
-                  className="block p-4 rounded-lg transition"
-                  style={{ background: colors.inputBg, color: colors.text }}
+                  className="block p-4 rounded-lg transition border"
+                  style={{ 
+                    background: mode === 'dark' ? '#181a20' : '#f9fafb',
+                    color: colors.text,
+                    borderColor: mode === 'dark' ? '#23272f' : '#e5e7eb',
+                    boxShadow: mode === 'dark' ? '0 1px 2px #0002' : '0 1px 2px #0001'
+                  }}
                 >
                   <h3 className="font-medium" style={{ color: colors.button }}>{question.title}</h3>
                   <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: colors.inputPlaceholder }}>

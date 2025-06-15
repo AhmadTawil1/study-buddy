@@ -53,42 +53,53 @@ export default function HeroSection() {
             </div>
             {/* Professional user flow: Think -> Ask -> Peer */}
             <div className="flex justify-center mt-8 mb-2">
-              <div className="w-full max-w-2xl bg-white/80 dark:bg-gray-800 rounded-2xl shadow-lg px-4 py-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div
+                className="w-full max-w-2xl rounded-2xl shadow-lg px-4 py-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 border"
+                style={{
+                  background: mode === 'dark' ? colors.card : '#fff',
+                  color: colors.text,
+                  borderColor: mode === 'dark' ? '#23272f' : '#e5e7eb',
+                  boxShadow: mode === 'dark' ? '0 2px 8px #0004' : '0 2px 8px #0001'
+                }}
+              >
                 {/* Step 1 */}
                 <div className="flex flex-col items-center flex-1 text-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
-                    <span className="text-2xl">💡</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                    style={{ background: mode === 'dark' ? '#1e293b' : '#e0e7ff' }}>
+                    <span className="text-2xl" style={{ color: colors.button }}>💡</span>
                   </div>
                   <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Think</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Identify your question or challenge.</div>
+                  <div className="text-xs sm:text-sm" style={{ color: colors.inputPlaceholder }}>Identify your question or challenge.</div>
                 </div>
                 {/* Arrow/Divider */}
                 <div className="hidden sm:flex flex-col items-center justify-center">
-                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mb-1"></div>
-                  <span className="text-xl text-blue-400">→</span>
-                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mt-1"></div>
+                  <div className="w-10 h-1 rounded-full mb-1" style={{ background: mode === 'dark' ? '#334155' : '#c7d2fe' }}></div>
+                  <span className="text-xl" style={{ color: colors.button }}>→</span>
+                  <div className="w-10 h-1 rounded-full mt-1" style={{ background: mode === 'dark' ? '#334155' : '#c7d2fe' }}></div>
                 </div>
                 {/* Step 2 */}
                 <div className="flex flex-col items-center flex-1 text-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
-                    <span className="text-2xl">❓</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                    style={{ background: mode === 'dark' ? '#1e293b' : '#e0e7ff' }}>
+                    <span className="text-2xl" style={{ color: colors.button }}>❓</span>
                   </div>
                   <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Ask</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Post your question to the community.</div>
+                  <div className="text-xs sm:text-sm" style={{ color: colors.inputPlaceholder }}>Post your question to the community.</div>
                 </div>
                 {/* Arrow/Divider */}
                 <div className="hidden sm:flex flex-col items-center justify-center">
-                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mb-1"></div>
-                  <span className="text-xl text-blue-400">→</span>
-                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mt-1"></div>
+                  <div className="w-10 h-1 rounded-full mb-1" style={{ background: mode === 'dark' ? '#334155' : '#c7d2fe' }}></div>
+                  <span className="text-xl" style={{ color: colors.button }}>→</span>
+                  <div className="w-10 h-1 rounded-full mt-1" style={{ background: mode === 'dark' ? '#334155' : '#c7d2fe' }}></div>
                 </div>
                 {/* Step 3 */}
                 <div className="flex flex-col items-center flex-1 text-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
-                    <span className="text-2xl">🤝</span>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                    style={{ background: mode === 'dark' ? '#1e293b' : '#e0e7ff' }}>
+                    <span className="text-2xl" style={{ color: colors.button }}>🤝</span>
                   </div>
                   <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Connect</div>
-                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Get help from peers and experts.</div>
+                  <div className="text-xs sm:text-sm" style={{ color: colors.inputPlaceholder }}>Get help from peers and experts.</div>
                 </div>
               </div>
             </div>

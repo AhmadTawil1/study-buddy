@@ -198,8 +198,12 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu with smooth transition */}
-      <div className={`md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} id="mobile-menu">
-        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl" style={{ background: colors.card }}>
+      <div
+        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        style={{ background: isMobileMenuOpen ? (mode === 'dark' ? '#181a20ee' : '#fffefeee') : 'transparent' }}
+        id="mobile-menu"
+      >
+        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl w-full max-w-xs ml-auto h-full" style={{ background: colors.card }}>
           <Link href="/" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
             Home
           </Link>
@@ -230,10 +234,10 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="space-y-1">
-              <Link href="/login" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <Link href="/login" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                 Sign In
               </Link>
-              <Link href="/signup" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
+              <Link href="/signup" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                 Register
               </Link>
             </div>
