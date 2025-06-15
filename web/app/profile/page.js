@@ -12,6 +12,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!loading && !user) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+      }
       router.push('/login')
     }
   }, [user, loading, router])

@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import ReactDOM from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/src/context/themeContext';
 
 export default function NotificationDropdown() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -12,6 +13,7 @@ export default function NotificationDropdown() {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const router = useRouter();
+  const { colors, mode } = useTheme();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -62,7 +64,8 @@ export default function NotificationDropdown() {
     <div className="relative" ref={buttonRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none"
+        className="relative p-2 focus:outline-none"
+        style={{ color: colors.text }}
       >
         <BellIcon className="w-6 h-6" />
         {unreadCount > 0 && (
@@ -75,16 +78,25 @@ export default function NotificationDropdown() {
       {isOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
         <div
           ref={dropdownRef}
-          className="origin-top-right absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-[1000]"
-          style={{ top: '70px', right: '16px', left: 'auto', position: 'fixed', transform: 'translateX(-30%)' }}
+          className="origin-top-right absolute right-0 mt-2 w-80 rounded-lg shadow-lg border z-[1000]"
+          style={{ 
+            top: '70px', 
+            right: '16px', 
+            left: 'auto', 
+            position: 'fixed', 
+            transform: 'translateX(-30%)',
+            background: colors.card,
+            borderColor: colors.inputBorder
+          }}
         >
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b" style={{ borderColor: colors.inputBorder }}>
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+              <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Notifications</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                  className="text-sm hover:opacity-80 transition-opacity"
+                  style={{ color: colors.button }}
                 >
                   Mark all as read
                 </button>
@@ -94,7 +106,7 @@ export default function NotificationDropdown() {
 
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
+              <div className="p-4 text-center" style={{ color: colors.inputPlaceholder }}>
                 No notifications yet
               </div>
             ) : (
@@ -103,20 +115,25 @@ export default function NotificationDropdown() {
                   key={notification.id}
                   href={`/requests/${notification.requestId || notification.questionId || notification.id}`}
                   onClick={(e) => handleNotificationClick(notification, e)}
-                  className={`block p-4 border-b border-gray-100 hover:bg-gray-50 ${
-                    !notification.read ? 'bg-blue-50' : ''
+                  className={`block p-4 border-b hover:bg-opacity-50 transition-colors ${
+                    !notification.read ? 'bg-opacity-10' : ''
                   }`}
+                  style={{ 
+                    borderColor: colors.inputBorder,
+                    background: !notification.read ? colors.button + '10' : 'transparent',
+                    color: colors.text
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-xl">{getNotificationIcon(notification.type)}</span>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-sm" style={{ color: colors.text }}>{notification.message}</p>
+                      <p className="text-xs mt-1" style={{ color: colors.inputPlaceholder }}>
                         {notification.createdAt && formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true })}
                       </p>
                     </div>
                     {!notification.read && (
-                      <span className="w-2 h-2 bg-blue-500 rounded-full mt-2" />
+                      <span className="w-2 h-2 rounded-full mt-2" style={{ background: colors.button }} />
                     )}
                   </div>
                 </a>

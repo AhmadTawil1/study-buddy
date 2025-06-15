@@ -183,7 +183,15 @@ export default function SignupPage() {
             </button>
           </form>
         )}
-        <div className="flex flex-col gap-2 mt-6">
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t" style={{ borderColor: colors.inputBorder }}></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2" style={{ background: colors.card, color: colors.text }}>or</span>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
           <button
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"

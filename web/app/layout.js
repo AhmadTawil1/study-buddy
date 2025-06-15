@@ -60,7 +60,7 @@ export default function RootLayout({ children }) {
                       {/* Navigation bar fixed at the top */}
                       <Navbar />
                       {/* Main content area with responsive padding */}
-                      <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 mt-12 overflow-visible">
+                      <main className="flex-1 w-full px-0 md:px-0 lg:px-0 py-0 overflow-visible">
                         {children}
                       </main>
                       {/* Footer at the bottom */}

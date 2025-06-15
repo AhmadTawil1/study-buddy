@@ -22,7 +22,13 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password)
-      router.push('/profile')
+      const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
+      if (redirectTo) {
+        localStorage.removeItem('redirectAfterLogin');
+        router.push(redirectTo);
+      } else {
+        router.push('/profile');
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -73,7 +79,24 @@ export default function LoginPage() {
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
             style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithGoogle}
+            onClick={async () => {
+              setLoading(true);
+              setError('');
+              try {
+                await signInWithGoogle();
+                const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
+                if (redirectTo) {
+                  localStorage.removeItem('redirectAfterLogin');
+                  router.push(redirectTo);
+                } else {
+                  router.push('/profile');
+                }
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <img src="/google.svg" alt="Google" className="h-5 w-5" /> Sign in with Google
           </button>
@@ -81,7 +104,24 @@ export default function LoginPage() {
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
             style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithGithub}
+            onClick={async () => {
+              setLoading(true);
+              setError('');
+              try {
+                await signInWithGithub();
+                const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
+                if (redirectTo) {
+                  localStorage.removeItem('redirectAfterLogin');
+                  router.push(redirectTo);
+                } else {
+                  router.push('/profile');
+                }
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign in with GitHub
           </button>
@@ -89,7 +129,24 @@ export default function LoginPage() {
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
             style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithMicrosoft}
+            onClick={async () => {
+              setLoading(true);
+              setError('');
+              try {
+                await signInWithMicrosoft();
+                const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
+                if (redirectTo) {
+                  localStorage.removeItem('redirectAfterLogin');
+                  router.push(redirectTo);
+                } else {
+                  router.push('/profile');
+                }
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <img src="/microsoft.svg" alt="Microsoft" className="h-5 w-5" /> Sign in with Microsoft
           </button>

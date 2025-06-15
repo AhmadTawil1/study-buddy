@@ -20,6 +20,7 @@ import { useAuth } from '@/src/context/authContext'
 import ReactDOM from 'react-dom'
 import NotificationDropdown from './NotificationDropdown'
 import { useTheme } from '@/src/context/themeContext'
+import { FaSun, FaMoon } from 'react-icons/fa'
 
 export default function Navbar() {
   // State for mobile and profile menus
@@ -86,19 +87,8 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Dark mode toggle button */}
-          <button
-            onClick={toggleMode}
-            className="ml-4 px-3 py-2 rounded-lg border text-lg shadow transition-colors"
-            style={{ background: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }}
-            aria-label="Toggle dark mode"
-            title="Toggle dark mode"
-          >
-            {mode === 'dark' ? '🌙' : '☀️'}
-          </button>
-
           {/* User profile menu (desktop) */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
             {loading ? (
               <div>Loading...</div>
             ) : user ? (
@@ -129,7 +119,6 @@ export default function Navbar() {
                       </div>
                     )}
                   </button>
-
                   {/* Profile dropdown menu (portal) */}
                   {isProfileMenuOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
                     <div
@@ -165,15 +154,33 @@ export default function Navbar() {
                 </div>
               </>
             ) : (
-              <div className="flex items-center space-x-4">
+              <>
                 <Link href="/login" className="px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
                   Sign In
                 </Link>
                 <Link href="/signup" className="bg-blue-600 text-white px-5 py-2 rounded-lg text-base font-semibold hover:bg-blue-700 transition">
                   Register
                 </Link>
-              </div>
+              </>
             )}
+            {/* Modern dark mode toggle switch */}
+            <button
+              onClick={toggleMode}
+              className="ml-8 flex items-center justify-center w-16 h-9 rounded-full border-2 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-opacity-80 shadow-md"
+              style={{ background: mode === 'dark' ? colors.inputBg : '#f3f4f6', borderColor: colors.inputBorder }}
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              <span className="relative flex items-center w-12 h-6">
+                <FaSun className={`absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${mode === 'dark' ? 'text-gray-400' : 'text-yellow-400'}`} />
+                <span
+                  className={`absolute left-0 top-0 w-6 h-6 rounded-full shadow-md transform transition-transform duration-300 border-2 flex items-center justify-center ${mode === 'dark' ? 'translate-x-6 bg-gray-700 border-blue-400' : 'translate-x-0 bg-yellow-400 border-yellow-300'}`}
+                >
+                  {mode === 'dark' ? <FaMoon className="w-4 h-4 text-blue-300" /> : <FaSun className="w-4 h-4 text-yellow-500" />}
+                </span>
+                <FaMoon className={`absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${mode === 'dark' ? 'text-blue-400' : 'text-gray-400'}`} />
+              </span>
+            </button>
           </div>
 
           {/* Mobile menu button */}
