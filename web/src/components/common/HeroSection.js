@@ -38,18 +38,24 @@ export default function HeroSection() {
               Join our community of learners and helpers. Get answers to your questions, share your knowledge, and grow your skills with StudyBuddy.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row justify-center md:justify-start sm:gap-4 mb-8 sm:mb-12 w-full">
-              <Link href="/ask">
-                <button style={{ background: colors.button, color: colors.buttonSecondaryText }}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-lg font-semibold shadow hover:opacity-90 transition text-base sm:text-lg flex items-center gap-2">
-                  Start Asking <FiArrowRight />
-                </button>
-              </Link>
-              <Link href="/requests">
-                <button style={{ background: colors.buttonSecondary, color: colors.button }}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-lg font-semibold border border-blue-200 hover:opacity-90 transition text-base sm:text-lg">
-                  Browse Requests
-                </button>
-              </Link>
+              <div className="flex w-full items-center justify-start">
+                <Link href="/ask">
+                  <button style={{ background: colors.button, color: colors.buttonSecondaryText }}
+                    className="px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold shadow hover:opacity-90 transition text-base sm:text-lg flex items-center gap-2"
+                    aria-label="Start Asking">
+                    Start Asking <FiArrowRight />
+                  </button>
+                </Link>
+              </div>
+              <div className="flex w-full items-center justify-center">
+                <Link href="/requests">
+                  <button style={{ background: colors.buttonSecondary, color: colors.button }}
+                    className="w-auto px-6 sm:px-8 py-2 sm:py-3 rounded-lg font-semibold border border-blue-200 hover:opacity-90 transition text-base sm:text-lg"
+                    aria-label="Browse Requests">
+                    Browse Requests
+                  </button>
+                </Link>
+              </div>
             </div>
             {/* Professional user flow: Think -> Ask -> Peer */}
             <div className="flex justify-center mt-8 mb-2">
