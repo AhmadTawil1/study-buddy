@@ -37,19 +37,24 @@ export default function HeroSection() {
             <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-10 max-w-2xl mx-auto md:mx-0" style={{ color: colors.inputPlaceholder }}>
               Join our community of learners and helpers. Get answers to your questions, share your knowledge, and grow your skills with StudyBuddy.
             </p>
-            <div className="flex flex-col gap-3 sm:flex-row justify-center md:justify-start sm:gap-4 mb-8 sm:mb-12 w-full">
-              <Link href="/ask">
+            <div className="flex flex-col gap-3 sm:flex-row justify-center md:justify-start sm:gap-4 mb-8 sm:mb-12 w-full items-center relative">
+              <div className="relative w-full flex flex-col items-center">
                 <button style={{ background: colors.button, color: colors.buttonSecondaryText }}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-lg font-semibold shadow hover:opacity-90 transition text-base sm:text-lg flex items-center gap-2">
-                  Start Asking <FiArrowRight />
+                  className="px-5 py-2 rounded-full font-semibold shadow-md hover:opacity-90 transition text-base flex items-center gap-2 min-w-[120px] justify-center absolute left-1/2 -translate-x-full sm:static sm:translate-x-0 sm:ml-0"
+                  aria-label="Start Asking"
+                  onClick={() => window.location.href='/ask'}
+                >
+                  <FiArrowRight className="text-lg" />
+                  <span className="inline">Start Asking</span>
                 </button>
-              </Link>
-              <Link href="/requests">
-                <button style={{ background: colors.buttonSecondary, color: colors.button }}
-                  className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-lg font-semibold border border-blue-200 hover:opacity-90 transition text-base sm:text-lg">
-                  Browse Requests
-                </button>
-              </Link>
+                <Link href="/requests">
+                  <button style={{ background: 'transparent', color: colors.button, border: `2px solid ${colors.button}` }}
+                    className="px-5 py-2 rounded-full font-semibold shadow-md hover:bg-blue-50 dark:hover:bg-gray-800 transition text-base flex items-center gap-2 min-w-[120px] justify-center mt-10 sm:mt-0"
+                    aria-label="Browse Requests">
+                    <span className="inline">Browse Requests</span>
+                  </button>
+                </Link>
+              </div>
             </div>
             {/* Professional user flow: Think -> Ask -> Peer */}
             <div className="flex justify-center mt-8 mb-2">
