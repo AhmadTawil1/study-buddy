@@ -61,6 +61,16 @@ export default function Navbar() {
     };
   }, [isProfileMenuOpen]);
 
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isMobileMenuOpen]);
+
   return (
     <nav
       className="sticky top-0 z-50 backdrop-blur shadow-lg transition-shadow duration-300 bg-opacity-95"
@@ -197,53 +207,78 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile menu with smooth transition */}
-      <div
-        className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ background: isMobileMenuOpen ? (mode === 'dark' ? '#181a20ee' : '#fffefeee') : 'transparent' }}
-        id="mobile-menu"
-      >
-        <div className="pt-2 pb-3 space-y-1 rounded-b-2xl shadow-xl w-full max-w-xs ml-auto h-full" style={{ background: colors.card }}>
-          <Link href="/" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
-            Home
-          </Link>
-          <Link href="/ask" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
-            Ask
-          </Link>
-          <Link href="/requests" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
-            Requests
-          </Link>
-        </div>
-        <div className="pt-4 pb-3 border-t border-gray-200 bg-white/90 rounded-b-2xl shadow-xl">
-          {loading ? (
-            <div className="block px-3 py-2 text-base font-medium text-gray-900">Loading...</div>
-          ) : user ? (
-            <div className="space-y-1">
-              <div className="px-3 py-2">
-                <NotificationDropdown />
+      {/* Mobile menu with improved UX */}
+      {isMobileMenuOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 z-40 bg-black bg-opacity-40 transition-opacity duration-300"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu overlay"
+          />
+          {/* Slide-in menu */}
+          <div
+            className="fixed top-0 right-0 h-full w-80 max-w-full z-50 bg-white dark:bg-gray-900 shadow-2xl flex flex-col transition-transform duration-300"
+            style={{
+              transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
+              background: mode === 'dark' ? colors.card : '#fff',
+              color: colors.text
+            }}
+            id="mobile-menu"
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-4 right-4 text-2xl p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              style={{ color: colors.text, background: 'transparent' }}
+              aria-label="Close menu"
+            >
+              <FiX />
+            </button>
+            <div className="pt-16 pb-3 space-y-1 flex-1 flex flex-col justify-start" style={{ background: 'transparent' }}>
+              <Link href="/" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                Home
+              </Link>
+              <Link href="/ask" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                Ask
+              </Link>
+              <Link href="/requests" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                Requests
+              </Link>
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                {loading ? (
+                  <div className="block px-6 py-3 text-lg font-medium" style={{ color: colors.text }}>Loading...</div>
+                ) : user ? (
+                  <>
+                    <div className="px-6 py-3">
+                      <NotificationDropdown />
+                    </div>
+                    <Link href="/profile" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                      Your Profile
+                    </Link>
+                    <button
+                      onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                      className="block w-full text-left px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800"
+                      style={{ color: colors.text }}
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                      Sign In
+                    </Link>
+                    <Link href="/signup" className="block px-6 py-3 text-lg font-medium transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-gray-800" style={{ color: colors.text }} onClick={() => setIsMobileMenuOpen(false)}>
+                      Register
+                    </Link>
+                  </>
+                )}
               </div>
-              <Link href="/profile" className="block px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors">
-                Your Profile
-              </Link>
-              <button
-                onClick={logout}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-900 hover:text-blue-600 transition-colors"
-              >
-                Logout
-              </button>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <Link href="/login" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
-                Sign In
-              </Link>
-              <Link href="/signup" className="block px-3 py-2 text-base font-medium transition-colors" style={{ color: colors.text }}>
-                Register
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </nav>
   )
 }
