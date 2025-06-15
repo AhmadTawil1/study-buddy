@@ -208,21 +208,22 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu with improved UX */}
-      {isMobileMenuOpen && (
+      {isMobileMenuOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
         <>
-          {/* Overlay */}
+          {/* Overlay backdrop for mobile menu */}
           <div
-            className="fixed inset-0 z-40 bg-black bg-opacity-40 transition-opacity duration-300"
+            className="fixed inset-0 top-0 left-0 z-[9999] bg-black bg-opacity-50 transition-opacity duration-300"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-label="Close menu overlay"
           />
           {/* Slide-in menu */}
           <div
-            className="fixed top-0 right-0 h-full w-80 max-w-full z-50 bg-white dark:bg-gray-900 shadow-2xl flex flex-col transition-transform duration-300"
+            className="fixed top-0 right-0 h-full w-80 max-w-full z-[9999] bg-white dark:bg-gray-900 shadow-2xl flex flex-col transition-transform duration-300"
             style={{
               transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(100%)',
               background: mode === 'dark' ? colors.card : '#fff',
-              color: colors.text
+              color: colors.text,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)'
             }}
             id="mobile-menu"
           >
@@ -277,7 +278,8 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </nav>
   )
