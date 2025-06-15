@@ -8,12 +8,27 @@ import { requestService } from '@/src/services/requestService'
 import { format } from 'date-fns'
 import Card from '@/src/components/common/Card'
 import { useTheme } from '@/src/context/themeContext'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { db } from '@/src/firebase/firebase'
 
 export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount, userId, createdAt }) {
   const { user } = useAuth()
   const [isSaved, setIsSaved] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const { colors } = useTheme();
+  const [realAnswersCount, setRealAnswersCount] = useState(0);
+
+  useEffect(() => {
+    // Real-time listener for answers excluding AI Assistant
+    if (!id) return;
+    const q = query(collection(db, 'answers'), where('requestId', '==', id));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const answers = snapshot.docs.map(doc => doc.data());
+      const humanAnswers = answers.filter(a => a.author !== 'AI Assistant');
+      setRealAnswersCount(humanAnswers.length);
+    });
+    return () => unsub();
+  }, [id]);
 
   useEffect(() => {
     if (!user) return
@@ -89,7 +104,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
       <div className="flex justify-between items-center">
         <div className="flex items-center text-sm" style={{ color: colors.inputPlaceholder }}>
           <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
-          {pluralize(Math.max(0, answersCount - 1), 'answer')}
+          {pluralize(realAnswersCount, 'answer')}
         </div>
         <div className="flex gap-2">
           <Link
