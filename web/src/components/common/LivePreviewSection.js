@@ -28,9 +28,10 @@ export default function LivePreviewSection() {
         setLatestQuestions(qs)
         setTopHelpers(helpers)
         setFeaturedSubjects(subjects)
-        // Fetch unanswered questions (answersCount === 0 or isAnswered === false)
-        const unanswered = await requestService.getRequests({ unanswered: true, sortBy: 'newest' })
-        setUnansweredQuestions(unanswered.slice(0, 4))
+        // Fetch unanswered questions (answersCount === 0 and isAnswered !== true)
+        let unanswered = await requestService.getRequests({ unanswered: true, sortBy: 'newest' })
+        unanswered = unanswered.filter(q => (q.answersCount === 0 || q.answersCount === undefined) && (q.isAnswered === false || q.isAnswered === undefined || q.isAnswered === null))
+        setUnansweredQuestions(unanswered.slice(0, 3))
       } catch (error) {
         setLatestQuestions([])
         setTopHelpers([])

@@ -52,27 +52,35 @@ export const requestService = {
         q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
       }
     }
-    // Combined Unanswered filter and Sorting
+    // Unanswered filter: only show requests with no human answers
     if (filters.unanswered) {
-      q = query(q, where('answersCount', '<=', 1));
-      // Firestore requires the first orderBy field to match the range filter field.
-      // If unanswered is active, answersCount must be first in orderBy.
-      if (filters.sortBy === 'newest') {
-        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
-      } else if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc')); // This will satisfy range filter too
-      } else {
-        q = query(q, orderBy('answersCount', 'asc')); // Default sort for unanswered
+      // Get all requests (with other filters applied)
+      const snapshot = await getDocs(q);
+      const requests = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
+      }));
+      // For each request, count only human answers
+      const filtered = [];
+      for (const req of requests) {
+        const answersRef = collection(db, 'answers');
+        const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
+        const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
+        if (humanAnswers.length === 0) {
+          filtered.push(req);
+        }
       }
-    } else {
-      // Original sorting logic for when unanswered is not active
-      if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc'));
-      } else {
-        q = query(q, orderBy('createdAt', 'desc'));
-      }
+      // Sort by createdAt desc
+      filtered.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+      return filtered;
     }
-
+    // Original sorting logic for when unanswered is not active
+    if (filters.sortBy === 'most_answered') {
+      q = query(q, orderBy('answersCount', 'desc'));
+    } else {
+      q = query(q, orderBy('createdAt', 'desc'));
+    }
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({
       id: doc.id,

@@ -138,5 +138,11 @@ export const profileService = {
       averageRating,
       rank
     };
+  },
+
+  // Add this method for updating user profile fields
+  updateProfile: async (userId, updates) => {
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, updates);
   }
 }; 
