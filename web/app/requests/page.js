@@ -1,9 +1,15 @@
+// Requests Page Route: /requests
+// Purpose: Shows a feed of all help requests for browsing and filtering.
+// Theme: Uses theme context for background, card, and text color.
+// Features: Header, request feed, filtering (in feed component).
+
 'use client'
 import RequestFeed from '@/src/features/requests/RequestFeed'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function RequestsPage() {
   const { mode, colors } = useTheme();
+  // Render the requests page with header and feed
   return (
     <div className="min-h-screen" style={{ background: colors.page, color: colors.text }}>
       {/* Header */}

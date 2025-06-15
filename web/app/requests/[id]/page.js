@@ -1,3 +1,8 @@
+// Request Details Page Route: /requests/[id]
+// Purpose: Shows details for a specific help request, including question, answers, and sidebar resources.
+// Theme: Uses theme context for background, card, and text color.
+// Features: Real-time updates, answer section, AI suggestions, join chat, sidebar with related info.
+
 'use client'
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'

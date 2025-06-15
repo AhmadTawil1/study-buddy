@@ -1,3 +1,7 @@
+// Profile Page Route: /profile (current user)
+// Purpose: Shows user profile info and stats. Redirects unauthenticated users.
+// Theme: Uses theme context for background and text color.
+
 'use client'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,6 +14,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const { colors } = useTheme();
 
+  // Redirect unauthenticated users to login
   useEffect(() => {
     if (!loading && !user) {
       if (typeof window !== 'undefined') {
@@ -23,6 +28,7 @@ export default function ProfilePage() {
     return <div className="min-h-screen py-12 px-4 text-center">Loading or redirecting...</div>
   }
 
+  // Render the profile view
   return (
     <div style={{ minHeight: '100vh', background: colors.page, color: colors.text }}>
       <ProfileView />

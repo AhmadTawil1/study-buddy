@@ -1,3 +1,8 @@
+// Login Page Route: /login
+// Purpose: Authenticates users via email/password or social providers.
+// Theme: Uses theme context for background, card, and text colors.
+// Features: Email/password login, Google/GitHub/Microsoft login, error handling, redirect after login.
+
 'use client'
 import { useState } from 'react'
 import { signInWithEmailAndPassword } from 'firebase/auth'
@@ -8,6 +13,7 @@ import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/c
 import { useTheme } from '@/src/context/themeContext'
 
 export default function LoginPage() {
+  // State for form fields and UI
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -15,6 +21,7 @@ export default function LoginPage() {
   const router = useRouter()
   const { colors, mode } = useTheme();
 
+  // Handle login form submission
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
@@ -22,6 +29,7 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password)
+      // Redirect to previous page or profile
       const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
       if (redirectTo) {
         localStorage.removeItem('redirectAfterLogin');
@@ -36,6 +44,7 @@ export default function LoginPage() {
     }
   }
 
+  // Render the login form and social login options
   return (
     <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-300" style={{ background: colors.page, color: colors.text }}>
       <div className="max-w-md w-full p-8 rounded-xl shadow-xl" style={{ background: colors.card, color: colors.text, borderColor: colors.inputBorder }}>

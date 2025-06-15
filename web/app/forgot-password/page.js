@@ -1,3 +1,8 @@
+// Forgot Password Page Route: /forgot-password
+// Purpose: Allows users to request a password reset email.
+// Theme: Uses Tailwind for styling, light mode only by default.
+// Features: Email input, error/success messages, link to login.
+
 'use client'
 import { useState } from 'react'
 import { sendPasswordResetEmail } from 'firebase/auth'

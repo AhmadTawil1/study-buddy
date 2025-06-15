@@ -1,3 +1,8 @@
+// Signup Page Route: /signup
+// Purpose: Registers new users with email/password or social providers.
+// Theme: Uses theme context for background, card, and text colors.
+// Features: Registration form, password validation, nickname uniqueness, social signup, error handling.
+
 'use client'
 import { useState } from 'react'
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'

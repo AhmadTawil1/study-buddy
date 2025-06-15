@@ -14,12 +14,13 @@ import { addTag, removeTag } from '@/src/utils/tags'
 import { handleFiles as handleFilesUtil, removeFile as removeFileUtil } from '@/src/utils/fileUtils'
 import TitleInput from './components/TitleInput'
 import DescriptionInput from './components/DescriptionInput'
-import FileUpload from './components/FileUpload'
+import FileUpload from '@/src/components/common/FileUpload'
 import TagInput from './components/TagInput'
 import PrivacyToggle from './components/PrivacyToggle'
 import Editor from '@monaco-editor/react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useTheme } from '@/src/context/themeContext'
 
 const MAX_TITLE_LENGTH = 100
 const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
@@ -46,6 +47,7 @@ const CODE_LANGUAGES = [
 ]
 
 export default function AskForm() {
+  const { colors, mode } = useTheme();
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [subject, setSubject] = useState('')
@@ -265,9 +267,9 @@ export default function AskForm() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-blue-800 mb-2">Ask a Question</h1>
-        <p className="text-gray-600 mb-8">Be clear. Be specific. We'll help.</p>
+      <div className="rounded-xl shadow-lg p-8" style={{ background: colors.card, color: colors.text }}>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text }}>Ask a Question</h1>
+        <p className="mb-8" style={{ color: colors.inputPlaceholder }}>Be clear. Be specific. We'll help.</p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Feedback Messages */}
@@ -277,7 +279,8 @@ export default function AskForm() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-green-50 text-green-700 p-4 rounded-lg"
+                className="p-4 rounded-lg"
+                style={{ background: colors.successBg, color: colors.successText }}
               >
                 ✅ Question submitted successfully!
               </motion.div>
@@ -287,7 +290,8 @@ export default function AskForm() {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="bg-red-50 text-red-700 p-4 rounded-lg"
+                className="p-4 rounded-lg"
+                style={{ background: colors.errorBg, color: colors.errorText }}
               >
                 {error}
               </motion.div>
@@ -343,7 +347,8 @@ export default function AskForm() {
             <button
               type="button"
               onClick={() => setShowCodeEditor(!showCodeEditor)}
-              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+              className="flex items-center gap-2 text-sm font-medium rounded px-4 py-2 mt-2 mb-2"
+              style={{ background: colors.button, color: colors.buttonSecondaryText }}
             >
               <FiCode />
               {showCodeEditor ? 'Hide Code Editor' : 'Add Code Snippet'}
@@ -351,25 +356,26 @@ export default function AskForm() {
             {showCodeEditor && (
               <div className="mt-2 space-y-2">
                 <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-700">Language:</label>
+                  <label className="text-sm" style={{ color: colors.text }}>Language:</label>
                   <select
                     value={codeLanguage}
                     onChange={(e) => setCodeLanguage(e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    style={{ background: colors.inputBg, color: colors.inputText, borderColor: colors.inputBorder }}
                   >
                     {CODE_LANGUAGES.map(lang => (
                       <option key={lang.id} value={lang.id}>{lang.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className="border rounded-lg overflow-hidden" style={{ height: '300px' }}>
+                <div className="border rounded-lg overflow-hidden" style={{ height: '300px', background: colors.inputBg, borderColor: colors.inputBorder }}>
                   <Editor
                     height="100%"
                     defaultLanguage={codeLanguage}
                     language={codeLanguage}
                     value={codeSnippet}
                     onChange={setCodeSnippet}
-                    theme="vs-light"
+                    theme={mode === 'dark' ? 'vs-dark' : 'vs-light'}
                     options={{
                       minimap: { enabled: false },
                       fontSize: 14,
@@ -397,11 +403,8 @@ export default function AskForm() {
             <button
               type="submit"
               disabled={loading}
-              className={`px-6 py-2 rounded-md text-white font-medium ${
-                loading
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
+              className="px-6 py-2 rounded-md font-medium transition-colors"
+              style={{ background: colors.button, color: colors.buttonSecondaryText, opacity: loading ? 0.7 : 1 }}
             >
               {loading ? 'Submitting...' : 'Submit Question'}
             </button>
@@ -409,16 +412,16 @@ export default function AskForm() {
         </form>
 
         {showAIAssistant && aiAnswer && (
-          <div className="mt-8 bg-white border border-blue-200 rounded-xl shadow p-6">
-            <h3 className="text-xl font-bold mb-4 text-blue-800">AI Assistant Answer & Suggestions</h3>
-            <div className="bg-blue-50 rounded-lg p-4 mb-4">
+          <div className="mt-8 border rounded-xl shadow p-6" style={{ background: colors.card, borderColor: colors.inputBorder, color: colors.text }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: colors.text }}>AI Assistant Answer & Suggestions</h3>
+            <div className="rounded-lg p-4 mb-4" style={{ background: colors.inputBg, color: colors.inputText }}>
               <SyntaxHighlighter language="markdown" style={oneDark} customStyle={{ borderRadius: '0.5rem', fontSize: 16 }}>
                 {aiAnswer}
               </SyntaxHighlighter>
             </div>
             {codeSnippet && (
               <div className="mb-4">
-                <h4 className="font-semibold mb-2 text-blue-700">Code Snippet</h4>
+                <h4 className="font-semibold mb-2" style={{ color: colors.text }}>Code Snippet</h4>
                 <SyntaxHighlighter language={codeLanguage || 'plaintext'} style={oneDark} customStyle={{ borderRadius: '0.5rem', fontSize: 15 }}>
                   {codeSnippet}
                 </SyntaxHighlighter>
@@ -426,14 +429,16 @@ export default function AskForm() {
             )}
             <div className="flex flex-row gap-4 mt-4">
               <button
-                className="px-6 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 shadow"
+                className="px-6 py-2 rounded-md font-medium transition-colors"
+                style={{ background: colors.button, color: colors.buttonSecondaryText, opacity: regenerating ? 0.7 : 1 }}
                 onClick={regenerateAISuggestion}
                 disabled={regenerating}
               >
                 {regenerating ? 'Regenerating...' : 'Regenerate AI Suggestion'}
               </button>
               <button
-                className="px-6 py-2 rounded-md bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 shadow"
+                className="px-6 py-2 rounded-md font-medium transition-colors"
+                style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}` }}
                 onClick={() => router.push('/requests')}
               >
                 Go to Requests
@@ -442,21 +447,6 @@ export default function AskForm() {
           </div>
         )}
       </div>
-
-      {/* Sidebar */}
-      <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Tips for Better Questions
-        </h2>
-        <ul className="space-y-3 text-gray-600">
-          <li>• Be specific about what you're trying to solve</li>
-          <li>• Include relevant context and background</li>
-          <li>• Show what you've tried so far</li>
-          <li>• Format your code properly</li>
-          <li>• Use appropriate tags to help others find your question</li>
-        </ul>
-      </div>
-
     </div>
   )
 }
