@@ -63,7 +63,7 @@ export default function Navbar() {
 
   return (
     <nav
-      className="backdrop-blur shadow-lg rounded-b-2xl"
+      className="sticky top-0 z-50 backdrop-blur shadow-lg transition-shadow duration-300 bg-opacity-95"
       style={{ background: colors.card, color: colors.text }}
     >
       {/* Main navigation bar content */}
