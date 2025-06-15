@@ -17,7 +17,7 @@ import Sidebar from '@/src/components/common/Sidebar'
 import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { requestService } from '@/src/services/requestService';
 import { questionService } from '@/src/services/questionService';
-import { FiArrowRight, FiArrowLeft } from 'react-icons/fi';
+import { FiArrowRight, FiArrowLeft, FiSearch } from 'react-icons/fi';
 import Card from '@/src/components/common/Card'
 import { useTheme } from '@/src/context/themeContext';
 import SidePanel from '@/src/features/requests/SidePanel';
@@ -46,6 +46,11 @@ function AISuggestions({ question, description }) {
     setLoading(false);
   };
 
+  const handleGoogleSearch = (suggestion) => {
+    const searchQuery = encodeURIComponent(suggestion.title || suggestion);
+    window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+  };
+
   return (
     <Card className="p-6" bgColor={colors.card}>
       <div className="flex items-center justify-between mb-3">
@@ -62,14 +67,30 @@ function AISuggestions({ question, description }) {
       {!loading && hasGenerated && suggestions.length === 0 && (
         <div style={{ color: colors.inputPlaceholder }}>No suggestions found</div>
       )}
-      {!loading && suggestions.length > 0 && (
+      {!loading && hasGenerated && suggestions.length > 0 && (
         <div className="space-y-3">
           {suggestions.map((s, i) => (
-            <a key={i} href={s.url} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg transition" style={{ background: colors.inputBg, color: colors.text }}>
-              <div className="font-semibold text-sm" style={{ color: colors.button }}>{s.title}</div>
-              <div className="text-xs" style={{ color: colors.inputPlaceholder }}>{s.description}</div>
-              <div className="text-xs mt-1 truncate" style={{ color: colors.button }}>{s.url}</div>
-            </a>
+            <div key={i} className="p-3 rounded-lg transition" style={{ background: colors.inputBg, color: colors.text }}>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="font-semibold text-sm" style={{ color: colors.button }}>{s.title}</div>
+                  <div className="text-xs" style={{ color: colors.inputPlaceholder }}>{s.description}</div>
+                  <div className="text-xs mt-1 truncate" style={{ color: colors.button }}>{s.url}</div>
+                </div>
+                <button
+                  onClick={() => handleGoogleSearch(s)}
+                  className="ml-2 px-3 py-1 text-xs rounded-md transition-colors flex items-center gap-1"
+                  style={{ 
+                    background: colors.buttonSecondary,
+                    color: colors.button,
+                    border: `1px solid ${colors.button}`
+                  }}
+                >
+                  <FiSearch className="w-3 h-3" />
+                  Search
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
