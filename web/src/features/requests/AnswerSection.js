@@ -12,8 +12,9 @@ import { format } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext';
 import FileUpload from '@/src/components/common/FileUpload';
 import { uploadFiles } from '@/src/services/storageService';
+import { notificationService } from '@/src/services/notificationService';
 
-export default function AnswerSection({ answers, requestId, questionTitle, questionDescription }) {
+export default function AnswerSection({ answers, requestId, questionTitle, questionDescription, questionOwnerId }) {
   const { user } = useAuth();
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [showReplies, setShowReplies] = useState({});
@@ -118,6 +119,21 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
     }));
   };
 
+  // Stub for sending a chat request
+  const sendChatRequest = async (toUserId) => {
+    if (!user) return;
+    await notificationService.createNotification({
+      userId: toUserId,
+      type: 'live_chat_request',
+      fromUserId: user.uid,
+      fromUserName: user.displayName || user.email,
+      requestId,
+      createdAt: new Date(),
+      message: `You have a live chat request from ${user.displayName || user.email}`
+    });
+    alert('Live chat request sent!');
+  };
+
   return (
     <div className="space-y-6" style={{ color: colors.text }}>
       <div className="flex items-center justify-between">
@@ -205,6 +221,18 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Request Live Chat Button */}
+            {user && user.uid !== 'ai-bot' && (
+              ((user.uid === questionOwnerId && user.uid !== ans.userId) || (user.uid === ans.userId && user.uid !== questionOwnerId)) && (
+                <button
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded shadow transition mb-2"
+                  onClick={() => sendChatRequest(user.uid === questionOwnerId ? ans.userId : questionOwnerId)}
+                >
+                  Request Live Chat
+                </button>
+              )
             )}
 
             <div className="flex items-center gap-2 mt-4">

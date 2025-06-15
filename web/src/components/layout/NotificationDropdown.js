@@ -6,6 +6,8 @@ import Link from 'next/link';
 import ReactDOM from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/src/context/themeContext';
+import { notificationService } from '@/src/services/notificationService';
+import { useAuth } from '@/src/context/authContext';
 
 export default function NotificationDropdown() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
@@ -14,6 +16,7 @@ export default function NotificationDropdown() {
   const buttonRef = useRef(null);
   const router = useRouter();
   const { colors, mode } = useTheme();
+  const { user } = useAuth();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -37,9 +40,12 @@ export default function NotificationDropdown() {
     if (!notification.read) {
       await markAsRead(notification.id);
     }
-    // Redirect to the correct post (try questionId, requestId, or fallback)
-    const postId = notification.requestId || notification.questionId || notification.id;
-    router.push(`/requests/${postId}`);
+    if (notification.type === 'live_chat_request' || notification.type === 'live_chat_accepted') {
+      router.push(`/chat/${notification.requestId}?with=${notification.fromUserId}`);
+    } else {
+      const postId = notification.requestId || notification.questionId || notification.id;
+      router.push(`/requests/${postId}`);
+    }
     setIsOpen(false);
   };
 
@@ -47,6 +53,21 @@ export default function NotificationDropdown() {
     e.preventDefault();
     e.stopPropagation();
     await markAllAsRead();
+  };
+
+  const handleAcceptLiveChat = async (notification) => {
+    // Send notification to the sender
+    await notificationService.createNotification({
+      userId: notification.fromUserId,
+      type: 'live_chat_accepted',
+      fromUserId: user.uid,
+      fromUserName: user.displayName || user.email,
+      requestId: notification.requestId,
+      message: `${user.displayName || user.email} accepted your live chat request! Click to join the chat.`
+    });
+    // Redirect to chat room
+    router.push(`/chat/${notification.requestId}?with=${notification.fromUserId}`);
+    setIsOpen(false);
   };
 
   const getNotificationIcon = (type) => {
@@ -111,32 +132,47 @@ export default function NotificationDropdown() {
               </div>
             ) : (
               notifications.map((notification) => (
-                <a
-                  key={notification.id}
-                  href={`/requests/${notification.requestId || notification.questionId || notification.id}`}
-                  onClick={(e) => handleNotificationClick(notification, e)}
-                  className={`block p-4 border-b hover:bg-opacity-50 transition-colors ${
-                    !notification.read ? 'bg-opacity-10' : ''
-                  }`}
-                  style={{ 
-                    borderColor: colors.inputBorder,
-                    background: !notification.read ? colors.button + '10' : 'transparent',
-                    color: colors.text
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">{getNotificationIcon(notification.type)}</span>
-                    <div className="flex-1">
-                      <p className="text-sm" style={{ color: colors.text }}>{notification.message}</p>
-                      <p className="text-xs mt-1" style={{ color: colors.inputPlaceholder }}>
-                        {notification.createdAt && formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true })}
-                      </p>
+                <div key={notification.id}>
+                  <a
+                    href={notification.type === 'live_chat_request' ? undefined : `/requests/${notification.requestId || notification.questionId || notification.id}`}
+                    onClick={notification.type === 'live_chat_request' ? undefined : (e) => handleNotificationClick(notification, e)}
+                    className={`block p-4 border-b hover:bg-opacity-50 transition-colors ${!notification.read ? 'bg-opacity-10' : ''}`}
+                    style={{ 
+                      borderColor: colors.inputBorder,
+                      background: !notification.read ? colors.button + '10' : 'transparent',
+                      color: colors.text
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl">{getNotificationIcon(notification.type)}</span>
+                      <div className="flex-1">
+                        <p className="text-sm" style={{ color: colors.text }}>{notification.message}</p>
+                        <p className="text-xs mt-1" style={{ color: colors.inputPlaceholder }}>
+                          {notification.createdAt && notification.createdAt.toDate && formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true })}
+                        </p>
+                      </div>
+                      {!notification.read && (
+                        <span className="w-2 h-2 rounded-full mt-2" style={{ background: colors.button }} />
+                      )}
                     </div>
-                    {!notification.read && (
-                      <span className="w-2 h-2 rounded-full mt-2" style={{ background: colors.button }} />
-                    )}
-                  </div>
-                </a>
+                  </a>
+                  {notification.type === 'live_chat_request' && (
+                    <div className="flex gap-2 px-4 pb-2">
+                      <button
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded"
+                        onClick={() => handleAcceptLiveChat(notification)}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
+                        onClick={async () => { await markAsRead(notification.id); setIsOpen(false); }}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  )}
+                </div>
               ))
             )}
           </div>

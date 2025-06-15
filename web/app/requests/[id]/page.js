@@ -16,6 +16,7 @@ import { FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import Card from '@/src/components/common/Card'
 import { useTheme } from '@/src/context/themeContext';
 import SidePanel from '@/src/features/requests/SidePanel';
+import Link from 'next/link';
 
 function AISuggestions({ question, description }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -178,6 +179,12 @@ export default function RequestDetails({ params }) {
           >
             <FiArrowLeft /> Back to Requests
           </button>
+          <Link
+            href={`/chat/${id}`}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded shadow transition mb-2 self-start"
+          >
+            Join Chat
+          </Link>
           <Card bgColor={colors.card} className="p-6">
             <QuestionOverview request={{
               ...request,
@@ -197,7 +204,7 @@ export default function RequestDetails({ params }) {
             />
           </Card>
           <Card bgColor={colors.card} className="p-6">
-            <AnswerSection answers={answers} requestId={request.id} questionTitle={request.title} questionDescription={request.description} />
+            <AnswerSection answers={answers} requestId={request.id} questionTitle={request.title} questionDescription={request.description} questionOwnerId={request.userId} />
           </Card>
         </div>
         {/* Sidebar */}
