@@ -8,6 +8,19 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext';
 
+// Add fetch for AI answer
+async function regenerateAIAnswer(requestId, title, description) {
+  try {
+    await fetch('/api/ai-answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: `${title}\n${description}` })
+    });
+  } catch (e) {
+    // Optionally handle error
+  }
+}
+
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
   const [isRequestSaved, setIsRequestSaved] = useState(request.isSavedByCurrentUser);
@@ -97,6 +110,8 @@ export default function QuestionOverview({ request }) {
       await requestService.updateRequest(request.id, { title: editTitle, title_lowercase: editTitle.toLowerCase() });
       setEditing(false);
       setSaving(false);
+      // Regenerate AI answer after title edit
+      await regenerateAIAnswer(request.id, editTitle, request.description);
     } catch (err) {
       console.error("Error updating title:", err);
       setError(`Failed to save title: ${err.message || 'An unexpected error occurred.'}`);
@@ -165,6 +180,13 @@ export default function QuestionOverview({ request }) {
             <span style={{ color: isRequestSaved ? colors.button : colors.inputPlaceholder }}>{isRequestSaved ? 'Saved' : 'Save'}</span>
           </button>
         )}
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium shadow hover:bg-blue-100 dark:hover:bg-gray-800 transition border border-blue-200"
+          style={{ color: colors.button }}
+        >
+          <FiShare2 className="w-4 h-4" /> Share
+        </button>
       </div>
 
       <div className="flex items-center gap-4 text-sm mb-4" style={{ color: colors.inputPlaceholder }}>

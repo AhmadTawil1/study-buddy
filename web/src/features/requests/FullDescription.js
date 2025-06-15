@@ -4,7 +4,19 @@ import Editor from '@monaco-editor/react'
 import { requestService } from '@/src/services/requestService';
 import { useTheme } from '@/src/context/themeContext';
 
-export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage, isOwner, requestId }) {
+async function regenerateAIAnswer(requestId, title, description) {
+  try {
+    await fetch('/api/ai-answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: `${title}\n${description}` })
+    });
+  } catch (e) {
+    // Optionally handle error
+  }
+}
+
+export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage, isOwner, requestId, title }) {
   const [editing, setEditing] = useState(false);
   const [editDescription, setEditDescription] = useState(description);
   const [saving, setSaving] = useState(false);
@@ -32,6 +44,12 @@ export default function FullDescription({ description, files, aiSummary, codeSni
     try {
       await requestService.updateRequest(requestId, { description: editDescription });
       setEditing(false);
+      let currentTitle = title;
+      if (!currentTitle) {
+        const req = await requestService.getRequestById(requestId);
+        currentTitle = req?.title || '';
+      }
+      await regenerateAIAnswer(requestId, currentTitle, editDescription);
     } catch (e) {
       setError("Failed to update description. Please try again.");
     }

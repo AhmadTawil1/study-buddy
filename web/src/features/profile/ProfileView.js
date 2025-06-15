@@ -15,7 +15,7 @@ import {
   ArrowRightOnRectangleIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
-import { FaGithub, FaLinkedin } from 'react-icons/fa'
+import { FaGithub, FaLinkedin, FaUserEdit } from 'react-icons/fa'
 
 // Context and Services
 import { useAuth } from '@/src/context/authContext'
@@ -42,6 +42,17 @@ export default function ProfileView({ userId: propUserId }) {
     averageRating: 0,
     rank: 0
   })
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState(profile?.name || '');
+  const [savingName, setSavingName] = useState(false);
+  const [editingAbout, setEditingAbout] = useState(false);
+  const [editAbout, setEditAbout] = useState('');
+  const [savingAbout, setSavingAbout] = useState(false);
+  const [editingSocial, setEditingSocial] = useState(false);
+  const [editGithub, setEditGithub] = useState(profile?.github || '');
+  const [editLinkedin, setEditLinkedin] = useState(profile?.linkedin || '');
+  const [savingSocial, setSavingSocial] = useState(false);
+  const [saveMsg, setSaveMsg] = useState('');
 
   // Determine which userId to use
   const userId = propUserId || (user ? user.uid : null)
@@ -89,6 +100,55 @@ export default function ProfileView({ userId: propUserId }) {
     fetchData()
   }, [userId, user])
 
+  useEffect(() => {
+    if (profile) {
+      setEditName(profile.name || '');
+      setEditAbout(profile.about || ''); 
+      setEditGithub(profile.github || '');
+      setEditLinkedin(profile.linkedin || '');
+    }
+  }, [profile]);
+
+  const handleSaveName = async () => {
+    if (!editName.trim()) return;
+    setSavingName(true);
+    setSaveMsg('');
+    try {
+      await profileService.updateProfile(userId, { name: editName });
+      setEditingName(false);
+      setProfile(prev => ({ ...prev, name: editName }));
+      setSaveMsg('Name updated!');
+    } catch (e) { setSaveMsg('Failed to update name.'); }
+    setSavingName(false);
+    setTimeout(() => setSaveMsg(''), 2000);
+  };
+
+  const handleSaveAbout = async () => {
+    setSavingAbout(true);
+    setSaveMsg('');
+    try {
+      await profileService.updateProfile(userId, { about: editAbout });
+      setEditingAbout(false);
+      setProfile(prev => ({ ...prev, about: editAbout }));
+      setSaveMsg('About updated!');
+    } catch (e) { setSaveMsg('Failed to update about.'); }
+    setSavingAbout(false);
+    setTimeout(() => setSaveMsg(''), 2000);
+  };
+
+  const handleSaveSocial = async () => {
+    setSavingSocial(true);
+    setSaveMsg('');
+    try {
+      await profileService.updateProfile(userId, { github: editGithub, linkedin: editLinkedin });
+      setEditingSocial(false);
+      setProfile(prev => ({ ...prev, github: editGithub, linkedin: editLinkedin }));
+      setSaveMsg('Social links updated!');
+    } catch (e) { setSaveMsg('Failed to update social links.'); }
+    setSavingSocial(false);
+    setTimeout(() => setSaveMsg(''), 2000);
+  };
+
   // Build recentActivity dynamically from fetched data
   const recentActivity = [
     ...myQuestions.map(q => ({
@@ -126,13 +186,66 @@ export default function ProfileView({ userId: propUserId }) {
             </button>
           </div>
           <div className="text-white ml-4">
-            <h2 className="text-2xl sm:text-3xl font-bold">{profile.name}</h2>
+            {isOwner && editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  className="text-2xl sm:text-3xl font-bold rounded px-2 py-1 border focus:border-blue-500 outline-none"
+                  style={{ color: colors.text, borderColor: colors.inputBorder }}
+                />
+                <button onClick={handleSaveName} disabled={savingName} className="px-2 py-1 rounded bg-blue-600 text-white text-sm font-semibold">Save</button>
+                <button onClick={() => { setEditingName(false); setEditName(profile.name || ''); }} className="px-2 py-1 rounded text-sm" style={{ color: colors.inputPlaceholder }}>Cancel</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl sm:text-3xl font-bold">{profile.name}</h2>
+                {isOwner && (
+                  <button onClick={() => setEditingName(true)} className="text-sm underline" style={{ color: colors.button }}>Edit</button>
+                )}
+              </div>
+            )}
             <p className="text-sm opacity-90">{profile.email}</p>
             {profile.joinDate && (
               <p className="text-sm opacity-80">Joined: {formatDate(profile.joinDate?.toDate ? profile.joinDate.toDate() : profile.joinDate)}</p>
             )}
           </div>
         </div>
+      </div>
+
+      {/* About Section */}
+      <div className="max-w-2xl mx-auto mt-8 mb-8 p-6 rounded-xl shadow-lg flex flex-col gap-4" style={{ background: colors.card, color: colors.text }}>
+        <div className="flex items-center gap-3 mb-2">
+          <FaUserEdit className="w-6 h-6" style={{ color: colors.button }} />
+          <h3 className="text-lg font-semibold" style={{ color: colors.button }}>About</h3>
+          {isOwner && !editingAbout && (
+            <button onClick={() => setEditingAbout(true)} className="ml-auto px-3 py-1 rounded bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition flex items-center gap-1">
+              <FaUserEdit className="w-4 h-4" /> Edit
+            </button>
+          )}
+        </div>
+        {isOwner && editingAbout ? (
+          <div>
+            <textarea
+              className="w-full rounded border px-2 py-2 mb-2 text-base"
+              rows={4}
+              value={editAbout}
+              onChange={e => setEditAbout(e.target.value)}
+              style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder }}
+              disabled={savingAbout}
+            />
+            <div className="flex gap-2">
+              <button onClick={handleSaveAbout} disabled={savingAbout} className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold">{savingAbout ? 'Saving...' : 'Save'}</button>
+              <button onClick={() => { setEditingAbout(false); setEditAbout(profile.about || ''); }} className="px-4 py-2 rounded text-sm" style={{ color: colors.inputPlaceholder }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-lg leading-relaxed" style={{ color: colors.text, minHeight: 40 }}>
+            {profile.about || (isOwner ? <span className="italic text-gray-400">Add a short description about yourself.</span> : <span className="italic text-gray-400">No description provided.</span>)}
+          </div>
+        )}
+        {saveMsg && <div className="text-xs mt-1" style={{ color: saveMsg.includes('Failed') ? colors.error : colors.button }}>{saveMsg}</div>}
       </div>
 
       {/* Main Content */}
@@ -327,66 +440,97 @@ export default function ProfileView({ userId: propUserId }) {
 
         {/* Account Management */}
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Account Management</h3>
+          <h3 className="text-xl font-semibold mb-4" style={{ color: colors.text }}>Account Management</h3>
           <div className="space-y-4">
-            <button className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors">
-              <BellIcon className="w-5 h-5" />
+            <button className="flex items-center space-x-2 transition-colors" style={{ color: colors.text }}>
+              <BellIcon className="w-5 h-5" style={{ color: colors.inputPlaceholder }} />
               <span>Notification Preferences</span>
             </button>
-            <button className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors">
-              <ShieldExclamationIcon className="w-5 h-5" />
+            <button className="flex items-center space-x-2 transition-colors" style={{ color: colors.text }}>
+              <ShieldExclamationIcon className="w-5 h-5" style={{ color: colors.inputPlaceholder }} />
               <span>Change Password</span>
             </button>
             <button 
               onClick={logout}
-              className="flex items-center space-x-2 text-gray-700 hover:text-rose-600 transition-colors"
+              className="flex items-center space-x-2 transition-colors"
+              style={{ color: colors.button }}
             >
-              <ArrowRightOnRectangleIcon className="w-5 h-5" />
+              <ArrowRightOnRectangleIcon className="w-5 h-5" style={{ color: colors.button }} />
               <span>Logout</span>
             </button>
-            <div className="pt-4 border-t border-gray-200">
-              <button className="flex items-center space-x-2 text-rose-600 hover:text-rose-700 transition-colors">
-                <TrashIcon className="w-5 h-5" />
+            <div className="pt-4 border-t" style={{ borderColor: colors.inputBorder }}>
+              <button className="flex items-center space-x-2 transition-colors font-semibold" style={{ color: colors.error }}>
+                <TrashIcon className="w-5 h-5" style={{ color: colors.error }} />
                 <span>Delete Account</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Social/Academic Links */}
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">Social / Academic Links</h3>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4">
-              <button className="flex items-center space-x-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
-                <FaGithub className="w-5 h-5" />
-                <span>Link GitHub</span>
-              </button>
-              <button className="flex items-center space-x-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors shadow-sm">
-                <FaLinkedin className="w-5 h-5" />
-                <span>Link LinkedIn</span>
-              </button>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter your student ID" 
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" 
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">University</label>
-                <input 
-                  type="text" 
-                  placeholder="Enter your university" 
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors" 
-                />
-              </div>
-            </div>
+        {/* Social Links Section */}
+        <div className="max-w-2xl mx-auto mb-8 p-6 rounded-xl shadow-lg flex flex-col gap-4" style={{ background: colors.card, color: colors.text }}>
+          <div className="flex items-center gap-3 mb-2">
+            <FaGithub className="w-5 h-5" style={{ color: '#333' }} />
+            <FaLinkedin className="w-5 h-5" style={{ color: '#0077b5' }} />
+            <h3 className="text-lg font-semibold" style={{ color: colors.button }}>Social Accounts</h3>
+            {isOwner && !editingSocial && (
+              <button onClick={() => setEditingSocial(true)} className="ml-auto px-3 py-1 rounded bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition">Edit</button>
+            )}
           </div>
+          {isOwner && editingSocial ? (
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">GitHub URL</label>
+                <input
+                  type="url"
+                  className="w-full rounded border px-2 py-2"
+                  value={editGithub}
+                  onChange={e => setEditGithub(e.target.value)}
+                  placeholder="https://github.com/yourusername"
+                  style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder }}
+                  disabled={savingSocial}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">LinkedIn URL</label>
+                <input
+                  type="url"
+                  className="w-full rounded border px-2 py-2"
+                  value={editLinkedin}
+                  onChange={e => setEditLinkedin(e.target.value)}
+                  placeholder="https://linkedin.com/in/yourusername"
+                  style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder }}
+                  disabled={savingSocial}
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button onClick={handleSaveSocial} disabled={savingSocial} className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold">{savingSocial ? 'Saving...' : 'Save'}</button>
+                <button onClick={() => { setEditingSocial(false); setEditGithub(profile.github || ''); setEditLinkedin(profile.linkedin || ''); }} className="px-4 py-2 rounded text-sm" style={{ color: colors.inputPlaceholder }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <FaGithub className="w-5 h-5" style={{ color: '#333' }} />
+                {profile.github ? (
+                  <a href={profile.github} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">{profile.github}</a>
+                ) : (
+                  <span className="text-gray-400">Not linked</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <FaLinkedin className="w-5 h-5" style={{ color: '#0077b5' }} />
+                {profile.linkedin ? (
+                  <a href={profile.linkedin} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-600">{profile.linkedin}</a>
+                ) : (
+                  <span className="text-gray-400">Not linked</span>
+                )}
+              </div>
+            </div>
+          )}
+          {saveMsg && <div className="text-xs mt-1" style={{ color: saveMsg.includes('Failed') ? colors.error : colors.button }}>{saveMsg}</div>}
         </div>
+
       </div>
     </div>
   )

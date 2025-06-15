@@ -1,20 +1,11 @@
 "use client"
-import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function HeroSection() {
-  const [subject, setSubject] = useState('')
   const { colors, mode } = useTheme()
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (subject.trim()) {
-      window.location.href = `/ask?subject=${encodeURIComponent(subject)}`
-    }
-  }
 
   return (
     <section
@@ -60,7 +51,48 @@ export default function HeroSection() {
                 </button>
               </Link>
             </div>
-            {/* AI-powered onboarding prompt */}
+            {/* Professional user flow: Think -> Ask -> Peer */}
+            <div className="flex justify-center mt-8 mb-2">
+              <div className="w-full max-w-2xl bg-white/80 dark:bg-gray-800 rounded-2xl shadow-lg px-4 py-6 sm:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+                {/* Step 1 */}
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
+                    <span className="text-2xl">💡</span>
+                  </div>
+                  <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Think</div>
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Identify your question or challenge.</div>
+                </div>
+                {/* Arrow/Divider */}
+                <div className="hidden sm:flex flex-col items-center justify-center">
+                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mb-1"></div>
+                  <span className="text-xl text-blue-400">→</span>
+                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mt-1"></div>
+                </div>
+                {/* Step 2 */}
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
+                    <span className="text-2xl">❓</span>
+                  </div>
+                  <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Ask</div>
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Post your question to the community.</div>
+                </div>
+                {/* Arrow/Divider */}
+                <div className="hidden sm:flex flex-col items-center justify-center">
+                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mb-1"></div>
+                  <span className="text-xl text-blue-400">→</span>
+                  <div className="w-10 h-1 bg-blue-200 dark:bg-blue-700 rounded-full mt-1"></div>
+                </div>
+                {/* Step 3 */}
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-blue-100 dark:bg-blue-900">
+                    <span className="text-2xl">🤝</span>
+                  </div>
+                  <div className="font-bold text-base sm:text-lg mb-1" style={{ color: colors.button }}>Connect</div>
+                  <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-300">Get help from peers and experts.</div>
+                </div>
+              </div>
+            </div>
+            {/* AI-powered onboarding prompt
             <div className="rounded-xl shadow-lg p-4 sm:p-6 max-w-md w-full mx-auto md:mx-0"
                  style={{ background: colors.card, color: colors.text }}>
               <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4" style={{ color: colors.text }}>What subject do you need help in today?</h3>
@@ -81,7 +113,7 @@ export default function HeroSection() {
                   Go
                 </button>
               </form>
-            </div>
+            </div> */}
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 40 }}

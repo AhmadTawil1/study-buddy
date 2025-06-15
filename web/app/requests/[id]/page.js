@@ -227,6 +227,7 @@ export default function RequestDetails({ params }) {
               codeLanguage={request.codeLanguage}
               isOwner={user && user.uid === request.userId}
               requestId={request.id}
+              title={request.title}
             />
           </Card>
           <Card bgColor={colors.card} className="p-6">
