@@ -118,35 +118,37 @@ export const requestService = {
         q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
       }
     }
-    // Combined Unanswered filter and Sorting
-    if (filters.unanswered) {
-      q = query(q, where('answersCount', '<=', 1));
-      // Firestore requires the first orderBy field to match the range filter field.
-      // If unanswered is active, answersCount must be first in orderBy.
-      if (filters.sortBy === 'newest') {
-        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
-      } else if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc')); // This will satisfy range filter too
-      } else {
-        q = query(q, orderBy('answersCount', 'asc')); // Default sort for unanswered
-      }
+
+    // Apply sorting
+    if (filters.sortBy === 'most_answered') {
+      q = query(q, orderBy('answersCount', 'desc'));
     } else {
-      // Original sorting logic for when unanswered is not active
-      if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc'));
-      } else {
-        q = query(q, orderBy('createdAt', 'desc'));
-      }
+      q = query(q, orderBy('createdAt', 'desc'));
     }
 
     return onSnapshot(
       q,
-      (snapshot) => {
-        const requests = snapshot.docs.map(doc => ({
+      async (snapshot) => {
+        let requests = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
           createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
         }));
+
+        // If unanswered filter is active, filter out requests with human answers
+        if (filters.unanswered) {
+          const filteredRequests = [];
+          for (const req of requests) {
+            const answersRef = collection(db, 'answers');
+            const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
+            const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
+            if (humanAnswers.length === 0) {
+              filteredRequests.push(req);
+            }
+          }
+          requests = filteredRequests;
+        }
+
         callback(requests);
       },
       (error) => {
@@ -464,32 +466,20 @@ export const requestService = {
         q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
       }
     }
-    // Combined Unanswered filter and Sorting
-    if (filters.unanswered) {
-      q = query(q, where('answersCount', '<=', 1));
-      if (filters.sortBy === 'newest') {
-        q = query(q, orderBy('answersCount', 'asc'), orderBy('createdAt', 'desc'));
-      } else if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc'));
-      } else {
-        q = query(q, orderBy('answersCount', 'asc'));
-      }
+
+    // Apply sorting
+    if (filters.sortBy === 'most_answered') {
+      q = query(q, orderBy('answersCount', 'desc'));
     } else {
-      if (filters.sortBy === 'most_answered') {
-        q = query(q, orderBy('answersCount', 'desc'));
-      } else {
-        q = query(q, orderBy('createdAt', 'desc'));
-      }
+      q = query(q, orderBy('createdAt', 'desc'));
     }
 
-    // Apply search query (simple title matching for now)
+    // Apply search query
     if (searchQuery) {
       const lowerCaseSearchQuery = searchQuery.toLowerCase();
-      // This is a simple starts-with query for title
-      // For more advanced search, consider a dedicated search service (e.g., Algolia, ElasticSearch)
       q = query(q,
         where('title_lowercase', '>=', lowerCaseSearchQuery),
-        where('title_lowercase', '<=', lowerCaseSearchQuery + '~ ') // Added space to effectively search for words
+        where('title_lowercase', '<=', lowerCaseSearchQuery + '~ ')
       );
     }
     
@@ -500,11 +490,25 @@ export const requestService = {
     q = query(q, limit(limitNum));
 
     const snapshot = await getDocs(q);
-    const requests = snapshot.docs.map(doc => ({
+    let requests = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
     }));
+
+    // If unanswered filter is active, filter out requests with human answers
+    if (filters.unanswered) {
+      const filteredRequests = [];
+      for (const req of requests) {
+        const answersRef = collection(db, 'answers');
+        const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
+        const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
+        if (humanAnswers.length === 0) {
+          filteredRequests.push(req);
+        }
+      }
+      requests = filteredRequests;
+    }
 
     return { requests, lastDoc: snapshot.docs[snapshot.docs.length - 1] || null };
   }
