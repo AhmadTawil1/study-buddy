@@ -1,10 +1,24 @@
+// src/services/questionService.js
+//
+// This service manages questions, answers, and related functionality in the StudyBuddy platform.
+// It handles the complete lifecycle of questions and answers including creation, voting,
+// accepting answers, and managing replies.
+//
+// Features:
+// - Question CRUD operations with filtering and search
+// - Answer management with AI and human answer support
+// - Voting system for questions and answers
+// - Reply system for answers
+// - Real-time subscriptions
+// - Notification integration
+// - Answer acceptance workflow
+
 import { db } from '@/src/firebase/firebase';
 import { 
   collection, 
   query, 
   where, 
-  orderBy, 
-  limit, 
+  orderBy,  
   getDocs, 
   onSnapshot,
   doc,
@@ -21,7 +35,11 @@ import {
 import { notificationService } from '@/src/services/notificationService';
 
 export const questionService = {
-  // Get all questions with optional filters
+  /**
+   * Retrieves questions with optional filtering
+   * @param {object} filters - Filter options (subject, userId, tags)
+   * @returns {Promise<Array>} Array of question objects
+   */
   getQuestions: async (filters = {}) => {
     const questionsRef = collection(db, 'questions');
     let q = query(questionsRef);
@@ -45,7 +63,12 @@ export const questionService = {
     }));
   },
 
-  // Subscribe to questions updates
+  /**
+   * Sets up real-time subscription to questions with optional filtering
+   * @param {function} callback - Function called when questions change
+   * @param {object} filters - Filter options (subject, userId, tags)
+   * @returns {function} Unsubscribe function
+   */
   subscribeToQuestions: (callback, filters = {}) => {
     const questionsRef = collection(db, 'questions');
     let q = query(questionsRef);
@@ -71,7 +94,11 @@ export const questionService = {
     });
   },
 
-  // Get a single question by ID
+  /**
+   * Retrieves a single question by its ID
+   * @param {string} questionId - The question ID to retrieve
+   * @returns {Promise<object|null>} Question object or null if not found
+   */
   getQuestionById: async (questionId) => {
     const questionRef = doc(db, 'questions', questionId);
     const questionSnap = await getDoc(questionRef);
@@ -85,7 +112,11 @@ export const questionService = {
     return null;
   },
 
-  // Create a new question
+  /**
+   * Creates a new question with default values
+   * @param {object} questionData - Question data to create
+   * @returns {Promise<object>} Created question with ID
+   */
   createQuestion: async (questionData) => {
     const questionsRef = collection(db, 'questions');
     const newQuestion = {
@@ -105,7 +136,12 @@ export const questionService = {
     };
   },
 
-  // Update a question
+  /**
+   * Updates an existing question
+   * @param {string} questionId - The question ID to update
+   * @param {object} updateData - Data to update
+   * @returns {Promise<void>}
+   */
   updateQuestion: async (questionId, updateData) => {
     const questionRef = doc(db, 'questions', questionId);
     await updateDoc(questionRef, {
@@ -114,7 +150,12 @@ export const questionService = {
     });
   },
 
-  // Add an answer to a question/request
+  /**
+   * Adds an answer to a question/request with special handling for AI answers
+   * @param {string} requestId - The request/question ID to answer
+   * @param {object} answerData - Answer data including userId, content, etc.
+   * @returns {Promise<object>} Created answer with ID
+   */
   addAnswer: async (requestId, answerData) => {
     // Support both questions and requests collections
     const requestRef = doc(db, 'requests', requestId);
@@ -204,7 +245,12 @@ export const questionService = {
     };
   },
 
-  // Update answer
+  /**
+   * Updates an existing answer
+   * @param {string} answerId - The answer ID to update
+   * @param {object} updateData - Data to update
+   * @returns {Promise<void>}
+   */
   updateAnswer: async (answerId, updateData) => {
     const answerRef = doc(db, 'answers', answerId);
     await updateDoc(answerRef, {
@@ -213,7 +259,13 @@ export const questionService = {
     });
   },
 
-  // Vote on a question
+  /**
+   * Votes on a question (upvote or downvote)
+   * @param {string} questionId - The question ID to vote on
+   * @param {string} voteType - 'up' or 'down'
+   * @param {string} userId - The user ID voting
+   * @returns {Promise<void>}
+   */
   voteQuestion: async (questionId, voteType, userId) => {
     const questionRef = doc(db, 'questions', questionId);
     const updates = {};
@@ -225,6 +277,7 @@ export const questionService = {
     }
 
     await updateDoc(questionRef, updates);
+    
     // Notify question owner if someone else upvotes
     if (voteType === 'up' && userId) {
       const questionSnap = await getDoc(questionRef);
@@ -240,22 +293,29 @@ export const questionService = {
     }
   },
 
-  // Vote on an answer
+  /**
+   * Votes on an answer with toggle functionality for upvotes
+   * @param {string} answerId - The answer ID to vote on
+   * @param {string} voteType - 'up' or 'down'
+   * @param {string} userId - The user ID voting
+   * @returns {Promise<void>}
+   */
   voteAnswer: async (answerId, voteType, userId) => {
     const answerRef = doc(db, 'answers', answerId);
     const answerSnap = await getDoc(answerRef);
     if (!answerSnap.exists()) return;
     const data = answerSnap.data();
     const upvotedBy = data.upvotedBy || [];
+    
     if (voteType === 'up') {
       if (upvotedBy.includes(userId)) {
-        // Remove upvote
+        // Remove upvote (toggle off)
         await updateDoc(answerRef, {
           upvotes: increment(-1),
           upvotedBy: arrayRemove(userId)
         });
       } else {
-        // Add upvote
+        // Add upvote (toggle on)
         await updateDoc(answerRef, {
           upvotes: increment(1),
           upvotedBy: arrayUnion(userId)
@@ -268,7 +328,12 @@ export const questionService = {
     }
   },
 
-  // Accept an answer
+  /**
+   * Accepts an answer as the best answer for a question
+   * @param {string} questionId - The question ID
+   * @param {string} answerId - The answer ID to accept
+   * @returns {Promise<void>}
+   */
   acceptAnswer: async (questionId, answerId) => {
     const questionRef = doc(db, 'questions', questionId);
     const answerRef = doc(db, 'answers', answerId);
@@ -284,7 +349,12 @@ export const questionService = {
     });
   },
 
-  // Delete an answer and update the parent request
+  /**
+   * Deletes an answer and updates the parent request
+   * Also deletes all associated replies
+   * @param {string} answerId - The answer ID to delete
+   * @returns {Promise<void>}
+   */
   deleteAnswer: async (answerId) => {
     const answerRef = doc(db, 'answers', answerId);
     const answerSnap = await getDoc(answerRef);
@@ -317,7 +387,12 @@ export const questionService = {
     await deleteDoc(answerRef);
   },
 
-  // Add a reply to an answer
+  /**
+   * Adds a reply to an answer
+   * @param {string} answerId - The answer ID to reply to
+   * @param {object} replyData - Reply data including content, author, etc.
+   * @returns {Promise<object>} Created reply with ID
+   */
   addReply: async (answerId, replyData) => {
     if (!answerId || typeof answerId !== 'string') {
       console.error('Invalid answerId provided to addReply:', answerId);
@@ -329,6 +404,7 @@ export const questionService = {
     if (!answerSnap.exists()) {
       throw new Error('Answer not found');
     }
+    
     // Ensure repliesRef is a top-level collection
     const repliesRef = collection(db, 'replies');
     const newReply = {
@@ -349,7 +425,11 @@ export const questionService = {
     };
   },
 
-  // Get replies for an answer
+  /**
+   * Retrieves all replies for a specific answer
+   * @param {string} answerId - The answer ID to get replies for
+   * @returns {Promise<Array>} Array of reply objects
+   */
   getReplies: async (answerId) => {
     const repliesRef = collection(db, 'replies');
     const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
@@ -360,7 +440,12 @@ export const questionService = {
     }));
   },
 
-  // Subscribe to replies for an answer
+  /**
+   * Sets up real-time subscription to replies for an answer
+   * @param {string} answerId - The answer ID to subscribe to replies for
+   * @param {function} callback - Function called when replies change
+   * @returns {function} Unsubscribe function
+   */
   subscribeToReplies: (answerId, callback) => {
     const repliesRef = collection(db, 'replies');
     const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
@@ -376,7 +461,13 @@ export const questionService = {
     });
   },
 
-  // Vote on a reply
+  /**
+   * Votes on a reply
+   * @param {string} replyId - The reply ID to vote on
+   * @param {string} voteType - 'up' or 'down'
+   * @param {string} userId - The user ID voting
+   * @returns {Promise<void>}
+   */
   voteReply: async (replyId, voteType, userId) => {
     const replyRef = doc(db, 'replies', replyId);
     const replySnap = await getDoc(replyRef);
@@ -398,7 +489,11 @@ export const questionService = {
     }
   },
 
-  // Delete a reply
+  /**
+   * Deletes a reply and updates the parent answer
+   * @param {string} replyId - The reply ID to delete
+   * @returns {Promise<void>}
+   */
   deleteReply: async (replyId) => {
     const replyRef = doc(db, 'replies', replyId);
     const replySnap = await getDoc(replyRef);
@@ -418,7 +513,11 @@ export const questionService = {
     await deleteDoc(replyRef);
   },
 
-  // Format timestamp with hour
+  /**
+   * Formats a Firestore timestamp to show hours and minutes
+   * @param {object} timestamp - Firestore timestamp object
+   * @returns {string} Formatted time string (HH:MM)
+   */
   formatTimestampWithHour: (timestamp) => {
     if (!timestamp || typeof timestamp.toDate !== 'function') {
       return '';
@@ -430,7 +529,12 @@ export const questionService = {
     return formattedTime;
   },
 
-  // Subscribe to answers for a request by requestId
+  /**
+   * Sets up real-time subscription to answers for a request
+   * @param {string} requestId - The request ID to subscribe to answers for
+   * @param {function} callback - Function called when answers change
+   * @returns {function} Unsubscribe function
+   */
   subscribeToAnswersByRequestId: (requestId, callback) => {
     const answersRef = collection(db, 'answers');
     const q = query(answersRef, where('requestId', '==', requestId));
