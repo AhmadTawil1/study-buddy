@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { requestService } from '@/src/services/requestService'
+import { requestService } from '@/src/services/requests/requestService'
 
 const TIME_RANGES = [
   { value: '24h', label: 'Last 24h' },

@@ -5,6 +5,7 @@ import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { submitReply } from '@/src/services/requests/answerService';
 
 export default function ReplySection({ answerId }) {
   const { user } = useAuth();

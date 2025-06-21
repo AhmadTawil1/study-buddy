@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import { requestService } from '@/src/services/requestService'
+import { getSearchSuggestions } from '@/src/services/requests/searchService'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function SearchBar({ value, onChange, onSuggestionClick }) {
@@ -13,7 +13,7 @@ export default function SearchBar({ value, onChange, onSuggestionClick }) {
     const fetchSuggestions = async () => {
       if (value.length > 2) {
         try {
-          const allSuggestions = await requestService.getSearchSuggestions(value)
+          const allSuggestions = await getSearchSuggestions(value)
           setSuggestions(allSuggestions)
           setShowSuggestions(true)
         } catch (error) {

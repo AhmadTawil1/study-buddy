@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/src/context/authContext'
 import { profileService } from '@/src/services/profileService'
-import { requestService } from '@/src/services/requestService'
+import { requestService } from '@/src/services/requests/requestService'
 import { buildRecentActivity, isProfileOwner } from '@/src/utils/profileUtils'
 
 export function useProfileLogic(user, propUserId) {

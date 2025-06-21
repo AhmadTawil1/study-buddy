@@ -27,7 +27,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { requestService } from '@/src/services/requestService';
+import { requestService } from '@/src/services/requests/requestService';
 import { useUser } from '@/src/context/userContext';
 
 /**

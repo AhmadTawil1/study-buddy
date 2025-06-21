@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
-import ReplySection from './ReplySection';
+import ReplySection from '../components/ReplySection';
 import { useRouter } from 'next/navigation';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -13,6 +13,7 @@ import { useTheme } from '@/src/context/themeContext';
 import FileUpload from '@/src/components/common/FileUpload';
 import { uploadFiles } from '@/src/services/storageService';
 import { notificationService } from '@/src/services/notificationService';
+import { submitAnswer, submitReply } from '@/src/services/requests/answerService';
 
 export default function AnswerSection({ answers, requestId, questionTitle, questionDescription, questionOwnerId }) {
   const { user } = useAuth();

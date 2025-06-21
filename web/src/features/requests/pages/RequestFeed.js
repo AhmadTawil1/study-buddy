@@ -1,11 +1,11 @@
 // src/features/requests/RequestFeed.js
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import RequestCard from './RequestCard'
-import SearchBar from './SearchBar'
-import FiltersPanel from './FiltersPanel'
-import SidePanel from './SidePanel'
-import { requestService } from '@/src/services/requestService'
+import RequestCard from '../components/RequestCard'
+import SearchBar from '../components/SearchBar'
+import FiltersPanel from '../components/FiltersPanel'
+import SidePanel from '../components/SidePanel'
+import { requestService } from '@/src/services/requests/requestService'
 import timeAgo from '@/src/utils/timeAgo'
 
 const PAGE_SIZE = 10

@@ -4,7 +4,7 @@
 // Features: Header, request feed, filtering (in feed component).
 
 'use client'
-import RequestFeed from '@/src/features/requests/RequestFeed'
+import RequestFeed from '@/src/features/requests/pages/RequestFeed'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function RequestsPage() {

@@ -1,7 +1,7 @@
 "use client"
 import { FiBookmark, FiShare2, FiThumbsUp, FiMessageSquare, FiEdit, FiSave, FiX } from 'react-icons/fi'
 import { useAuth } from '@/src/context/authContext';
-import { requestService } from '@/src/services/requestService';
+import { requestService } from '@/src/services/requests/requestService';
 import { useState, useEffect } from 'react';
 import Link from 'next/link'
 import { format } from 'date-fns'

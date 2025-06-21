@@ -39,6 +39,63 @@ import {
   startAfter
 } from 'firebase/firestore';
 
+// Helper functions
+const buildTimeRangeFilter = (timeRange) => {
+  if (!timeRange || timeRange === 'all') return null;
+  
+  const now = new Date();
+  const timeRanges = {
+    '24h': 24 * 60 * 60 * 1000,
+    '7d': 7 * 24 * 60 * 60 * 1000,
+    '30d': 30 * 24 * 60 * 60 * 1000
+  };
+  
+  const fromDate = new Date(now.getTime() - timeRanges[timeRange]);
+  return Timestamp.fromDate(fromDate);
+};
+
+const applyFilters = (q, filters) => {
+  if (filters.subject) q = query(q, where('subject', '==', filters.subject));
+  if (filters.status) q = query(q, where('status', '==', filters.status));
+  if (filters.userId) q = query(q, where('userId', '==', filters.userId));
+  
+  const timeFilter = buildTimeRangeFilter(filters.timeRange);
+  if (timeFilter) q = query(q, where('createdAt', '>=', timeFilter));
+  
+  return q;
+};
+
+const applySorting = (q, sortBy) => {
+  const sortField = sortBy === 'most_answered' ? 'answersCount' : 'createdAt';
+  const sortOrder = sortBy === 'most_answered' ? 'desc' : 'desc';
+  return query(q, orderBy(sortField, sortOrder));
+};
+
+const formatRequest = (doc) => ({
+  id: doc.id,
+  ...doc.data(),
+  createdAtFormatted: formatTimestampWithHour(doc.data().createdAt)
+});
+
+const formatTimestampWithHour = (timestamp) => {
+  if (timestamp?.toDate && typeof timestamp.seconds === 'number') {
+    const date = timestamp.toDate();
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+  }
+  return '';
+};
+
+const filterUnansweredRequests = async (requests) => {
+  const filtered = [];
+  for (const req of requests) {
+    const answersRef = collection(db, 'answers');
+    const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
+    const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
+    if (humanAnswers.length === 0) filtered.push(req);
+  }
+  return filtered.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+};
+
 export const requestService = {
   /**
    * Retrieves requests with optional filtering and sorting
@@ -47,130 +104,17 @@ export const requestService = {
    */
   getRequests: async (filters = {}) => {
     const requestsRef = collection(db, 'requests');
-    let q = query(requestsRef);
-
-    // Apply basic filters
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
-    
-    // Time range filter for recent requests
-    if (filters.timeRange && filters.timeRange !== 'all') {
-      let fromDate = null;
-      const now = new Date();
-      if (filters.timeRange === '24h') {
-        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '7d') {
-        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '30d') {
-        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
-      if (fromDate) {
-        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
-      }
-    }
-    
-    // Unanswered filter: only show requests with no human answers
-    if (filters.unanswered) {
-      try {
-        // Get all requests (with other filters applied)
-        const snapshot = await getDocs(q);
-        const requests = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
-        }));
-        
-        // For each request, count only human answers (exclude AI answers)
-        const filtered = [];
-        for (const req of requests) {
-          const answersRef = collection(db, 'answers');
-          const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
-          const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
-          if (humanAnswers.length === 0) {
-            filtered.push(req);
-          }
-        }
-        
-        // Sort by createdAt desc
-        filtered.sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
-        
-        // If no unanswered questions found, return mock data for demo purposes
-        if (filtered.length === 0) {
-          return [
-            {
-              id: 'demo-unanswered-1',
-              title: 'Help with calculus integration',
-              subject: 'Mathematics',
-              createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
-              createdAtFormatted: '1 hour ago'
-            },
-            {
-              id: 'demo-unanswered-2',
-              title: 'Understanding organic chemistry reactions',
-              subject: 'Chemistry',
-              createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-              createdAtFormatted: '3 hours ago'
-            },
-            {
-              id: 'demo-unanswered-3',
-              title: 'Python data structures optimization',
-              subject: 'Computer Science',
-              createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-              createdAtFormatted: '5 hours ago'
-            }
-          ];
-        }
-        
-        return filtered;
-      } catch (error) {
-        console.warn('Error fetching unanswered questions:', error);
-        // Return mock data on error for demo purposes
-        return [
-          {
-            id: 'demo-unanswered-1',
-            title: 'Help with calculus integration',
-            subject: 'Mathematics',
-            createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-            createdAtFormatted: '1 hour ago'
-          },
-          {
-            id: 'demo-unanswered-2',
-            title: 'Understanding organic chemistry reactions',
-            subject: 'Chemistry',
-            createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-            createdAtFormatted: '3 hours ago'
-          },
-          {
-            id: 'demo-unanswered-3',
-            title: 'Python data structures optimization',
-            subject: 'Computer Science',
-            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-            createdAtFormatted: '5 hours ago'
-          }
-        ];
-      }
-    }
-    
-    // Original sorting logic for when unanswered is not active
-    if (filters.sortBy === 'most_answered') {
-      q = query(q, orderBy('answersCount', 'desc'));
-    } else {
-      q = query(q, orderBy('createdAt', 'desc'));
-    }
+    let q = applyFilters(query(requestsRef), filters);
+    q = applySorting(q, filters.sortBy);
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
-    }));
+    let requests = snapshot.docs.map(formatRequest);
+    
+    if (filters.unanswered) {
+      requests = await filterUnansweredRequests(requests);
+    }
+    
+    return requests;
   },
 
   /**
@@ -181,72 +125,21 @@ export const requestService = {
    */
   subscribeToRequests: (callback, filters = {}) => {
     const requestsRef = collection(db, 'requests');
-    let q = query(requestsRef);
+    let q = applyFilters(query(requestsRef), filters);
+    q = applySorting(q, filters.sortBy);
 
-    // Apply the same filters as getRequests
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
-    
-    // Time range filter
-    if (filters.timeRange && filters.timeRange !== 'all') {
-      let fromDate = null;
-      const now = new Date();
-      if (filters.timeRange === '24h') {
-        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '7d') {
-        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '30d') {
-        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return onSnapshot(q, async (snapshot) => {
+      let requests = snapshot.docs.map(formatRequest);
+      
+      if (filters.unanswered) {
+        requests = await filterUnansweredRequests(requests);
       }
-      if (fromDate) {
-        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
-      }
-    }
-
-    // Apply sorting
-    if (filters.sortBy === 'most_answered') {
-      q = query(q, orderBy('answersCount', 'desc'));
-    } else {
-      q = query(q, orderBy('createdAt', 'desc'));
-    }
-
-    return onSnapshot(
-      q,
-      async (snapshot) => {
-        let requests = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
-        }));
-
-        // If unanswered filter is active, filter out requests with human answers
-        if (filters.unanswered) {
-          const filteredRequests = [];
-          for (const req of requests) {
-            const answersRef = collection(db, 'answers');
-            const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
-            const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
-            if (humanAnswers.length === 0) {
-              filteredRequests.push(req);
-            }
-          }
-          requests = filteredRequests;
-        }
-
-        callback(requests);
-      },
-      (error) => {
-        console.error('Firestore subscribeToRequests error:', error);
-        callback([]); // Return empty array on error
-      }
-    );
+      
+      callback(requests);
+    }, (error) => {
+      console.error('Firestore subscribeToRequests error:', error);
+      callback([]);
+    });
   },
 
   /**
@@ -257,14 +150,7 @@ export const requestService = {
   getRequestById: async (requestId) => {
     const requestRef = doc(db, 'requests', requestId);
     const requestSnap = await getDoc(requestRef);
-    
-    if (requestSnap.exists()) {
-      return {
-        id: requestSnap.id,
-        ...requestSnap.data()
-      };
-    }
-    return null;
+    return requestSnap.exists() ? { id: requestSnap.id, ...requestSnap.data() } : null;
   },
 
   /**
@@ -276,17 +162,14 @@ export const requestService = {
     const requestsRef = collection(db, 'requests');
     const newRequest = {
       ...requestData,
-      title_lowercase: requestData.title ? requestData.title.toLowerCase() : '',
+      title_lowercase: requestData.title?.toLowerCase() || '',
       createdAt: serverTimestamp(),
       status: 'open',
       responses: []
     };
     
     const docRef = await addDoc(requestsRef, newRequest);
-    return {
-      id: docRef.id,
-      ...newRequest
-    };
+    return { id: docRef.id, ...newRequest };
   },
 
   /**
@@ -297,10 +180,7 @@ export const requestService = {
    */
   updateRequest: async (requestId, updateData) => {
     const requestRef = doc(db, 'requests', requestId);
-    await updateDoc(requestRef, {
-      ...updateData,
-      updatedAt: serverTimestamp()
-    });
+    await updateDoc(requestRef, { ...updateData, updatedAt: serverTimestamp() });
   },
 
   /**
@@ -310,18 +190,7 @@ export const requestService = {
    */
   getRequestCount: async (filters = {}) => {
     const requestsRef = collection(db, 'requests');
-    let q = query(requestsRef);
-
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
-
+    const q = applyFilters(query(requestsRef), filters);
     const snapshot = await getCountFromServer(q);
     return snapshot.data().count;
   },
@@ -335,11 +204,7 @@ export const requestService = {
   subscribeToRequestById: (requestId, callback) => {
     const requestRef = doc(db, 'requests', requestId);
     return onSnapshot(requestRef, (docSnap) => {
-      if (docSnap.exists()) {
-        callback({ id: docSnap.id, ...docSnap.data() });
-      } else {
-        callback(null);
-      }
+      callback(docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null);
     });
   },
 
@@ -488,40 +353,15 @@ export const requestService = {
     const requestRef = doc(db, 'requests', requestId);
     const requestSnap = await getDoc(requestRef);
     if (!requestSnap.exists()) return;
+    
     const data = requestSnap.data();
     const upvotedBy = data.upvotedBy || [];
-    if (upvotedBy.includes(userId)) {
-      // Remove upvote
-      await updateDoc(requestRef, {
-        upvotes: increment(-1),
-        upvotedBy: arrayRemove(userId)
-      });
-    } else {
-      // Add upvote
-      await updateDoc(requestRef, {
-        upvotes: increment(1),
-        upvotedBy: arrayUnion(userId)
-      });
-    }
-  },
-
-  /**
-   * Formats a Firestore timestamp to show hours and minutes
-   * @param {object} timestamp - Firestore timestamp object
-   * @returns {string} Formatted time string (HH:MM) or empty string
-   */
-  formatTimestampWithHour: (timestamp) => {
-    // A Firestore Timestamp object has 'seconds' and 'nanoseconds' properties
-    // and a 'toDate' method. `serverTimestamp()` is a FieldValue, not a Timestamp
-    // until the server writes it back. This check handles both.
-    if (timestamp && typeof timestamp.toDate === 'function' && typeof timestamp.seconds === 'number') {
-      const date = timestamp.toDate();
-      const hours = date.getHours();
-      const minutes = date.getMinutes();
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    }
-    // If it's not a valid Firestore Timestamp, return an empty string or handle as needed.
-    return '';
+    const hasUpvoted = upvotedBy.includes(userId);
+    
+    await updateDoc(requestRef, {
+      upvotes: increment(hasUpvoted ? -1 : 1),
+      upvotedBy: hasUpvoted ? arrayRemove(userId) : arrayUnion(userId)
+    });
   },
 
   /**
@@ -532,9 +372,7 @@ export const requestService = {
    */
   saveQuestion: async (userId, requestId) => {
     const savedRef = doc(db, 'users', userId, 'savedQuestions', requestId);
-    await setDoc(savedRef, {
-      savedAt: serverTimestamp()
-    });
+    await setDoc(savedRef, { savedAt: serverTimestamp() });
   },
 
   /**
@@ -556,10 +394,7 @@ export const requestService = {
   getSavedQuestions: async (userId) => {
     const savedRef = collection(db, 'users', userId, 'savedQuestions');
     const snapshot = await getDocs(savedRef);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      savedAt: doc.data().savedAt
-    }));
+    return snapshot.docs.map(doc => ({ id: doc.id, savedAt: doc.data().savedAt }));
   },
 
   /**
@@ -571,10 +406,7 @@ export const requestService = {
   subscribeToSavedQuestions: (userId, callback) => {
     const savedRef = collection(db, 'users', userId, 'savedQuestions');
     return onSnapshot(savedRef, (snapshot) => {
-      const savedQuestions = snapshot.docs.map(doc => ({
-        id: doc.id,
-        savedAt: doc.data().savedAt
-      }));
+      const savedQuestions = snapshot.docs.map(doc => ({ id: doc.id, savedAt: doc.data().savedAt }));
       callback(savedQuestions);
     });
   },
@@ -589,43 +421,9 @@ export const requestService = {
    */
   fetchRequestsPaginated: async (limitNum = 10, lastDoc = null, filters = {}, searchQuery = '') => {
     const requestsRef = collection(db, 'requests');
-    let q = query(requestsRef);
-
-    // Apply filters
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.status) {
-      q = query(q, where('status', '==', filters.status));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
+    let q = applyFilters(query(requestsRef), filters);
+    q = applySorting(q, filters.sortBy);
     
-    // Time range filter
-    if (filters.timeRange && filters.timeRange !== 'all') {
-      let fromDate = null;
-      const now = new Date();
-      if (filters.timeRange === '24h') {
-        fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '7d') {
-        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      } else if (filters.timeRange === '30d') {
-        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
-      if (fromDate) {
-        q = query(q, where('createdAt', '>=', Timestamp.fromDate(fromDate)));
-      }
-    }
-
-    // Apply sorting
-    if (filters.sortBy === 'most_answered') {
-      q = query(q, orderBy('answersCount', 'desc'));
-    } else {
-      q = query(q, orderBy('createdAt', 'desc'));
-    }
-
-    // Apply search query
     if (searchQuery) {
       const lowerCaseSearchQuery = searchQuery.toLowerCase();
       q = query(q,
@@ -634,33 +432,23 @@ export const requestService = {
       );
     }
     
-    // Pagination
-    if (lastDoc) {
-      q = query(q, startAfter(lastDoc));
-    }
+    if (lastDoc) q = query(q, startAfter(lastDoc));
     q = query(q, limit(limitNum));
 
     const snapshot = await getDocs(q);
-    let requests = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAtFormatted: requestService.formatTimestampWithHour(doc.data().createdAt)
-    }));
+    let requests = snapshot.docs.map(formatRequest);
 
-    // If unanswered filter is active, filter out requests with human answers
     if (filters.unanswered) {
-      const filteredRequests = [];
-      for (const req of requests) {
-        const answersRef = collection(db, 'answers');
-        const answersSnap = await getDocs(query(answersRef, where('requestId', '==', req.id)));
-        const humanAnswers = answersSnap.docs.filter(a => a.data().userId !== 'ai-bot');
-        if (humanAnswers.length === 0) {
-          filteredRequests.push(req);
-        }
-      }
-      requests = filteredRequests;
+      requests = await filterUnansweredRequests(requests);
     }
 
     return { requests, lastDoc: snapshot.docs[snapshot.docs.length - 1] || null };
-  }
+  },
+
+  /**
+   * Formats a Firestore timestamp to show hours and minutes
+   * @param {object} timestamp - Firestore timestamp object
+   * @returns {string} Formatted time string (HH:MM) or empty string
+   */
+  formatTimestampWithHour
 }; 

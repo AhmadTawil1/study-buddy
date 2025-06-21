@@ -1,7 +1,7 @@
 "use client"
 import { useState } from 'react';
 import Editor from '@monaco-editor/react'
-import { requestService } from '@/src/services/requestService';
+import { requestService } from '@/src/services/requests/requestService';
 import { useTheme } from '@/src/context/themeContext';
 
 async function regenerateAIAnswer(requestId, title, description) {

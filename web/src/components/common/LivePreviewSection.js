@@ -6,7 +6,7 @@ import { FiArrowRight, FiStar, FiUsers, FiBook } from 'react-icons/fi'
 import { fetchLatestQuestions, fetchTopHelpers } from '@/src/firebase/queries'
 import { formatDistanceToNow } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext'
-import { requestService } from '@/src/services/requestService'
+import { requestService } from '@/src/services/requests/requestService'
 
 // src/components/common/LivePreviewSection.js
 //

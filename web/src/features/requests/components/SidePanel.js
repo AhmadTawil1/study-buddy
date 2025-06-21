@@ -2,7 +2,8 @@
 import Link from 'next/link'
 import { UserCircleIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
-import { requestService } from '@/src/services/requestService'
+import { subscribeToPopularTags } from '@/src/services/requests/tagService'
+import { subscribeToTopContributors } from '@/src/services/requests/contributorService'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function SidePanel() {
@@ -17,12 +18,12 @@ export default function SidePanel() {
     setLoading(true);
 
     // Subscribe to popular tags
-    unsubTags = requestService.subscribeToPopularTags((tags) => {
+    unsubTags = subscribeToPopularTags((tags) => {
       setPopularTags(tags);
     });
 
     // Subscribe to top contributors
-    unsubContributors = requestService.subscribeToTopContributors((contributors) => {
+    unsubContributors = subscribeToTopContributors((contributors) => {
       setTopContributors(contributors);
       setLoading(false);
     });
