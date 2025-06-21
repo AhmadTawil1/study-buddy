@@ -5,6 +5,7 @@
 //
 // Features:
 // - Question rephrasing for better clarity
+// - AI answer generation for questions
 // - Error handling for API failures
 // - Consistent error message formatting
 
@@ -37,5 +38,34 @@ export async function rephraseQuestion(prompt) {
     console.error(' Failed to call rephrase API:', err)
     // Return a user-friendly error message
     return ' Rephrase failed: API error'
+  }
+}
+
+/**
+ * Generates an AI answer for a question using the AI answer API
+ * @param {Object} params - Parameters for answer generation
+ * @param {string} params.title - The question title
+ * @param {string} params.description - The question description
+ * @param {string} params.codeSnippet - Optional code snippet
+ * @param {string} params.codeLanguage - The programming language of the code
+ * @returns {Promise<string>} The generated AI answer
+ */
+export async function generateAnswer({ title, description, codeSnippet, codeLanguage }) {
+  try {
+    const response = await fetch('/api/ai-answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: title + '\n' + description,
+        codeSnippet: codeSnippet,
+        codeLanguage: codeLanguage
+      })
+    })
+    
+    const { answer } = await response.json()
+    return answer
+  } catch (error) {
+    console.error('Failed to generate AI answer:', error)
+    throw new Error('Failed to generate AI answer')
   }
 }

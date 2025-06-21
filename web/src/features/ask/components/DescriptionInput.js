@@ -1,11 +1,10 @@
 'use client'
 
 import React from 'react'
-import ReactMarkdown from 'react-markdown'
 import { rephraseQuestion } from '@/src/services/aiService'
 import { useTheme } from '@/src/context/themeContext'
 
-export default function DescriptionInput({ value, onChange, onRephrase, loading, showPreview, setShowPreview }) {
+export default function DescriptionInput({ value, onChange, onRephrase, loading }) {
   const { colors } = useTheme();
   const handleRephraseDescription = async () => {
     if (!value.trim()) return

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/src/context/authContext';
 import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
-import formatDate from '@/src/utils/formatDate';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 

@@ -128,19 +128,7 @@ export const UserProvider = ({ children }) => {
 
 /**
  * Custom hook to access user context
- * 
- * @returns {Object} User context containing:
- *   - user: Firebase Auth user object
- *   - userProfile: User profile data from Firestore
- *   - loading: Loading state for initial data fetch
- *   - updateUserProfile: Function to update user profile
- * 
- * @throws {Error} If used outside of UserProvider
- * 
- * Example usage:
- * ```js
- * const { user, userProfile, loading, updateUserProfile } = useUser();
- * ```
+
  */
 export const useUser = () => {
   const context = useContext(UserContext);

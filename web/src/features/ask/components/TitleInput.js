@@ -3,7 +3,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { rephraseQuestion } from '@/src/services/aiService'
-import calculateClarityScore from '@/src/utils/clarityScore'
 import { useTheme } from '@/src/context/themeContext'
 
 const MAX_TITLE_LENGTH = 100

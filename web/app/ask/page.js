@@ -32,7 +32,9 @@ export default function AskPage() {
       setLoadingRecent(true)
       try {
         const res = await fetchLatestQuestions()
-        setRecent(Array.isArray(res) ? res : (res.questions || []))
+        // Handle questions data structure - API might return {questions: []} or [] directly
+        const questions = res?.questions || res || []
+        setRecent(Array.isArray(questions) ? questions : [])
       } catch {
         setRecent([])
       } finally {

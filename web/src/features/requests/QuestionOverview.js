@@ -3,7 +3,6 @@ import { FiBookmark, FiShare2, FiThumbsUp, FiMessageSquare, FiEdit, FiSave, FiX 
 import { useAuth } from '@/src/context/authContext';
 import { requestService } from '@/src/services/requestService';
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext';

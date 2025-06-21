@@ -70,55 +70,11 @@ export const fetchLatestQuestions = async (pageLimit = LIMITS.LATEST_QUESTIONS, 
     }))
     const lastDoc = querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
     
-    // If no questions found, return mock data for demo purposes
-    if (questions.length === 0) {
-      const mockQuestions = [
-        {
-          id: 'demo-1',
-          title: 'How to solve quadratic equations?',
-          subject: 'Mathematics',
-          createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
-        },
-        {
-          id: 'demo-2',
-          title: 'Understanding Newton\'s laws of motion',
-          subject: 'Physics',
-          createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000) // 4 hours ago
-        },
-        {
-          id: 'demo-3',
-          title: 'JavaScript async/await best practices',
-          subject: 'Computer Science',
-          createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000) // 6 hours ago
-        }
-      ]
-      return { questions: mockQuestions, lastDoc: null }
-    }
-    
     return { questions, lastDoc }
   } catch (error) {
-    // Return mock data on error for demo purposes
-    const mockQuestions = [
-      {
-        id: 'demo-1',
-        title: 'How to solve quadratic equations?',
-        subject: 'Mathematics',
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
-      },
-      {
-        id: 'demo-2',
-        title: 'Understanding Newton\'s laws of motion',
-        subject: 'Physics',
-        createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000)
-      },
-      {
-        id: 'demo-3',
-        title: 'JavaScript async/await best practices',
-        subject: 'Computer Science',
-        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000)
-      }
-    ]
-    return { questions: mockQuestions, lastDoc: null }
+    console.error('Error fetching latest questions:', error)
+    // Return empty data instead of throwing error for better UX
+    return { questions: [], lastDoc: null }
   }
 }
 
@@ -148,30 +104,8 @@ export const fetchTopHelpers = async () => {
       .map(([email, count]) => ({ email, count }))
 
     if (sortedContributorEmails.length === 0) {
-      // Return mock data if no helpers found
-      return [
-        {
-          id: 'demo-helper-1',
-          displayName: 'Sarah Johnson',
-          subjects: ['Mathematics', 'Physics'],
-          rating: 4.8,
-          answers: 12
-        },
-        {
-          id: 'demo-helper-2',
-          displayName: 'Mike Chen',
-          subjects: ['Computer Science', 'Chemistry'],
-          rating: 4.6,
-          answers: 8
-        },
-        {
-          id: 'demo-helper-3',
-          displayName: 'Emma Davis',
-          subjects: ['Biology', 'Mathematics'],
-          rating: 4.9,
-          answers: 15
-        }
-      ]
+      // Return empty array instead of throwing error for better UX
+      return []
     }
 
     // Fetch user details for top contributors
@@ -200,30 +134,9 @@ export const fetchTopHelpers = async () => {
       answers: item.count
     }))
   } catch (error) {
-    // Return mock data on error
-    return [
-      {
-        id: 'demo-helper-1',
-        displayName: 'Sarah Johnson',
-        subjects: ['Mathematics', 'Physics'],
-        rating: 4.8,
-        answers: 12
-      },
-      {
-        id: 'demo-helper-2',
-        displayName: 'Mike Chen',
-        subjects: ['Computer Science', 'Chemistry'],
-        rating: 4.6,
-        answers: 8
-      },
-      {
-        id: 'demo-helper-3',
-        displayName: 'Emma Davis',
-        subjects: ['Biology', 'Mathematics'],
-        rating: 4.9,
-        answers: 15
-      }
-    ]
+    console.error('Error fetching top helpers:', error)
+    // Return empty array instead of throwing error for better UX
+    return []
   }
 }
 

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useNotifications } from '@/src/context/notificationContext';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { formatDistanceToNow } from 'date-fns';
-import Link from 'next/link';
 import ReactDOM from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/src/context/themeContext';

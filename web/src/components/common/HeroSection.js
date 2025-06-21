@@ -109,28 +109,7 @@ export default function HeroSection() {
                 </div>
               </div>
             </div>
-            {/* AI-powered onboarding prompt
-            <div className="rounded-xl shadow-lg p-4 sm:p-6 max-w-md w-full mx-auto md:mx-0"
-                 style={{ background: colors.card, color: colors.text }}>
-              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4" style={{ color: colors.text }}>What subject do you need help in today?</h3>
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 w-full">
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g., Mathematics, Physics..."
-                  className="flex-1 px-3 sm:px-4 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base w-full"
-                  style={{ background: colors.inputBg, color: colors.text, border: `1px solid ${colors.inputBorder}` }}
-                />
-                <button
-                  type="submit"
-                  style={{ background: colors.button, color: colors.buttonSecondaryText }}
-                  className="w-full sm:w-auto px-4 py-2 rounded-lg hover:opacity-90 transition text-sm sm:text-base"
-                >
-                  Go
-                </button>
-              </form>
-            </div> */}
+
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 40 }}

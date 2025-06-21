@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { FiLock, FiGlobe } from 'react-icons/fi'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function PrivacyToggle({ isPrivate, setIsPrivate, isAnonymous, setIsAnonymous }) {

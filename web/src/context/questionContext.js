@@ -269,25 +269,6 @@ export const QuestionProvider = ({ children }) => {
 
 /**
  * Custom hook to access question context
- * 
- * @returns {Object} Question context containing:
- *   - questions: Array of question objects
- *   - loading: Loading state for questions
- *   - filters: Current filter configuration
- *   - createQuestion: Function to create new questions
- *   - updateQuestion: Function to update existing questions
- *   - addAnswer: Function to add answers
- *   - voteQuestion: Function to vote on questions
- *   - voteAnswer: Function to vote on answers
- *   - acceptAnswer: Function to accept answers
- *   - updateFilters: Function to update filters
- * 
- * @throws {Error} If used outside of QuestionProvider
- * 
- * Example usage:
- * ```js
- * const { questions, loading, createQuestion } = useQuestion();
- * ```
  */
 export const useQuestion = () => {
   const context = useContext(QuestionContext);
