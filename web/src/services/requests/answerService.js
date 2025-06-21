@@ -2,8 +2,7 @@ import { db } from '@/src/firebase/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export function subscribeToAnswersByRequestId(requestId, callback) {
-  const answersRef = collection(db, 'answers');
-  const q = query(answersRef, where('requestId', '==', requestId));
+  const q = query(collection(db, 'answers'), where('requestId', '==', requestId));
   return onSnapshot(q, (snapshot) => {
     const answers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     callback(answers);
@@ -11,14 +10,13 @@ export function subscribeToAnswersByRequestId(requestId, callback) {
 }
 
 export async function submitAnswer(answerData) {
-  const answersRef = collection(db, 'answers');
   const newAnswer = {
     ...answerData,
     createdAt: serverTimestamp(),
     upvotes: 0,
     isHelpful: false,
   };
-  const docRef = await addDoc(answersRef, newAnswer);
+  const docRef = await addDoc(collection(db, 'answers'), newAnswer);
   return { id: docRef.id, ...newAnswer };
 }
 

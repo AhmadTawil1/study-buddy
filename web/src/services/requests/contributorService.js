@@ -1,41 +1,54 @@
 import { db } from '@/src/firebase/firebase';
 import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 
+const processContributors = (docs) => {
+  const contributorCount = {};
+  docs.forEach(doc => {
+    const authorName = doc.data().authorName || doc.data().author;
+    if (authorName && authorName !== 'Unknown' && authorName !== 'AI Assistant') {
+      contributorCount[authorName] = (contributorCount[authorName] || 0) + 1;
+    }
+  });
+  
+  return Object.entries(contributorCount)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([email, count]) => ({ email, count }));
+};
+
+const fetchUserData = async (emails) => {
+  if (emails.length === 0) return {};
+  
+  const usersQuery = query(collection(db, 'users'), where('email', 'in', emails));
+  const usersSnapshot = await getDocs(usersQuery);
+  
+  const userDataMap = {};
+  usersSnapshot.docs.forEach(doc => {
+    const data = doc.data();
+    userDataMap[data.email] = { name: data.name, nickname: data.nickname, id: doc.id };
+  });
+  
+  return userDataMap;
+};
+
 export function subscribeToTopContributors(callback) {
-  const unsub = onSnapshot(collection(db, 'answers'), async (snapshot) => {
-    const contributorCount = {};
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      const authorName = data.authorName || data.author;
-      if (authorName && authorName !== 'Unknown' && authorName !== 'AI Assistant') {
-        contributorCount[authorName] = (contributorCount[authorName] || 0) + 1;
-      }
-    });
-    const sortedContributorEmails = Object.entries(contributorCount)
-      .sort(([, countA], [, countB]) => countB - countA)
-      .slice(0, 5)
-      .map(([email, count]) => ({ email, count }));
-    if (sortedContributorEmails.length === 0) {
+  return onSnapshot(collection(db, 'answers'), async (snapshot) => {
+    const contributors = processContributors(snapshot.docs);
+    
+    if (contributors.length === 0) {
       callback([]);
       return;
     }
-    const topContributorEmails = sortedContributorEmails.map(item => item.email);
-    const usersRef = collection(db, 'users');
-    if (topContributorEmails.length > 0) {
-      const usersQuery = query(usersRef, where('email', 'in', topContributorEmails));
-      const usersSnapshot = await getDocs(usersQuery);
-      const userDataMap = {};
-      usersSnapshot.docs.forEach(doc => {
-        const data = doc.data();
-        userDataMap[data.email] = { name: data.name, nickname: data.nickname, id: doc.id };
-      });
-      const topContributorsWithNames = sortedContributorEmails.map(item => {
-        const userData = userDataMap[item.email];
-        const displayName = userData?.nickname || userData?.name || item.email;
-        return { name: displayName, answers: item.count, userId: userData?.id };
-      });
-      callback(topContributorsWithNames);
-    }
+    
+    const emails = contributors.map(c => c.email);
+    const userDataMap = await fetchUserData(emails);
+    
+    const topContributors = contributors.map(item => {
+      const userData = userDataMap[item.email];
+      const displayName = userData?.nickname || userData?.name || item.email;
+      return { name: displayName, answers: item.count, userId: userData?.id };
+    });
+    
+    callback(topContributors);
   });
-  return unsub;
 } 
