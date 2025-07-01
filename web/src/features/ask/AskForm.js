@@ -51,8 +51,6 @@ export default function AskForm() {
     handleSubmit,
     handleRephraseTitle,
     handleRephraseDescription,
-    handleDrag,
-    handleDrop,
     handleFiles,
     removeFile,
     addTag,

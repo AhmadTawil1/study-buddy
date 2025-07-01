@@ -20,7 +20,7 @@ export default function ChatRoom({ requestId, currentUser }) {
   const [input, setInput] = useState('');
   const messages = useChatMessages(requestId);
   const bottomRef = useRef(null);
-  useTheme(); // just to trigger re-render on theme change
+  const { colors, mode } = useTheme();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,30 +54,47 @@ export default function ChatRoom({ requestId, currentUser }) {
   };
 
   return (
-    <div className="flex flex-col h-[80vh] max-h-[90vh] w-full max-w-2xl mx-auto rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 relative">
+    <div
+      className="flex flex-col w-full max-w-2xl h-full max-h-[90vh] rounded-2xl shadow-lg relative"
+      style={{
+        border: `1px solid ${colors.border}`,
+        background: colors.card,
+      }}
+    >
       {/* Message List */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-3 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent bg-white dark:bg-gray-900 rounded-t-2xl">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-3 scrollbar-thin rounded-t-2xl"
+        style={{
+          background: colors.card,
+        }}
+      >
         {messages.map((msg, idx) => {
           const isCurrentUser = msg.sender?.uid === currentUser?.uid;
           return (
             <div key={msg.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}> 
               <div
-                className={`group rounded-xl px-4 py-3 max-w-[70%] shadow-sm flex flex-col transition-colors duration-200
-                  ${isCurrentUser
-                    ? 'bg-blue-500 text-white dark:bg-blue-400 dark:text-gray-900 items-end'
-                    : 'bg-white text-gray-900 border border-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 items-start'}
-                  ${idx > 0 && messages[idx-1]?.sender?.uid === msg.sender?.uid ? 'mt-1' : 'mt-3'}`}
-                style={{ wordBreak: 'break-word' }}
+                className="group rounded-xl px-4 py-3 max-w-[70%] shadow-sm flex flex-col transition-colors duration-200"
+                style={{
+                  wordBreak: 'break-word',
+                  background: isCurrentUser ? colors.button : colors.inputBg,
+                  color: isCurrentUser ? colors.text : colors.text,
+                  alignItems: isCurrentUser ? 'flex-end' : 'flex-start',
+                  border: isCurrentUser ? undefined : `1px solid ${colors.border}`,
+                  marginTop: idx > 0 && messages[idx-1]?.sender?.uid === msg.sender?.uid ? 4 : 12
+                }}
               >
                 {msg.type === 'text' && (
                   <span className="text-base leading-relaxed">{msg.text}</span>
                 )}
                 {msg.type === 'zoom_invite' && msg.url && (
                   <a href={msg.url} target="_blank" rel="noopener noreferrer">
-                    <button className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded mt-1 text-sm transition-colors">Join Zoom</button>
+                    <button style={{background: colors.button, color: colors.text}} className="px-3 py-1 rounded mt-1 text-sm transition-colors">Join Zoom</button>
                   </a>
                 )}
-                <span className={`text-xs mt-2 font-medium opacity-80 ${isCurrentUser ? 'text-blue-200 dark:text-blue-900' : 'text-gray-500 dark:text-gray-400'} whitespace-nowrap`}>
+                <span
+                  className="text-xs mt-2 font-medium opacity-80 whitespace-nowrap"
+                  style={{ color: isCurrentUser ? colors.inputBg : colors.inputPlaceholder }}
+                >
                   {msg.sender?.displayName || msg.sender?.email || 'User'}
                 </span>
               </div>
@@ -89,25 +106,43 @@ export default function ChatRoom({ requestId, currentUser }) {
       {/* Input Bar */}
       <form
         onSubmit={handleSend}
-        className="flex gap-2 items-center px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-2xl sticky bottom-0 z-10"
-        style={{ minHeight: '64px' }}
+        className="flex gap-2 items-center px-4 py-3 rounded-b-2xl sticky bottom-0 z-10"
+        style={{
+          minHeight: '64px',
+          borderTop: `1px solid ${colors.border}`,
+          background: colors.card
+        }}
       >
         <input
-          className="flex-1 rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-base placeholder-gray-400 dark:placeholder-gray-500"
+          className="flex-1 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 text-base"
+          style={{
+            border: `1px solid ${colors.border}`,
+            background: colors.inputBg,
+            color: colors.text,
+            placeholder: colors.inputPlaceholder
+          }}
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Type a message..."
         />
         <button
           type="submit"
-          className="h-11 px-5 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white dark:text-gray-900 transition-colors text-base shadow-sm"
+          className="h-11 px-5 rounded-lg font-semibold transition-colors text-base shadow-sm"
+          style={{
+            background: colors.button,
+            color: colors.text
+          }}
         >
           Send
         </button>
         <button
           type="button"
           onClick={handleZoomInvite}
-          className="h-11 px-5 rounded-lg font-semibold bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white dark:text-gray-900 transition-colors text-base shadow-sm"
+          className="h-11 px-5 rounded-lg font-semibold transition-colors text-base shadow-sm"
+          style={{
+            background: colors.button,
+            color: colors.text
+          }}
         >
           Zoom Invite
         </button>

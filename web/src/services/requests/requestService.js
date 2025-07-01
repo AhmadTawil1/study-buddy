@@ -16,12 +16,11 @@
 // - Time-based filtering
 
 import { db } from '@/src/firebase/firebase';
+import { buildQuery } from '@/src/firebase/queries';
 import { 
   collection, 
   query, 
   where, 
-  orderBy, 
-  limit, 
   getDocs, 
   onSnapshot,
   doc,
@@ -33,46 +32,9 @@ import {
   increment,
   arrayUnion,
   arrayRemove,
-  Timestamp,
   deleteDoc,
   setDoc,
-  startAfter
 } from 'firebase/firestore';
-
-// Query builder
-const buildQuery = (collectionName, filters = {}, sortBy = 'createdAt', searchQuery = '', lastDoc = null, limitNum = null) => {
-  let q = query(collection(db, collectionName));
-  
-  // Apply filters
-  Object.entries(filters).forEach(([key, value]) => {
-    if (value && key !== 'timeRange' && key !== 'unanswered') {
-      q = query(q, where(key, '==', value));
-    }
-  });
-  
-  // Time range filter
-  if (filters.timeRange && filters.timeRange !== 'all') {
-    const timeRanges = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 };
-    const fromDate = Timestamp.fromDate(new Date(Date.now() - timeRanges[filters.timeRange]));
-    q = query(q, where('createdAt', '>=', fromDate));
-  }
-  
-  // Search query
-  if (searchQuery) {
-    const lowerQuery = searchQuery.toLowerCase();
-    q = query(q, where('title_lowercase', '>=', lowerQuery), where('title_lowercase', '<=', lowerQuery + '~ '));
-  }
-  
-  // Sorting
-  const sortField = sortBy === 'most_answered' ? 'answersCount' : 'createdAt';
-  q = query(q, orderBy(sortField, 'desc'));
-  
-  // Pagination
-  if (lastDoc) q = query(q, startAfter(lastDoc));
-  if (limitNum) q = query(q, limit(limitNum));
-  
-  return q;
-};
 
 // Format helpers
 const formatDoc = (doc) => ({ id: doc.id, ...doc.data() });

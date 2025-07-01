@@ -8,8 +8,6 @@ import {
   getDocs, 
   where, 
   Timestamp, 
-  doc, 
-  updateDoc,
   startAfter
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -59,7 +57,7 @@ export const fetchLatestQuestions = async (pageLimit = LIMITS.LATEST_QUESTIONS, 
         questionsRef,
         orderBy('createdAt', 'desc'),
         startAfter(startAfterDoc),
-        limit(pageLimit)
+        limit(pageLimit) 
       )
     }
     const querySnapshot = await getDocs(q)
@@ -141,52 +139,24 @@ export const fetchTopHelpers = async () => {
 }
 
 /**
- * Fetches featured subjects based on question count
- * @returns {Promise<Array>} Array of subject objects
- */
-export const fetchFeaturedSubjects = async () => {
-  try {
-    // For now, return a static list of popular subjects
-    // In the future, this could be based on actual question counts
-    const featuredSubjects = [
-      { id: 'mathematics', name: 'Mathematics', questionCount: 45, icon: '📐' },
-      { id: 'physics', name: 'Physics', questionCount: 32, icon: '⚡' },
-      { id: 'chemistry', name: 'Chemistry', questionCount: 28, icon: '🧪' },
-      { id: 'computer-science', name: 'Computer Science', questionCount: 67, icon: '💻' }
-    ];
-    
-    return featuredSubjects;
-  } catch (error) {
-    throw new FirebaseError('Error fetching featured subjects', error)
-  }
-}
-
-/**
  * Fetches community statistics
  * @returns {Promise<Object>} Object containing community stats
  */
 export const fetchCommunityStats = async () => {
   try {
+    // Count users
     const usersRef = collection(db, COLLECTIONS.USERS)
     const usersSnapshot = await getDocs(usersRef)
     const totalUsers = usersSnapshot.size
 
-    const activeHelpersQuery = query(usersRef, where('isHelper', '==', true))
-    const activeHelpersSnapshot = await getDocs(activeHelpersQuery)
-    const activeHelpers = activeHelpersSnapshot.size
-
-    const sevenDaysAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-    const questionsRef = collection(db, COLLECTIONS.REQUESTS)
-    const recentQuestionsQuery = query(
-      questionsRef,
-      where('createdAt', '>=', sevenDaysAgo)
-    )
-    const recentQuestionsSnapshot = await getDocs(recentQuestionsQuery)
+    // Count requests (questions)
+    const requestsRef = collection(db, COLLECTIONS.REQUESTS)
+    const requestsSnapshot = await getDocs(requestsRef)
+    const totalQuestions = requestsSnapshot.size
 
     return {
-      usersHelped: totalUsers,
-      questionsThisWeek: recentQuestionsSnapshot.size,
-      activeHelpers
+      users: totalUsers,
+      questions: totalQuestions
     }
   } catch (error) {
     throw new FirebaseError('Error fetching community stats', error)
@@ -222,25 +192,47 @@ export const fetchTrendingTopics = async () => {
 }
 
 /**
- * Initializes answersCount field for all requests
- * @returns {Promise<void>}
+ * Builds a Firestore query for requests based on filters, sorting, and search.
+ * @param {string} collectionName - The name of the collection to query.
+ * @param {object} filters - Filtering options.
+ * @param {string} sortBy - Field to sort by.
+ * @param {string} searchQuery - Text to search for in the title.
+ * @param {object} lastDoc - The last document from the previous page for pagination.
+ * @param {number} limitNum - The number of documents to limit.
+ * @returns {Query} A Firestore query object.
  */
-export const initializeAnswersCountForRequests = async () => {
-  try {
-    const requestsRef = collection(db, COLLECTIONS.REQUESTS)
-    const querySnapshot = await getDocs(requestsRef)
-    let updated = 0
-
-    for (const docSnap of querySnapshot.docs) {
-      const data = docSnap.data()
-      if (typeof data.answersCount === 'undefined') {
-        const requestDocRef = doc(db, COLLECTIONS.REQUESTS, docSnap.id)
-        await updateDoc(requestDocRef, { answersCount: 0 })
-        updated++
-      }
+export const buildQuery = (collectionName, filters = {}, sortBy = 'createdAt', searchQuery = '', lastDoc = null, limitNum = null) => {
+  let q = query(collection(db, collectionName));
+  
+  // Apply filters
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value && key !== 'timeRange' && key !== 'unanswered') {
+      q = query(q, where(key, '==', value));
     }
-    console.log(`Initialized answersCount for ${updated} requests.`)
-  } catch (error) {
-    throw new FirebaseError('Error initializing answersCount for requests', error)
+  });
+  
+  // Time range filter
+  if (filters.timeRange && filters.timeRange !== 'all') {
+    const timeRanges = { '24h': 86400000, '7d': 604800000, '30d': 2592000000 };
+    const fromDate = Timestamp.fromDate(new Date(Date.now() - timeRanges[filters.timeRange]));
+    q = query(q, where('createdAt', '>=', fromDate));
   }
-} 
+  
+  // Search query
+  if (searchQuery) {
+    const lowerQuery = searchQuery.toLowerCase();
+    q = query(q, where('title_lowercase', '>=', lowerQuery), where('title_lowercase', '<=', lowerQuery + '~ '));
+  }
+  
+  // Sorting
+  const sortField = sortBy === 'most_answered' ? 'answersCount' : 'createdAt';
+  q = query(q, orderBy(sortField, 'desc'));
+  
+  // Pagination
+  if (lastDoc) q = query(q, startAfter(lastDoc));
+  if (limitNum) q = query(q, limit(limitNum));
+  
+  return q;
+};
+
+

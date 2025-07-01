@@ -8,7 +8,6 @@ import { useState } from 'react'
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/src/firebase/firebase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
@@ -21,11 +20,10 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const [nickname, setNickname] = useState('')
   const [signupComplete, setSignupComplete] = useState(false)
   const [bio, setBio] = useState('')
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
 
   const handleSignup = async (e) => {
     e.preventDefault()
