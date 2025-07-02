@@ -51,11 +51,9 @@ export function isProfileOwner(user, userId, propUserId) {
  * @returns {string} Formatted value
  */
 export function formatStatValue(statKey, value) {
-  if (statKey === 'averageRating') {
-    return value.toFixed(1)
-  }
   if (statKey === 'rank') {
-    return `#${value}`
+    return `#${value ?? 0}`;
   }
-  return value.toString()
-} 
+  if (value === undefined || value === null) return '0';
+  return value.toString();
+}

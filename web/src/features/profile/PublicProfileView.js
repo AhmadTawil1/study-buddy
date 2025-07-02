@@ -12,6 +12,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { profileService } from '@/src/services/profileService'
 import { useRouter } from 'next/navigation'
+import Badge from '@/src/components/common/Badge'
 
 export default function PublicProfileView({ userId }) {
   const { user } = useAuth()
@@ -99,7 +100,12 @@ export default function PublicProfileView({ userId }) {
             </div>
           </div>
         </div>
-
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2 mt-4">
+          {stats.badges && stats.badges.map(badgeKey => (
+            <Badge key={badgeKey} badgeKey={badgeKey} />
+          ))}
+        </div>
         {/* Stats Overview */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-8">
           <div className="p-4 rounded-lg text-center shadow-md hover:shadow-lg transition-shadow" style={{ background: mode === 'dark' ? '#1e293b' : '#eef2ff' }}>
@@ -119,8 +125,8 @@ export default function PublicProfileView({ userId }) {
           </div>
           <div className="p-4 rounded-lg text-center shadow-md hover:shadow-lg transition-shadow" style={{ background: mode === 'dark' ? '#1e293b' : '#f5f3ff' }}>
             <TrophyIcon className="w-8 h-8 mx-auto mb-2" style={{ color: mode === 'dark' ? '#a78bfa' : '#7c3aed' }} />
-            <div className="text-2xl font-bold" style={{ color: mode === 'dark' ? '#a78bfa' : '#7c3aed' }}>{stats.averageRating.toFixed(1)}</div>
-            <div className="text-sm" style={{ color: mode === 'dark' ? '#a78bfa' : '#7c3aed' }}>Avg. Rating</div>
+            <div className="text-2xl font-bold" style={{ color: mode === 'dark' ? '#a78bfa' : '#7c3aed' }}>{stats.points}</div>
+            <div className="text-sm" style={{ color: mode === 'dark' ? '#a78bfa' : '#7c3aed' }}>Points</div>
           </div>
           <div className="p-4 rounded-lg text-center shadow-md hover:shadow-lg transition-shadow" style={{ background: mode === 'dark' ? '#1e293b' : '#fef2f2' }}>
             <TrophyIcon className="w-8 h-8 mx-auto mb-2" style={{ color: mode === 'dark' ? '#fb7185' : '#e11d48' }} />

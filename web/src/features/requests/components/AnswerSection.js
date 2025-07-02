@@ -225,15 +225,13 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
             )}
 
             {/* Request Live Chat Button */}
-            {user && user.uid !== 'ai-bot' && (
-              ((user.uid === questionOwnerId && user.uid !== ans.userId) || (user.uid === ans.userId && user.uid !== questionOwnerId)) && (
-                <button
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded shadow transition mb-2"
-                  onClick={() => sendChatRequest(user.uid === questionOwnerId ? ans.userId : questionOwnerId)}
-                >
-                  Request Live Chat
-                </button>
-              )
+            {user && ans.author !== 'AI Assistant' && user.uid === questionOwnerId && user.uid !== ans.userId && (
+              <button
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1 rounded shadow transition mb-2"
+                onClick={() => sendChatRequest(ans.userId)}
+              >
+                Request Live Chat
+              </button>
             )}
 
             <div className="flex items-center gap-2 mt-4">

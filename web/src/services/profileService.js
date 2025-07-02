@@ -158,25 +158,19 @@ export const profileService = {
       }, {})
     );
     
-    // Calculate upvotes and ratings from all answers
+    // Calculate upvotes from all answers
     let upvotes = 0;
-    let totalRating = 0;
-    let ratingCount = 0;
     uniqueAnswers.forEach(doc => {
       const data = doc.data ? doc.data() : doc;
       upvotes += data.upvotes || 0;
-      if (Array.isArray(data.ratings)) {
-        data.ratings.forEach(r => {
-          totalRating += r;
-          ratingCount++;
-        });
-      }
     });
-    const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
+    // Calculate points: 1 per answer, 1 per 5 upvotes
+    const questionsAnswered = uniqueAnswers.length;
+    const points = questionsAnswered + Math.floor(upvotes / 5);
     
-    // Calculate user ranking based on upvotes compared to all users
+    // Calculate user ranking based on points compared to all users
     const usersSnap = await getDocs(collection(db, 'users'));
-    const allUserUpvotes = [];
+    const allUserPoints = [];
     for (const userDoc of usersSnap.docs) {
       const userId = userDoc.id;
       const userAnswersQuery = query(collection(db, 'answers'), where('userId', '==', userId));
@@ -185,19 +179,21 @@ export const profileService = {
       userAnswersSnap.docs.forEach(ansDoc => {
         userUpvotes += ansDoc.data().upvotes || 0;
       });
-      allUserUpvotes.push({ userId, upvotes: userUpvotes });
+      const userPoints = userAnswersSnap.docs.length + Math.floor(userUpvotes / 5);
+      allUserPoints.push({ userId, points: userPoints });
     }
+    // Sort users by points and find current user's rank
+    allUserPoints.sort((a, b) => b.points - a.points);
+    const rank = allUserPoints.findIndex(u => u.userId === userId) + 1;
     
-    // Sort users by upvotes and find current user's rank
-    allUserUpvotes.sort((a, b) => b.upvotes - a.upvotes);
-    const rank = allUserUpvotes.findIndex(u => u.userId === userId) + 1;
-    
+    const badges = getUserBadges({ questionsAnswered, upvotesEarned: upvotes, points, rank });
     return {
       questionsAsked: 0, // to be set in component
-      questionsAnswered: uniqueAnswers.length,
+      questionsAnswered,
       upvotesEarned: upvotes,
-      averageRating,
-      rank
+      points,
+      rank,
+      badges,
     };
   },
 
@@ -211,4 +207,14 @@ export const profileService = {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, updates);
   }
-}; 
+};
+
+function getUserBadges({ questionsAnswered, upvotesEarned, points, rank }) {
+  const badges = [];
+  if (questionsAnswered >= 1) badges.push('first_answer');
+  if (questionsAnswered >= 10) badges.push('helper');
+  if (upvotesEarned >= 10) badges.push('popular');
+  if (points >= 20) badges.push('rising_star');
+  if (rank > 0 && rank <= 3) badges.push('top_3');
+  return badges;
+} 

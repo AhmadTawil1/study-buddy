@@ -68,16 +68,6 @@ export default function CommunitySnapshot() {
             </div>
           ))}
         </div>
-        <div className="rounded-xl shadow-lg p-8" style={{ background: colors.card, color: colors.text }}>
-          <h3 className="text-xl font-bold mb-6 text-center" style={{ color: colors.button }}>Trending Topics</h3>
-          <div className="flex flex-wrap justify-center gap-3">
-            {topics.map(topic => (
-              <span key={topic} className="px-4 py-2 rounded-full text-sm font-medium transition cursor-pointer" style={{ background: colors.inputBg, color: colors.button }}>
-                {topic}
-              </span>
-            ))}
-          </div>
-        </div>
       </div>
     </section>
   )
