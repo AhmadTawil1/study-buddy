@@ -45,11 +45,7 @@ export function AuthProvider({ children }) {
             name: currentUser.displayName || '',
             nickname: '', // You may want to prompt for this later
             joinDate: serverTimestamp(),
-            role: 'student',
             bio: '',
-            subjects: [],
-            rating: 0,
-            totalRatings: 0,
             emailVerified: currentUser.emailVerified || false,
             provider: currentUser.providerData[0]?.providerId || 'unknown'
           })
