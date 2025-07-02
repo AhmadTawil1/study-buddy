@@ -32,9 +32,9 @@ export const STAT_TYPES = {
     textColor: 'text-amber-600',
     valueColor: 'text-amber-700'
   },
-  AVERAGE_RATING: {
-    key: 'averageRating',
-    label: 'Avg. Rating',
+  POINTS: {
+    key: 'points',
+    label: 'Points',
     icon: TrophyIcon,
     color: 'purple',
     bgColor: 'bg-purple-50',

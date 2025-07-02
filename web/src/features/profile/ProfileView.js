@@ -9,6 +9,7 @@ import RecentActivity from './components/RecentActivity'
 import ProfileTabs from './components/ProfileTabs'
 import AccountSettings from './components/AccountSettings'
 import SocialLinks from './components/SocialLinks'
+import Badge from '@/src/components/common/Badge'
 
 export default function ProfileView({ userId: propUserId }) {
   const { user } = useAuth()
@@ -71,6 +72,13 @@ export default function ProfileView({ userId: propUserId }) {
         }}
         onNameChange={(e) => setEditName(e.target.value)}
       />
+
+      {/* Badges */}
+      <div className="flex flex-wrap gap-2 mt-4">
+        {stats.badges && stats.badges.map(badgeKey => (
+          <Badge key={badgeKey} badgeKey={badgeKey} />
+        ))}
+      </div>
 
       {/* About Section */}
       <AboutSection
