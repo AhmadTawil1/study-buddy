@@ -54,11 +54,16 @@ export default function ChatRoom({ requestId, currentUser }) {
 
   const sendMessage = (msg) => {
     if (!msg.text && msg.type !== 'zoom_invite') return;
+    // Only send if displayName or email is available
+    if (!currentUser.displayName && !currentUser.email) {
+      alert('Please set your display name or email before sending messages.');
+      return;
+    }
     gun.get(`chat-room-${requestId}`).set({
       ...msg,
       sender: {
         uid: currentUser.uid,
-        displayName: currentUser.displayName || '',
+        displayName: currentUser.displayName || currentUser.email || currentUser.uid,
         email: currentUser.email || '',
       },
       createdAt: Date.now(),
