@@ -1,17 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { db } from '@/src/firebase/firebase';
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import Gun from 'gun';
 import { useTheme } from '@/src/context/themeContext';
+
+// Use a public relay peer for GunDB so P2P chat works across devices and in production
+const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
 
 function useChatMessages(chatId) {
   const [messages, setMessages] = useState([]);
   useEffect(() => {
     if (!chatId) return;
-    const q = query(collection(db, `chats/${chatId}/messages`), orderBy('createdAt'));
-    const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const chat = gun.get(`chat-room-${chatId}`);
+    const handler = chat.map().on((msg, id) => {
+      if (msg && msg.createdAt) {
+        setMessages(msgs => {
+          // Avoid duplicates
+          if (msgs.some(m => m._gunId === id)) return msgs;
+          return [...msgs, { ...msg, _gunId: id }].sort((a, b) => a.createdAt - b.createdAt);
+        });
+      }
     });
-    return () => unsub();
+    return () => chat.off();
   }, [chatId]);
   return messages;
 }
@@ -20,36 +28,37 @@ export default function ChatRoom({ requestId, currentUser }) {
   const [input, setInput] = useState('');
   const messages = useChatMessages(requestId);
   const bottomRef = useRef(null);
-  const { colors, mode } = useTheme();
+  const chatListRef = useRef(null);
+  const { colors } = useTheme();
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
-  const sendMessage = async (msg) => {
+  const sendMessage = (msg) => {
     if (!msg.text && msg.type !== 'zoom_invite') return;
-    await addDoc(collection(db, `chats/${requestId}/messages`), {
+    gun.get(`chat-room-${requestId}`).set({
       ...msg,
       sender: {
         uid: currentUser.uid,
         displayName: currentUser.displayName || '',
         email: currentUser.email || '',
       },
-      createdAt: serverTimestamp(),
+      createdAt: Date.now(),
     });
   };
 
-  const handleSend = async (e) => {
+  const handleSend = (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    await sendMessage({ text: input, type: 'text' });
+    sendMessage({ text: input, type: 'text' });
     setInput('');
   };
 
-  const handleZoomInvite = async () => {
+  const handleZoomInvite = () => {
     const url = prompt('Paste your Zoom link:');
     if (url && url.startsWith('http')) {
-      await sendMessage({ text: '', type: 'zoom_invite', url });
+      sendMessage({ text: '', type: 'zoom_invite', url });
     }
   };
 
@@ -63,15 +72,17 @@ export default function ChatRoom({ requestId, currentUser }) {
     >
       {/* Message List */}
       <div
+        ref={chatListRef}
         className="flex-1 overflow-y-auto px-4 py-6 space-y-3 scrollbar-thin rounded-t-2xl"
         style={{
           background: colors.card,
+          minHeight: 0
         }}
       >
         {messages.map((msg, idx) => {
           const isCurrentUser = msg.sender?.uid === currentUser?.uid;
           return (
-            <div key={msg.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}> 
+            <div key={msg._gunId || idx} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}> 
               <div
                 className="group rounded-xl px-4 py-3 max-w-[70%] shadow-sm flex flex-col transition-colors duration-200"
                 style={{

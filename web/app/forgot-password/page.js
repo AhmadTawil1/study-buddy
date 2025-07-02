@@ -8,12 +8,14 @@ import { useState } from 'react'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '@/src/firebase/firebase'
 import Link from 'next/link'
+import { useTheme } from '@/src/context/themeContext'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const { colors, mode } = useTheme();
 
   const handlePasswordReset = async (e) => {
     e.preventDefault();
@@ -33,58 +35,56 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-8 bg-white rounded-xl shadow-lg fade-in">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password</h2>
-        <p className="text-gray-600">Enter your email address to receive a password reset link.</p>
-      </div>
-
-      {message && (
-        <div className="success-message mb-4 fade-in">
-          {message}
-        </div>
-      )}
-
-      {error && (
-        <div className="error-message mb-4 fade-in">
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handlePasswordReset} className="space-y-6">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
+    <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-300" style={{ background: colors.page, color: colors.text }}>
+      <div className="max-w-md w-full p-8 rounded-xl shadow-xl" style={{ background: colors.card, color: colors.text, borderColor: colors.inputBorder }}>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold mb-2" style={{ color: colors.text }}>Forgot Password</h2>
+          <p style={{ color: colors.inputPlaceholder }}>Enter your email address to receive a password reset link.</p>
         </div>
 
-        <button
-          className={`w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Sending...' : 'Send Reset Link'}
-        </button>
-      </form>
+        {message && (
+          <div className="mb-4 text-green-500 text-center fade-in">{message}</div>
+        )}
 
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Remember your password?{' '}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
+        {error && (
+          <div className="mb-4 text-red-500 text-center fade-in">{error}</div>
+        )}
+
+        <form onSubmit={handlePasswordReset} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1" style={{ color: colors.text }}>
+              Email
+            </label>
+            <input
+              id="email"
+              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            className={`w-full py-3 rounded-lg font-semibold transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            style={{ background: colors.button, color: colors.buttonSecondaryText }}
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-sm" style={{ color: colors.inputPlaceholder }}>
+            Remember your password?{' '}
+            <Link href="/login" className="text-blue-600 hover:underline" style={{ color: colors.button }}>
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

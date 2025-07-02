@@ -14,25 +14,17 @@
 // - Answer acceptance workflow
 
 import { db } from '@/src/firebase/firebase';
-import { 
-  collection, 
-  query, 
-  where, 
-  orderBy,  
-  getDocs, 
-  onSnapshot,
-  doc,
-  getDoc,
-  addDoc,
-  updateDoc,
-  serverTimestamp,
-  increment,
-  arrayUnion,
-  arrayRemove,
-  deleteDoc,
-  setDoc
-} from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, onSnapshot, doc, getDoc, addDoc, updateDoc, serverTimestamp, increment, arrayUnion, arrayRemove, deleteDoc, setDoc } from 'firebase/firestore';
 import { notificationService } from '@/src/services/notificationService';
+
+const qCol = (col, f = {}, ord = 'createdAt') => {
+  let q = query(collection(db, col));
+  if (f.subject) q = query(q, where('subject', '==', f.subject));
+  if (f.userId) q = query(q, where('userId', '==', f.userId));
+  if (f.tags?.length) q = query(q, where('tags', 'array-contains-any', f.tags));
+  return query(q, orderBy(ord, 'desc'));
+};
+const notify = async (userId, type, data) => userId && notificationService.createNotification({ userId, type, ...data });
 
 export const questionService = {
   /**
@@ -41,22 +33,7 @@ export const questionService = {
    * @returns {Promise<Array>} Array of question objects
    */
   getQuestions: async (filters = {}) => {
-    const questionsRef = collection(db, 'questions');
-    let q = query(questionsRef);
-
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      q = query(q, where('tags', 'array-contains-any', filters.tags));
-    }
-
-    q = query(q, orderBy('createdAt', 'desc'));
-    
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(qCol('questions', filters));
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -69,71 +46,17 @@ export const questionService = {
    * @param {object} filters - Filter options (subject, userId, tags)
    * @returns {function} Unsubscribe function
    */
-  subscribeToQuestions: (callback, filters = {}) => {
-    const questionsRef = collection(db, 'questions');
-    let q = query(questionsRef);
-
-    if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
-    }
-    if (filters.userId) {
-      q = query(q, where('userId', '==', filters.userId));
-    }
-    if (filters.tags && filters.tags.length > 0) {
-      q = query(q, where('tags', 'array-contains-any', filters.tags));
-    }
-
-    q = query(q, orderBy('createdAt', 'desc'));
-
-    return onSnapshot(q, (snapshot) => {
-      const questions = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(questions);
-    });
-  },
-
-  /**
-   * Retrieves a single question by its ID
-   * @param {string} questionId - The question ID to retrieve
-   * @returns {Promise<object|null>} Question object or null if not found
-   */
-  getQuestionById: async (questionId) => {
-    const questionRef = doc(db, 'questions', questionId);
-    const questionSnap = await getDoc(questionRef);
-    
-    if (questionSnap.exists()) {
-      return {
-        id: questionSnap.id,
-        ...questionSnap.data()
-      };
-    }
-    return null;
-  },
+  subscribeToQuestions: (cb, f = {}) => onSnapshot(qCol('questions', f), snap => cb(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))),
 
   /**
    * Creates a new question with default values
    * @param {object} questionData - Question data to create
    * @returns {Promise<object>} Created question with ID
    */
-  createQuestion: async (questionData) => {
-    const questionsRef = collection(db, 'questions');
-    const newQuestion = {
-      ...questionData,
-      title_lowercase: questionData.title ? questionData.title.toLowerCase() : '',
-      createdAt: serverTimestamp(),
-      upvotes: 0,
-      downvotes: 0,
-      answers: [],
-      views: 0
-    };
-    
-    const docRef = await addDoc(questionsRef, newQuestion);
-    return {
-      id: docRef.id,
-      ...newQuestion
-    };
+  createQuestion: async d => {
+    const q = { ...d, title_lowercase: d.title?.toLowerCase() || '', createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, answers: [], views: 0 };
+    const ref = await addDoc(collection(db, 'questions'), q);
+    return { id: ref.id, ...q };
   },
 
   /**
@@ -142,13 +65,7 @@ export const questionService = {
    * @param {object} updateData - Data to update
    * @returns {Promise<void>}
    */
-  updateQuestion: async (questionId, updateData) => {
-    const questionRef = doc(db, 'questions', questionId);
-    await updateDoc(questionRef, {
-      ...updateData,
-      updatedAt: serverTimestamp()
-    });
-  },
+  updateQuestion: (id, d) => updateDoc(doc(db, 'questions', id), { ...d, updatedAt: serverTimestamp() }),
 
   /**
    * Adds an answer to a question/request with special handling for AI answers
@@ -156,93 +73,29 @@ export const questionService = {
    * @param {object} answerData - Answer data including userId, content, etc.
    * @returns {Promise<object>} Created answer with ID
    */
-  addAnswer: async (requestId, answerData) => {
-    // Support both questions and requests collections
-    const requestRef = doc(db, 'requests', requestId);
-    const requestSnap = await getDoc(requestRef);
-    if (!requestSnap.exists()) {
-      throw new Error('Question not found');
-    }
-    const requestData = requestSnap.data();
-
-    const answersRef = collection(db, 'answers');
-    let answerDocRef;
-    let newAnswerData = {}; // Initialize with default values
-
-    if (answerData.userId === 'ai-bot') {
-      // For AI answers, use a deterministic ID to ensure uniqueness per request
-      const aiAnswerId = `${requestId}_ai_answer`;
-      answerDocRef = doc(db, 'answers', aiAnswerId);
-      const aiAnswerSnap = await getDoc(answerDocRef);
-
-      if (aiAnswerSnap.exists()) {
-        console.log('AI answer already exists for this request. Updating existing.');
-        await updateDoc(answerDocRef, {
-          ...answerData,
-          requestId,
-          questionTitle: requestData.title,
-          updatedAt: serverTimestamp(),
-        });
-        return { id: aiAnswerId, ...answerData, ...aiAnswerSnap.data() };
-      } else {
-        console.log('Adding new AI answer.');
-        newAnswerData = {
-          ...answerData,
-          requestId,
-          questionTitle: requestData.title,
-          createdAt: serverTimestamp(),
-          upvotes: 0,
-          downvotes: 0,
-          isAccepted: false,
-          upvotedBy: [],
-          replies: [] // Initialize empty replies array
-        };
-        await setDoc(answerDocRef, newAnswerData);
-        // Only update requestRef if it's a truly new AI answer
-        await updateDoc(requestRef, {
-          answers: arrayUnion(answerDocRef.id),
-          updatedAt: serverTimestamp()
-          // Do NOT increment answersCount for AI answers
-        });
+  addAnswer: async (rid, d) => {
+    const reqRef = doc(db, 'requests', rid), reqSnap = await getDoc(reqRef);
+    if (!reqSnap.exists()) throw new Error('Question not found');
+    const req = reqSnap.data();
+    let answerRef, newA;
+    if (d.userId === 'ai-bot') {
+      answerRef = doc(db, 'answers', `${rid}_ai_answer`);
+      const aiSnap = await getDoc(answerRef);
+      if (aiSnap.exists()) {
+        await updateDoc(answerRef, { ...d, requestId: rid, questionTitle: req.title, updatedAt: serverTimestamp() });
+        return { id: answerRef.id, ...d, ...aiSnap.data() };
       }
+      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, isAccepted: false, upvotedBy: [], replies: [] };
+      await setDoc(answerRef, newA);
+      await updateDoc(reqRef, { answers: arrayUnion(answerRef.id), updatedAt: serverTimestamp() });
     } else {
-      // For human answers, continue with addDoc
-      newAnswerData = {
-        ...answerData,
-        requestId,
-        questionTitle: requestData.title,
-        createdAt: serverTimestamp(),
-        upvotes: 0,
-        downvotes: 0,
-        isAccepted: false,
-        upvotedBy: [],
-        replies: [] // Initialize empty replies array
-      };
-      const humanAnswerDoc = await addDoc(answersRef, newAnswerData);
-      answerDocRef = humanAnswerDoc;
-      // Update requestRef for human answers
-      await updateDoc(requestRef, {
-        answers: arrayUnion(answerDocRef.id),
-        updatedAt: serverTimestamp(),
-        answersCount: increment(1) // Increment answer count
-      });
+      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, isAccepted: false, upvotedBy: [], replies: [] };
+      answerRef = await addDoc(collection(db, 'answers'), newA);
+      await updateDoc(reqRef, { answers: arrayUnion(answerRef.id), updatedAt: serverTimestamp(), answersCount: increment(1) });
     }
-
-    // Notification logic remains outside the conditional adding/updating for simplicity
-    if (requestData.userId && answerData.userId && answerData.userId !== requestData.userId && answerData.userId !== 'ai-bot') {
-      await notificationService.createNotification({
-        userId: requestData.userId,
-        type: 'answer',
-        questionId: requestId,
-        answerId: answerDocRef.id,
-        message: `Your question "${requestData.title}" received a new answer!`
-      });
-    }
-
-    return {
-      id: answerDocRef.id,
-      ...newAnswerData
-    };
+    if (req.userId && d.userId && d.userId !== req.userId && d.userId !== 'ai-bot')
+      await notify(req.userId, 'answer', { questionId: rid, answerId: answerRef.id, message: `Your question "${req.title}" received a new answer!` });
+    return { id: answerRef.id, ...newA };
   },
 
   /**
@@ -266,30 +119,12 @@ export const questionService = {
    * @param {string} userId - The user ID voting
    * @returns {Promise<void>}
    */
-  voteQuestion: async (questionId, voteType, userId) => {
-    const questionRef = doc(db, 'questions', questionId);
-    const updates = {};
-    
-    if (voteType === 'up') {
-      updates.upvotes = increment(1);
-    } else if (voteType === 'down') {
-      updates.downvotes = increment(1);
-    }
-
-    await updateDoc(questionRef, updates);
-    
-    // Notify question owner if someone else upvotes
-    if (voteType === 'up' && userId) {
-      const questionSnap = await getDoc(questionRef);
-      const questionData = questionSnap.data();
-      if (questionData.userId && userId !== questionData.userId) {
-        await notificationService.createNotification({
-          userId: questionData.userId,
-          type: 'upvote',
-          questionId,
-          message: `Your question "${questionData.title}" received an upvote!`
-        });
-      }
+  voteQuestion: async (id, t, uid) => {
+    const ref = doc(db, 'questions', id);
+    await updateDoc(ref, { [t === 'up' ? 'upvotes' : 'downvotes']: increment(1) });
+    if (t === 'up' && uid) {
+      const d = (await getDoc(ref)).data();
+      if (d.userId && uid !== d.userId) await notify(d.userId, 'upvote', { questionId: id, message: `Your question "${d.title}" received an upvote!` });
     }
   },
 
@@ -300,32 +135,14 @@ export const questionService = {
    * @param {string} userId - The user ID voting
    * @returns {Promise<void>}
    */
-  voteAnswer: async (answerId, voteType, userId) => {
-    const answerRef = doc(db, 'answers', answerId);
-    const answerSnap = await getDoc(answerRef);
-    if (!answerSnap.exists()) return;
-    const data = answerSnap.data();
-    const upvotedBy = data.upvotedBy || [];
-    
-    if (voteType === 'up') {
-      if (upvotedBy.includes(userId)) {
-        // Remove upvote (toggle off)
-        await updateDoc(answerRef, {
-          upvotes: increment(-1),
-          upvotedBy: arrayRemove(userId)
-        });
-      } else {
-        // Add upvote (toggle on)
-        await updateDoc(answerRef, {
-          upvotes: increment(1),
-          upvotedBy: arrayUnion(userId)
-        });
-      }
-    } else if (voteType === 'down') {
-      await updateDoc(answerRef, {
-        downvotes: increment(1)
-      });
-    }
+  voteAnswer: async (id, t, uid) => {
+    const ref = doc(db, 'answers', id), snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const d = snap.data(), upvotedBy = d.upvotedBy || [];
+    if (t === 'up') upvotedBy.includes(uid)
+      ? await updateDoc(ref, { upvotes: increment(-1), upvotedBy: arrayRemove(uid) })
+      : await updateDoc(ref, { upvotes: increment(1), upvotedBy: arrayUnion(uid) });
+    else if (t === 'down') await updateDoc(ref, { downvotes: increment(1) });
   },
 
   /**
@@ -334,20 +151,10 @@ export const questionService = {
    * @param {string} answerId - The answer ID to accept
    * @returns {Promise<void>}
    */
-  acceptAnswer: async (questionId, answerId) => {
-    const questionRef = doc(db, 'questions', questionId);
-    const answerRef = doc(db, 'answers', answerId);
-
-    await updateDoc(questionRef, {
-      acceptedAnswerId: answerId,
-      updatedAt: serverTimestamp()
-    });
-
-    await updateDoc(answerRef, {
-      isAccepted: true,
-      updatedAt: serverTimestamp()
-    });
-  },
+  acceptAnswer: (qid, aid) => Promise.all([
+    updateDoc(doc(db, 'questions', qid), { acceptedAnswerId: aid, updatedAt: serverTimestamp() }),
+    updateDoc(doc(db, 'answers', aid), { isAccepted: true, updatedAt: serverTimestamp() })
+  ]),
 
   /**
    * Deletes an answer and updates the parent request
@@ -355,36 +162,13 @@ export const questionService = {
    * @param {string} answerId - The answer ID to delete
    * @returns {Promise<void>}
    */
-  deleteAnswer: async (answerId) => {
-    const answerRef = doc(db, 'answers', answerId);
-    const answerSnap = await getDoc(answerRef);
-    if (!answerSnap.exists()) return;
-    
-    const answerData = answerSnap.data();
-    const requestId = answerData.requestId;
-    const replyIds = answerData.replies || [];
-
-    // Delete all replies first
-    const deleteRepliesPromises = replyIds.map(replyId => {
-      const replyRef = doc(db, 'replies', replyId);
-      return deleteDoc(replyRef);
-    });
-
-    // Wait for all replies to be deleted
-    await Promise.all(deleteRepliesPromises);
-
-    // Update the request to remove the answer ID and decrement count
-    if (requestId) {
-      const requestRef = doc(db, 'requests', requestId);
-      await updateDoc(requestRef, {
-        answers: arrayRemove(answerId),
-        updatedAt: serverTimestamp(),
-        answersCount: increment(-1) // Decrement answer count
-      });
-    }
-
-    // Finally delete the answer
-    await deleteDoc(answerRef);
+  deleteAnswer: async id => {
+    const ref = doc(db, 'answers', id), snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const d = snap.data(), reqId = d.requestId, replyIds = d.replies || [];
+    await Promise.all(replyIds.map(rid => deleteDoc(doc(db, 'replies', rid))));
+    if (reqId) await updateDoc(doc(db, 'requests', reqId), { answers: arrayRemove(id), updatedAt: serverTimestamp(), answersCount: increment(-1) });
+    await deleteDoc(ref);
   },
 
   /**
@@ -393,36 +177,14 @@ export const questionService = {
    * @param {object} replyData - Reply data including content, author, etc.
    * @returns {Promise<object>} Created reply with ID
    */
-  addReply: async (answerId, replyData) => {
-    if (!answerId || typeof answerId !== 'string') {
-      console.error('Invalid answerId provided to addReply:', answerId);
-      throw new Error('Invalid answerId provided to addReply');
-    }
-    console.log('Adding reply to answerId:', answerId, 'with data:', replyData);
-    const answerRef = doc(db, 'answers', answerId);
-    const answerSnap = await getDoc(answerRef);
-    if (!answerSnap.exists()) {
-      throw new Error('Answer not found');
-    }
-    
-    // Ensure repliesRef is a top-level collection
-    const repliesRef = collection(db, 'replies');
-    const newReply = {
-      ...replyData,
-      answerId,
-      createdAt: serverTimestamp(),
-      upvotes: 0,
-      upvotedBy: []
-    };
-    const replyDoc = await addDoc(repliesRef, newReply);
-    await updateDoc(answerRef, {
-      replies: arrayUnion(replyDoc.id),
-      updatedAt: serverTimestamp()
-    });
-    return {
-      id: replyDoc.id,
-      ...newReply
-    };
+  addReply: async (aid, d) => {
+    if (!aid || typeof aid !== 'string') throw new Error('Invalid answerId');
+    const answerRef = doc(db, 'answers', aid), answerSnap = await getDoc(answerRef);
+    if (!answerSnap.exists()) throw new Error('Answer not found');
+    const newReply = { ...d, answerId: aid, createdAt: serverTimestamp(), upvotes: 0, upvotedBy: [] };
+    const replyDoc = await addDoc(collection(db, 'replies'), newReply);
+    await updateDoc(answerRef, { replies: arrayUnion(replyDoc.id), updatedAt: serverTimestamp() });
+    return { id: replyDoc.id, ...newReply };
   },
 
   /**
@@ -431,9 +193,7 @@ export const questionService = {
    * @returns {Promise<Array>} Array of reply objects
    */
   getReplies: async (answerId) => {
-    const repliesRef = collection(db, 'replies');
-    const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(query(collection(db, 'replies'), where('answerId', '==', answerId), orderBy('createdAt', 'asc')));
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -446,20 +206,15 @@ export const questionService = {
    * @param {function} callback - Function called when replies change
    * @returns {function} Unsubscribe function
    */
-  subscribeToReplies: (answerId, callback) => {
-    const repliesRef = collection(db, 'replies');
-    const q = query(repliesRef, where('answerId', '==', answerId), orderBy('createdAt', 'asc'));
-
-    return onSnapshot(q, (snapshot) => {
-      const replies = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAtFormatted: questionService.formatTimestampWithHour(doc.data().createdAt),
-        createdAtFullDate: doc.data().createdAt?.toDate().toLocaleDateString()
-      }));
-      callback(replies);
-    });
-  },
+  subscribeToReplies: (aid, cb) => onSnapshot(
+    query(collection(db, 'replies'), where('answerId', '==', aid), orderBy('createdAt', 'asc')),
+    snap => cb(snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAtFormatted: questionService.formatTimestampWithHour(doc.data().createdAt),
+      createdAtFullDate: doc.data().createdAt?.toDate().toLocaleDateString()
+    })))
+  ),
 
   /**
    * Votes on a reply
@@ -468,25 +223,14 @@ export const questionService = {
    * @param {string} userId - The user ID voting
    * @returns {Promise<void>}
    */
-  voteReply: async (replyId, voteType, userId) => {
-    const replyRef = doc(db, 'replies', replyId);
-    const replySnap = await getDoc(replyRef);
-    if (!replySnap.exists()) return;
-    
-    const data = replySnap.data();
-    const upvotedBy = data.upvotedBy || [];
-    
-    if (voteType === 'up') {
-      if (upvotedBy.includes(userId)) return; // already upvoted
-      await updateDoc(replyRef, {
-        upvotes: increment(1),
-        upvotedBy: arrayUnion(userId)
-      });
-    } else if (voteType === 'down') {
-      await updateDoc(replyRef, {
-        downvotes: increment(1)
-      });
-    }
+  voteReply: async (id, t, uid) => {
+    const ref = doc(db, 'replies', id), snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const d = snap.data(), upvotedBy = d.upvotedBy || [];
+    if (t === 'up') {
+      if (upvotedBy.includes(uid)) return;
+      await updateDoc(ref, { upvotes: increment(1), upvotedBy: arrayUnion(uid) });
+    } else if (t === 'down') await updateDoc(ref, { downvotes: increment(1) });
   },
 
   /**
@@ -494,23 +238,12 @@ export const questionService = {
    * @param {string} replyId - The reply ID to delete
    * @returns {Promise<void>}
    */
-  deleteReply: async (replyId) => {
-    const replyRef = doc(db, 'replies', replyId);
-    const replySnap = await getDoc(replyRef);
-    if (!replySnap.exists()) return;
-    
-    const replyData = replySnap.data();
-    const answerId = replyData.answerId;
-    
-    if (answerId) {
-      const answerRef = doc(db, 'answers', answerId);
-      await updateDoc(answerRef, {
-        replies: arrayRemove(replyId),
-        updatedAt: serverTimestamp()
-      });
-    }
-    
-    await deleteDoc(replyRef);
+  deleteReply: async id => {
+    const ref = doc(db, 'replies', id), snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const d = snap.data(), answerId = d.answerId;
+    if (answerId) await updateDoc(doc(db, 'answers', answerId), { replies: arrayRemove(id), updatedAt: serverTimestamp() });
+    await deleteDoc(ref);
   },
 
   /**
@@ -518,35 +251,5 @@ export const questionService = {
    * @param {object} timestamp - Firestore timestamp object
    * @returns {string} Formatted time string (HH:MM)
    */
-  formatTimestampWithHour: (timestamp) => {
-    if (!timestamp || typeof timestamp.toDate !== 'function') {
-      return '';
-    }
-    const date = timestamp.toDate();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    return formattedTime;
-  },
-
-  /**
-   * Sets up real-time subscription to answers for a request
-   * @param {string} requestId - The request ID to subscribe to answers for
-   * @param {function} callback - Function called when answers change
-   * @returns {function} Unsubscribe function
-   */
-  subscribeToAnswersByRequestId: (requestId, callback) => {
-    const answersRef = collection(db, 'answers');
-    const q = query(answersRef, where('requestId', '==', requestId));
-
-    return onSnapshot(q, (snapshot) => {
-      const answers = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAtFormatted: questionService.formatTimestampWithHour(doc.data().createdAt),
-        createdAtFullDate: doc.data().createdAt?.toDate().toLocaleDateString()
-      }));
-      callback(answers);
-    });
-  }
+  formatTimestampWithHour: t => (!t || typeof t.toDate !== 'function') ? '' : `${t.toDate().getHours().toString().padStart(2, '0')}:${t.toDate().getMinutes().toString().padStart(2, '0')}`
 }; 

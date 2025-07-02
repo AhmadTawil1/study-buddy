@@ -26,10 +26,6 @@ export default function FiltersPanel({ filters, onFilterChange }) {
     onFilterChange({ ...filters, subject: filters.subject === subject ? null : subject });
   }
 
-  const clearFilters = () => {
-    onFilterChange({ subject: null, timeRange: 'all', sortBy: 'newest' })
-  }
-
   return (
     <div className="w-full flex flex-col md:flex-row md:items-center gap-2 md:gap-4 bg-white/80 rounded-full shadow-sm px-3 py-2 mt-4 mb-2 border border-gray-100">
       {/* Subject Chips */}
@@ -73,13 +69,6 @@ export default function FiltersPanel({ filters, onFilterChange }) {
           />
           Show only unanswered
         </label>
-        <button
-          onClick={clearFilters}
-          className="ml-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors whitespace-nowrap shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-200 bg-gray-100 text-gray-700 border-gray-200 hover:bg-red-50 hover:text-red-700"
-          title="Clear Filters"
-        >
-          Clear
-        </button>
       </div>
     </div>
   )

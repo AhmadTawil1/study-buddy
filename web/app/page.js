@@ -10,7 +10,6 @@ import AboutSection from '../src/components/common/AboutSection'
 import FeaturesSection from '../src/components/common/FeaturesSection'
 import HowItWorksSection from '../src/components/common/HowItWorksSection'
 import LivePreviewSection from '../src/components/common/LivePreviewSection'
-import CommunitySnapshot from '../src/components/common/CommunitySnapshot'
 
 export default function HomePage() {
   const { colors } = useTheme();
@@ -28,8 +27,6 @@ export default function HomePage() {
         <FeaturesSection />
         {/* How the platform works */}
         <HowItWorksSection />
-        {/* Community stats and snapshot */}
-        <CommunitySnapshot />
       </main>
     </div>
   )

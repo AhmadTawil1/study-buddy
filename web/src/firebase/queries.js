@@ -159,9 +159,15 @@ export const fetchCommunityStats = async () => {
     const requestsSnapshot = await getDocs(requestsRef)
     const totalQuestions = requestsSnapshot.size
 
+    // Count answers
+    const answersRef = collection(db, COLLECTIONS.ANSWERS)
+    const answersSnapshot = await getDocs(answersRef)
+    const totalAnswers = answersSnapshot.size
+
     return {
       users: totalUsers,
-      questions: totalQuestions
+      questions: totalQuestions,
+      answers: totalAnswers
     }
   } catch (error) {
     throw new FirebaseError('Error fetching community stats', error)

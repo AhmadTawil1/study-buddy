@@ -12,6 +12,17 @@ import Link from 'next/link'
 import { collection, query, where, getDocs } from 'firebase/firestore'
 import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
 import { useTheme } from '@/src/context/themeContext'
+import { useRouter } from 'next/navigation'
+
+function getPasswordChecks(password) {
+  return {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+  };
+}
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -21,9 +32,9 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [nickname, setNickname] = useState('')
-  const [signupComplete, setSignupComplete] = useState(false)
-  const [bio, setBio] = useState('')
   const { colors } = useTheme();
+  const passwordChecks = getPasswordChecks(password);
+  const router = useRouter();
 
   const handleSignup = async (e) => {
     e.preventDefault()
@@ -59,29 +70,19 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
 
-      // Send email verification
-      await sendEmailVerification(user);
-
       // Add user info to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         name: name,
         nickname: nickname,
         joinDate: serverTimestamp(),
-        role: 'student', // Default role
-        bio: bio,
-        subjects: [], // Empty subjects array
+        role: 'student',
+        subjects: [],
         rating: 0,
         totalRatings: 0,
-        emailVerified: user.emailVerified || false, // Store email verification status
+        emailVerified: user.emailVerified || false,
       })
-
-      // Set signupComplete to true to show the success message
-      setSignupComplete(true);
-
-      // Instead of redirecting, we'll show a message prompting email verification.
-      // router.push('/profile');
-
+      router.push('/profile');
     } catch (err) {
       setError(err.message)
     } finally {
@@ -118,74 +119,80 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center p-4 transition-colors duration-300" style={{ background: colors.page, color: colors.text }}>
       <div className="max-w-md w-full p-8 rounded-xl shadow-xl" style={{ background: colors.card, color: colors.text, borderColor: colors.inputBorder }}>
         <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: colors.text }}>Register</h2>
-        {signupComplete ? (
-          <div className="mb-4 text-green-500 text-center">Registration successful! Please check your email to verify your account.</div>
-        ) : (
-          <form onSubmit={handleSignup} className="space-y-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={name}
-              onChange={e => setName(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="Nickname"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={nickname}
-              onChange={e => setNickname(e.target.value)}
-              required
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              required
-            />
-            <textarea
-              placeholder="Short Bio (optional)"
-              className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-              rows={3}
-            />
-            {error && <div className="mb-2 text-red-500 text-center">{error}</div>}
-            <button
-              type="submit"
-              className="w-full py-3 rounded-lg font-semibold transition-colors"
-              style={{ background: colors.button, color: colors.buttonSecondaryText }}
-              disabled={loading}
-            >
-              {loading ? 'Registering...' : 'Register'}
-            </button>
-          </form>
-        )}
+        <form onSubmit={handleSignup} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Nickname"
+            className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+            value={nickname}
+            onChange={e => setNickname(e.target.value)}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+          {/* Password guide/strength indicator */}
+          <div className="mb-2 text-xs rounded-lg px-3 py-2" style={{ background: colors.inputBg, border: `1px solid ${colors.inputBorder}` }}>
+            <div style={{ color: passwordChecks.length ? '#22c55e' : '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {passwordChecks.length ? '✓' : '○'} <span>At least 8 characters</span>
+            </div>
+            <div style={{ color: passwordChecks.upper ? '#22c55e' : '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {passwordChecks.upper ? '✓' : '○'} <span>At least one uppercase letter</span>
+            </div>
+            <div style={{ color: passwordChecks.lower ? '#22c55e' : '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {passwordChecks.lower ? '✓' : '○'} <span>At least one lowercase letter</span>
+            </div>
+            <div style={{ color: passwordChecks.number ? '#22c55e' : '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {passwordChecks.number ? '✓' : '○'} <span>At least one number</span>
+            </div>
+            <div style={{ color: passwordChecks.special ? '#22c55e' : '#888', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {passwordChecks.special ? '✓' : '○'} <span>At least one special character</span>
+            </div>
+          </div>
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            className="w-full p-3 rounded-lg border focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+          />
+          {error && <div className="mb-2 text-red-500 text-center">{error}</div>}
+          <button
+            type="submit"
+            className="w-full py-3 rounded-lg font-semibold transition-colors"
+            style={{ background: colors.button, color: colors.buttonSecondaryText }}
+            disabled={loading}
+          >
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+        </form>
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t" style={{ borderColor: colors.inputBorder }}></div>

@@ -3,9 +3,16 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { FiArrowRight } from 'react-icons/fi'
 import { useTheme } from '@/src/context/themeContext'
+import { useEffect, useState } from 'react'
+import { fetchCommunityStats } from '@/src/firebase/queries'
 
 export default function HeroSection() {
   const { colors, mode } = useTheme()
+  const [stats, setStats] = useState({ users: 0, questions: 0, answers: 0 })
+
+  useEffect(() => {
+    fetchCommunityStats().then(s => setStats({ users: s.users, questions: s.questions, answers: s.answers }))
+  }, [])
 
   return (
     <section
@@ -116,7 +123,7 @@ export default function HeroSection() {
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
             viewport={{ once: true }}
-            className="flex-1 flex justify-center md:justify-end mt-8 md:mt-0"
+            className="flex-1 flex flex-col items-center justify-end mt-8 md:mt-0"
           >
             <img
               src="/home.jpg"
@@ -124,6 +131,24 @@ export default function HeroSection() {
               className="w-full max-w-xs sm:max-w-md md:max-w-xl h-auto object-contain drop-shadow-xl"
               style={{ borderRadius: '1.5rem', boxShadow: mode === 'dark' ? '0 4px 32px #0008' : '0 4px 32px #60a5fa22' }}
             />
+            {/* Community stats cards below the hero image */}
+            <div className="w-full flex flex-col items-center mt-8">
+              <h3 className="text-xl font-bold mb-4" style={{ color: colors.button }}>Our Growing Community</h3>
+              <div className="flex gap-8 justify-center items-center">
+                <div className="flex flex-col items-center px-6 py-4 rounded-2xl shadow-lg border" style={{ background: mode === 'dark' ? colors.card : '#fff', minWidth: 120, borderColor: colors.button + '33', boxShadow: mode === 'dark' ? '0 4px 24px #0006' : '0 4px 24px #60a5fa22' }}>
+                  <span className="text-4xl font-extrabold mb-1" style={{ color: colors.button }}>{stats.users?.toLocaleString() ?? 0}</span>
+                  <span className="text-base font-semibold tracking-wide" style={{ color: colors.inputPlaceholder, letterSpacing: 1 }}>Users</span>
+                </div>
+                <div className="flex flex-col items-center px-6 py-4 rounded-2xl shadow-lg border" style={{ background: mode === 'dark' ? colors.card : '#fff', minWidth: 120, borderColor: colors.button + '33', boxShadow: mode === 'dark' ? '0 4px 24px #0006' : '0 4px 24px #60a5fa22' }}>
+                  <span className="text-4xl font-extrabold mb-1" style={{ color: colors.button }}>{stats.questions?.toLocaleString() ?? 0}</span>
+                  <span className="text-base font-semibold tracking-wide" style={{ color: colors.inputPlaceholder, letterSpacing: 1 }}>Questions</span>
+                </div>
+                <div className="flex flex-col items-center px-6 py-4 rounded-2xl shadow-lg border" style={{ background: mode === 'dark' ? colors.card : '#fff', minWidth: 120, borderColor: colors.button + '33', boxShadow: mode === 'dark' ? '0 4px 24px #0006' : '0 4px 24px #60a5fa22' }}>
+                  <span className="text-4xl font-extrabold mb-1" style={{ color: colors.button }}>{stats.answers?.toLocaleString() ?? 0}</span>
+                  <span className="text-base font-semibold tracking-wide" style={{ color: colors.inputPlaceholder, letterSpacing: 1 }}>Answers</span>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>

@@ -18,15 +18,6 @@ import { useState } from 'react'
 export default function Footer() {
   const [language, setLanguage] = useState('en')
 
-  const quickLinks = [
-    { name: "Documentation", href: "/docs" },
-    { name: "Contact Us", href: "/contact" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "FAQ", href: "/faq" },
-    { name: "Support", href: "/support" },
-  ]
-
   const socialLinks = [
     { name: "GitHub", icon: FiGithub, href: "https://github.com/studybuddy" },
     { name: "Twitter", icon: FiTwitter, href: "https://twitter.com/studybuddy" },
@@ -66,20 +57,6 @@ export default function Footer() {
                 </a>
               ))}
             </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="md:col-span-2 md:col-start-3">
-            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              {quickLinks.map((link) => (
-                <li key={link.name}>
-                  <Link href={link.href} className="text-gray-400 hover:text-white transition">
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 
