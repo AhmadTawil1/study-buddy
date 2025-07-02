@@ -12,11 +12,26 @@ function useChatMessages(chatId) {
     const chat = gun.get(`chat-room-${chatId}`);
     const handler = chat.map().on((msg, id) => {
       if (msg && msg.createdAt) {
-        setMessages(msgs => {
-          // Avoid duplicates
-          if (msgs.some(m => m._gunId === id)) return msgs;
-          return [...msgs, { ...msg, _gunId: id }].sort((a, b) => a.createdAt - b.createdAt);
-        });
+        // If sender is a Gun reference, resolve it
+        if (msg.sender && typeof msg.sender === 'object' && msg.sender['#']) {
+          gun.get(msg.sender['#']).once(senderObj => {
+            setMessages(msgs => {
+              if (msgs.some(m => m._gunId === id)) return msgs;
+              return [
+                ...msgs,
+                { ...msg, sender: senderObj, _gunId: id }
+              ].sort((a, b) => a.createdAt - b.createdAt);
+            });
+          });
+        } else {
+          setMessages(msgs => {
+            if (msgs.some(m => m._gunId === id)) return msgs;
+            return [
+              ...msgs,
+              { ...msg, _gunId: id }
+            ].sort((a, b) => a.createdAt - b.createdAt);
+          });
+        }
       }
     });
     return () => chat.off();
@@ -25,6 +40,8 @@ function useChatMessages(chatId) {
 }
 
 export default function ChatRoom({ requestId, currentUser }) {
+  // Debugging: Log currentUser and messages
+  console.log('ChatRoom currentUser:', currentUser);
   const [input, setInput] = useState('');
   const messages = useChatMessages(requestId);
   const bottomRef = useRef(null);
@@ -80,6 +97,8 @@ export default function ChatRoom({ requestId, currentUser }) {
         }}
       >
         {messages.map((msg, idx) => {
+          // Debugging: Log each message sender
+          console.log('Message sender:', msg.sender);
           const isCurrentUser = msg.sender?.uid === currentUser?.uid;
           return (
             <div key={msg._gunId || idx} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}> 
@@ -106,7 +125,8 @@ export default function ChatRoom({ requestId, currentUser }) {
                   className="text-xs mt-2 font-medium opacity-80 whitespace-nowrap"
                   style={{ color: isCurrentUser ? colors.inputBg : colors.inputPlaceholder }}
                 >
-                  {msg.sender?.displayName || msg.sender?.email || 'User'}
+                  {/* Improved fallback for displayName */}
+                  {msg.sender?.displayName?.trim() || msg.sender?.email || msg.sender?.uid || 'User'}
                 </span>
               </div>
             </div>
