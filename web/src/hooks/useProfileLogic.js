@@ -5,6 +5,7 @@ import { useAuth } from '@/src/context/authContext'
 import { profileService } from '@/src/services/profileService'
 import { requestService } from '@/src/services/requests/requestService'
 import { buildRecentActivity, isProfileOwner } from '@/src/utils/profileUtils'
+import { getAuth } from 'firebase/auth'
 
 export function useProfileLogic(user, propUserId) {
   const { logout } = useAuth()
@@ -57,6 +58,11 @@ export function useProfileLogic(user, propUserId) {
       await profileService.updateProfile(userId, { name: editName })
       setEditingName(false)
       setProfile(prev => ({ ...prev, name: editName }))
+      // Reload Firebase Auth user so displayName is up to date
+      const auth = getAuth();
+      if (auth.currentUser) {
+        await auth.currentUser.reload();
+      }
       setSaveMsg('Name updated!')
     } catch (e) { 
       setSaveMsg('Failed to update name.') 
