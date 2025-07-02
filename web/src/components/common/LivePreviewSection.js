@@ -7,6 +7,8 @@ import { fetchLatestQuestions, fetchTopHelpers } from '@/src/firebase/queries'
 import { formatDistanceToNow } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext'
 import { requestService } from '@/src/services/requests/requestService'
+import { db } from '@/src/firebase/firebase'
+import { collection, getDocs } from 'firebase/firestore'
 
 // src/components/common/LivePreviewSection.js
 //
@@ -28,18 +30,43 @@ export default function LivePreviewSection() {
   // State management for the three data sections
   const [latestQuestions, setLatestQuestions] = useState([]) // Recent questions from users
   const [topHelpers, setTopHelpers] = useState([]) // Users who help others the most
-  const [unansweredQuestions, setUnansweredQuestions] = useState([]) // Questions needing answers
+  const [topics, setTopics] = useState([]) // Trending topics (most used tags)
   const [loading, setLoading] = useState(true) // Loading state for initial data fetch
   const { colors, mode } = useTheme(); // Theme context for styling
+
+  // Function to get trending topics (most used tags) - same logic as popular tags
+  const getTrendingTopics = async () => {
+    try {
+      const requestsRef = collection(db, 'requests')
+      const snapshot = await getDocs(requestsRef)
+      
+      const tagCount = {}
+      snapshot.docs.forEach(doc => {
+        const tags = doc.data().tags || []
+        tags.forEach(tag => {
+          tagCount[tag] = (tagCount[tag] || 0) + 1
+        })
+      })
+      
+      return Object.entries(tagCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5) // Get top 5 most used tags
+        .map(([name]) => ({ name }))
+    } catch (error) {
+      console.error('Error fetching trending topics:', error)
+      return []
+    }
+  }
 
   // Fetch all live preview data on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch latest questions and top helpers in parallel for better performance
-        const [questionsResult, helpers] = await Promise.all([
+        // Fetch latest questions, top helpers, and trending topics in parallel
+        const [questionsResult, helpers, trendingTopics] = await Promise.all([
           fetchLatestQuestions(),
-          fetchTopHelpers()
+          fetchTopHelpers(),
+          getTrendingTopics()
         ])
         
         // Handle questions data structure - API might return {questions: []} or [] directly
@@ -49,21 +76,15 @@ export default function LivePreviewSection() {
         // Handle helpers data - limit to top 3 helpers
         setTopHelpers(Array.isArray(helpers) ? helpers.slice(0, 3) : [])
         
-        // Fetch unanswered questions separately (more complex query)
-        try {
-          const unanswered = await requestService.getRequests({ unanswered: true, sortBy: 'newest' })
-          setUnansweredQuestions(Array.isArray(unanswered) ? unanswered.slice(0, 4) : [])
-        } catch (unansweredError) {
-          console.warn('Failed to fetch unanswered questions:', unansweredError)
-          setUnansweredQuestions([]) // Set empty array on error
-        }
+        // Handle trending topics data
+        setTopics(Array.isArray(trendingTopics) ? trendingTopics : [])
         
       } catch (error) {
         console.error('Error fetching live preview data:', error)
         // Set fallback data on error - empty arrays will show placeholder content
         setLatestQuestions([])
         setTopHelpers([])
-        setUnansweredQuestions([])
+        setTopics([])
       } finally {
         setLoading(false) // Always stop loading, regardless of success/failure
       }
@@ -175,14 +196,6 @@ export default function LivePreviewSection() {
                     {/* Helper details */}
                     <div className="flex-1">
                       <Link href={`/profile/${helper.id}`} className="font-medium hover:underline" style={{ color: colors.button }}>{helper.displayName}</Link>
-                      <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: colors.inputPlaceholder }}>
-                        <span>{helper.subjects?.join(", ") || "General"}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <FiStar className="w-4 h-4" style={{ color: '#facc15' }} />
-                          {helper.rating?.toFixed(1) || "New"}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 ))
@@ -197,53 +210,32 @@ export default function LivePreviewSection() {
             </div>
           </motion.div>
 
-          {/* Section 3: Unanswered Questions */}
+          {/* Section 3: Trending Topics */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }} // More delay for staggered animation
+            transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
-            className="rounded-xl shadow-lg p-6"
+            className="rounded-xl shadow-lg p-6 flex flex-col h-full"
             style={{ background: colors.card, color: colors.text }}
           >
-            {/* Section header with description */}
             <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold" style={{ color: colors.text }}>Unanswered Questions</h2>
-                <div className="text-sm mt-1" style={{ color: colors.inputPlaceholder }}>
-                  Be the one to help a peer by answering their question!
-                </div>
-              </div>
-              <Link href="/requests?filter=unanswered" style={{ color: colors.button }} className="hover:underline flex items-center gap-1">
-                View all <FiArrowRight />
-              </Link>
+              <h2 className="text-xl font-bold" style={{ color: colors.text }}>Trending Topics</h2>
             </div>
-            
-            {/* Unanswered questions list or placeholder */}
-            <div className="space-y-4 flex-1">
-              {unansweredQuestions.length > 0 ? (
-                // Display actual unanswered questions
-                unansweredQuestions.map((question) => (
-                  <Link
-                    key={question.id}
-                    href={`/requests/${question.id}`}
-                    className="block p-4 rounded-lg transition hover:opacity-80"
-                    style={{ background: colors.inputBg, color: colors.text }}
-                  >
-                    <h3 className="font-medium" style={{ color: colors.button }}>{question.title}</h3>
-                    <div className="flex items-center gap-2 mt-1 text-sm" style={{ color: colors.inputPlaceholder }}>
-                      <span>{question.subject}</span>
-                      <span>•</span>
-                      <span>{question.createdAtFormatted || (question.createdAt ? formatDistanceToNow(new Date(question.createdAt), { addSuffix: true }) : 'Recently')}</span>
+            <div className="flex-1 w-full">
+              {topics.length > 0 ? (
+                <div className="space-y-4 flex-1">
+                  {topics.map(topic => (
+                    <div key={topic.name} className="flex items-center p-4 rounded-lg transition" style={{ background: colors.inputBg, color: colors.text }}>
+                      <span className="font-medium" style={{ color: colors.button }}>{topic.name}</span>
                     </div>
-                  </Link>
-                ))
+                  ))}
+                </div>
               ) : (
-                // Show placeholder when no unanswered questions
-                <div className="text-center py-8" style={{ color: colors.inputPlaceholder }}>
+                <div className="text-center py-8 w-full" style={{ color: colors.inputPlaceholder }}>
                   <FiBook className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No unanswered questions</p>
-                  <p className="text-sm">Great! All questions have answers!</p>
+                  <p>No trending topics</p>
+                  <p className="text-sm">Ask questions to start trending topics!</p>
                 </div>
               )}
             </div>

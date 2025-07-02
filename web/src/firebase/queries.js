@@ -85,52 +85,57 @@ export const fetchTopHelpers = async () => {
     const answersRef = collection(db, COLLECTIONS.ANSWERS)
     const querySnapshot = await getDocs(answersRef)
 
-    // Count contributions per user
+    // Count contributions per userId (UID)
     const contributorCount = {}
     querySnapshot.docs.forEach(doc => {
       const data = doc.data()
-      const authorEmail = data.author || data.authorName || 'Unknown'
-      if (authorEmail !== 'Unknown') {
-        contributorCount[authorEmail] = (contributorCount[authorEmail] || 0) + 1
+      // Exclude AI Assistant by userId, author, or authorName
+      const isAI = data.author === 'AI Assistant' || data.authorName === 'AI Assistant' || data.userId === 'ai-bot'
+      if (isAI) return
+      const userId = data.userId
+      if (userId) {
+        contributorCount[userId] = (contributorCount[userId] || 0) + 1
       }
     })
 
-    // Get top contributors
-    const sortedContributorEmails = Object.entries(contributorCount)
+    // Get top contributors by UID
+    const sortedContributorUids = Object.entries(contributorCount)
       .sort(([, countA], [, countB]) => countB - countA)
       .slice(0, LIMITS.TOP_HELPERS)
-      .map(([email, count]) => ({ email, count }))
+      .map(([uid, count]) => ({ uid, count }))
 
-    if (sortedContributorEmails.length === 0) {
-      // Return empty array instead of throwing error for better UX
+    if (sortedContributorUids.length === 0) {
       return []
     }
 
     // Fetch user details for top contributors
-    const topContributorEmails = sortedContributorEmails.map(item => item.email)
+    const topContributorUids = sortedContributorUids.map(item => item.uid)
     const usersRef = collection(db, COLLECTIONS.USERS)
-    const usersQuery = query(usersRef, where('email', 'in', topContributorEmails))
+    const usersQuery = query(usersRef, where('__name__', 'in', topContributorUids))
     const usersSnapshot = await getDocs(usersQuery)
 
     // Map user data
     const userDataMap = {}
     usersSnapshot.docs.forEach(doc => {
       const data = doc.data()
-      userDataMap[data.email] = {
-        displayName: data.nickname || data.name || data.email,
+      userDataMap[doc.id] = {
+        userId: doc.id,
+        displayName: data.nickname || data.name || data.email || doc.id,
         subjects: data.subjects || [],
         rating: data.rating || 0
       }
     })
 
     // Combine data
-    return sortedContributorEmails.map(item => ({
-      id: item.email,
-      displayName: userDataMap[item.email]?.displayName || item.email,
-      subjects: userDataMap[item.email]?.subjects || [],
-      rating: userDataMap[item.email]?.rating || 0,
-      answers: item.count
-    }))
+    return sortedContributorUids
+      .map(item => ({
+        id: userDataMap[item.uid]?.userId,
+        displayName: userDataMap[item.uid]?.displayName || item.uid,
+        subjects: userDataMap[item.uid]?.subjects || [],
+        rating: userDataMap[item.uid]?.rating || 0,
+        answers: item.count
+      }))
+      .filter(helper => !!helper.id)
   } catch (error) {
     console.error('Error fetching top helpers:', error)
     // Return empty array instead of throwing error for better UX

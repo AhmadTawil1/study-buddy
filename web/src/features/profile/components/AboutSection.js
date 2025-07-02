@@ -17,7 +17,7 @@ export default function AboutSection({
   const { colors } = useTheme()
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 mb-8 p-6 rounded-xl shadow-lg flex flex-col gap-4" style={{ background: colors.card, color: colors.text }}>
+    <div className="w-full mt-8 mb-8 p-6 rounded-xl shadow-lg flex flex-col gap-4 mx-auto" style={{ background: colors.card, color: colors.text, alignItems: 'flex-start' }}>
       <div className="flex items-center gap-3 mb-2">
         <FaUserEdit className="w-6 h-6" style={{ color: colors.button }} />
         <h3 className="text-lg font-semibold" style={{ color: colors.button }}>About</h3>
@@ -31,13 +31,13 @@ export default function AboutSection({
         )}
       </div>
       {isOwner && editingAbout ? (
-        <div>
+        <div className="flex flex-col w-full">
           <textarea
-            className="w-full rounded border px-2 py-2 mb-2 text-base"
+            className="w-full block rounded border px-2 py-2 mb-2 text-base"
+            style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder, resize: 'vertical' }}
             rows={4}
             value={editAbout}
             onChange={onAboutChange}
-            style={{ color: colors.text, background: colors.inputBg, borderColor: colors.inputBorder }}
             disabled={savingAbout}
           />
           <div className="flex gap-2">
