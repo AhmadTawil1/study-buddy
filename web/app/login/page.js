@@ -9,7 +9,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/src/firebase/firebase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
+import { signInWithGoogle, signInWithGithub } from '@/src/context/authContext'
 import { useTheme } from '@/src/context/themeContext'
 
 export default function LoginPage() {
@@ -133,31 +133,6 @@ export default function LoginPage() {
             }}
           >
             <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign in with GitHub
-          </button>
-          <button
-            type="button"
-            className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
-            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={async () => {
-              setLoading(true);
-              setError('');
-              try {
-                await signInWithMicrosoft();
-                const redirectTo = typeof window !== 'undefined' && localStorage.getItem('redirectAfterLogin');
-                if (redirectTo) {
-                  localStorage.removeItem('redirectAfterLogin');
-                  router.push(redirectTo);
-                } else {
-                  router.push('/profile');
-                }
-              } catch (err) {
-                setError(err.message);
-              } finally {
-                setLoading(false);
-              }
-            }}
-          >
-            <img src="/microsoft.svg" alt="Microsoft" className="h-5 w-5" /> Sign in with Microsoft
           </button>
         </div>
         <div className="mt-6 text-center">

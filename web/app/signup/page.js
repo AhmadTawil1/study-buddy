@@ -10,7 +10,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '@/src/firebase/firebase'
 import Link from 'next/link'
 import { collection, query, where, getDocs } from 'firebase/firestore'
-import { signInWithGoogle, signInWithGithub, signInWithMicrosoft } from '@/src/context/authContext'
+import { signInWithGoogle, signInWithGithub } from '@/src/context/authContext'
 import { useTheme } from '@/src/context/themeContext'
 import { useRouter } from 'next/navigation'
 
@@ -217,14 +217,6 @@ export default function SignupPage() {
             onClick={signInWithGithub}
           >
             <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign up with GitHub
-          </button>
-          <button
-            type="button"
-            className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
-            style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithMicrosoft}
-          >
-            <img src="/microsoft.svg" alt="Microsoft" className="h-5 w-5" /> Sign up with Microsoft
           </button>
         </div>
         <div className="mt-6 text-center text-sm">
