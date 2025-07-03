@@ -200,12 +200,6 @@ export default function RequestDetails() {
           >
             <FiArrowLeft /> Back to Requests
           </button>
-          <Link
-            href={`/chat/${id}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded shadow transition mb-2 self-start"
-          >
-            Join Chat
-          </Link>
           <Card bgColor={colors.card} className="p-6">
             <QuestionOverview request={{
               ...request,

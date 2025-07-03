@@ -6,6 +6,7 @@ import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { submitReply } from '@/src/services/requests/answerService';
+import { useTheme } from '@/src/context/themeContext';
 
 export default function ReplySection({ answerId }) {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export default function ReplySection({ answerId }) {
   const [newReplyContent, setNewReplyContent] = useState('');
   const [isReplying, setIsReplying] = useState(false);
   const router = useRouter();
+  const { colors } = useTheme();
 
   useEffect(() => {
     if (!answerId) return;
@@ -128,14 +130,24 @@ export default function ReplySection({ answerId }) {
                 placeholder="Write your reply..."
                 value={newReplyContent}
                 onChange={(e) => setNewReplyContent(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                style={{
+                  color: colors.text,
+                  background: colors.inputBg,
+                  border: `1px solid ${colors.inputBorder}`
+                }}
                 rows="3"
               />
               <div className="flex items-center gap-2">
                 <button
                   type="submit"
                   disabled={!newReplyContent.trim()}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    background: colors.button,
+                    color: colors.buttonSecondaryText,
+                    opacity: !newReplyContent.trim() ? 0.5 : 1
+                  }}
                 >
                   Submit Reply
                 </button>
@@ -145,7 +157,8 @@ export default function ReplySection({ answerId }) {
                     setIsReplying(false);
                     setNewReplyContent('');
                   }}
-                  className="text-gray-600 hover:text-gray-700 text-sm font-medium"
+                  className="text-sm font-medium transition-colors"
+                  style={{ color: colors.inputPlaceholder }}
                 >
                   Cancel
                 </button>

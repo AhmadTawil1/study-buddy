@@ -1,18 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import Gun from 'gun';
 import { useTheme } from '@/src/context/themeContext';
-
-// Use a public relay peer for GunDB so P2P chat works across devices and in production
-const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
+import { chatService } from '@/src/services/chatService';
+import gun from '@/src/services/gunService';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/src/firebase/firebase';
+import { profileService } from '@/src/services/profileService';
 
 function useChatMessages(chatId) {
   const [messages, setMessages] = useState([]);
   useEffect(() => {
     if (!chatId) return;
-    const chat = gun.get(`chat-room-${chatId}`);
+    const chat = gun.get(`chat-room-${chatId}`); // Use Firestore chatId as GunDB room name
     const handler = chat.map().on((msg, id) => {
       if (msg && msg.createdAt) {
-        // If sender is a Gun reference, resolve it
         if (msg.sender && typeof msg.sender === 'object' && msg.sender['#']) {
           gun.get(msg.sender['#']).once(senderObj => {
             setMessages(msgs => {
@@ -39,27 +39,44 @@ function useChatMessages(chatId) {
   return messages;
 }
 
-export default function ChatRoom({ requestId, currentUser }) {
+export default function ChatRoom({ chatId, currentUser }) {
   // Debugging: Log currentUser and messages
   console.log('ChatRoom currentUser:', currentUser);
   const [input, setInput] = useState('');
-  const messages = useChatMessages(requestId);
+  const messages = useChatMessages(chatId);
   const bottomRef = useRef(null);
   const chatListRef = useRef(null);
   const { colors } = useTheme();
+  const [otherUserName, setOtherUserName] = useState('');
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages]);
 
+  useEffect(() => {
+    async function fetchOtherUserName() {
+      if (!chatId || !currentUser) return;
+      // Fetch chat doc from Firestore
+      const chatDoc = await getDoc(doc(db, 'chats', chatId));
+      if (!chatDoc.exists()) return;
+      const participants = chatDoc.data().participants;
+      if (!participants || participants.length !== 2) return;
+      const otherUserId = participants.find(uid => uid !== currentUser.uid);
+      if (!otherUserId) return;
+      // Fetch other user's public profile
+      const otherProfile = await profileService.getPublicUserProfile(otherUserId);
+      setOtherUserName(otherProfile?.name || 'User');
+    }
+    fetchOtherUserName();
+  }, [chatId, currentUser]);
+
   const sendMessage = (msg) => {
     if (!msg.text && msg.type !== 'zoom_invite') return;
-    // Only send if displayName or email is available
     if (!currentUser.displayName && !currentUser.email) {
       alert('Please set your display name or email before sending messages.');
       return;
     }
-    gun.get(`chat-room-${requestId}`).set({
+    gun.get(`chat-room-${chatId}`).set({
       ...msg,
       sender: {
         uid: currentUser.uid,
@@ -92,6 +109,10 @@ export default function ChatRoom({ requestId, currentUser }) {
         background: colors.card,
       }}
     >
+      {/* Other user's name at the top */}
+      <div className="px-6 py-4 border-b text-xl font-semibold" style={{ borderColor: colors.border, color: colors.text }}>
+        {otherUserName ? `Chat with ${otherUserName}` : 'Chat'}
+      </div>
       {/* Message List */}
       <div
         ref={chatListRef}

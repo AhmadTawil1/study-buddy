@@ -132,7 +132,8 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
       createdAt: new Date(),
       message: `You have a live chat request from ${user.displayName || user.email}`
     });
-    alert('Live chat request sent!');
+    // Redirect to private chat
+    router.push(`/chat/${requestId}?with=${toUserId}`);
   };
 
   return (
@@ -231,6 +232,15 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
                 onClick={() => sendChatRequest(ans.userId)}
               >
                 Request Live Chat
+              </button>
+            )}
+            {/* If the answer is by the current user and not the question owner, show join chat with owner */}
+            {user && ans.userId === user.uid && user.uid !== questionOwnerId && (
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded shadow transition mb-2"
+                onClick={() => router.push(`/chat/${requestId}?with=${questionOwnerId}`)}
+              >
+                Join Chat with Owner
               </button>
             )}
 
