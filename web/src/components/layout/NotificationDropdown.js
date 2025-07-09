@@ -8,13 +8,15 @@ import { useTheme } from '@/src/context/themeContext';
 import { notificationService } from '@/src/services/notificationService';
 import { useAuth } from '@/src/context/authContext';
 
+// Notification dropdown component for showing user notifications in the navbar
 export default function NotificationDropdown() {
+  // Contexts and hooks
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false); // Dropdown open/close state
+  const dropdownRef = useRef(null); // Ref for dropdown panel
+  const buttonRef = useRef(null); // Ref for bell button
   const router = useRouter();
-  const { colors, mode } = useTheme();
+  const { colors, mode } = useTheme(); // Theme colors for dark/light mode
   const { user } = useAuth();
 
   // Close dropdown when clicking outside
@@ -29,11 +31,11 @@ export default function NotificationDropdown() {
         setIsOpen(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle clicking a notification (mark as read and navigate)
   const handleNotificationClick = async (notification, e) => {
     e.preventDefault();
     if (!notification.read) {
@@ -48,12 +50,14 @@ export default function NotificationDropdown() {
     setIsOpen(false);
   };
 
+  // Mark all notifications as read
   const handleMarkAllAsRead = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     await markAllAsRead();
   };
 
+  // Accept a live chat request notification
   const handleAcceptLiveChat = async (notification) => {
     // Send notification to the sender
     await notificationService.createNotification({
@@ -69,6 +73,7 @@ export default function NotificationDropdown() {
     setIsOpen(false);
   };
 
+  // Get icon for notification type
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'answer':
@@ -81,6 +86,7 @@ export default function NotificationDropdown() {
   };
 
   return (
+    // Bell icon button
     <div className="relative" ref={buttonRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -88,6 +94,7 @@ export default function NotificationDropdown() {
         style={{ color: colors.text }}
       >
         <BellIcon className="w-6 h-6" />
+        {/* Unread badge */}
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
             {unreadCount}
@@ -95,6 +102,7 @@ export default function NotificationDropdown() {
         )}
       </button>
 
+      {/* Dropdown panel rendered in portal */}
       {isOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
         <div
           ref={dropdownRef}
@@ -109,6 +117,7 @@ export default function NotificationDropdown() {
             borderColor: colors.inputBorder
           }}
         >
+          {/* Header with title and mark all as read */}
           <div className="p-4 border-b" style={{ borderColor: colors.inputBorder }}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold" style={{ color: colors.text }}>Notifications</h3>
@@ -124,6 +133,7 @@ export default function NotificationDropdown() {
             </div>
           </div>
 
+          {/* Notification list */}
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 text-center" style={{ color: colors.inputPlaceholder }}>
@@ -132,6 +142,7 @@ export default function NotificationDropdown() {
             ) : (
               notifications.map((notification) => (
                 <div key={notification.id}>
+                  {/* Notification item */}
                   <a
                     href={notification.type === 'live_chat_request' ? undefined : `/requests/${notification.requestId || notification.questionId || notification.id}`}
                     onClick={notification.type === 'live_chat_request' ? undefined : (e) => handleNotificationClick(notification, e)}
@@ -150,11 +161,13 @@ export default function NotificationDropdown() {
                           {notification.createdAt && notification.createdAt.toDate && formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true })}
                         </p>
                       </div>
+                      {/* Unread dot */}
                       {!notification.read && (
                         <span className="w-2 h-2 rounded-full mt-2" style={{ background: colors.button }} />
                       )}
                     </div>
                   </a>
+                  {/* Live chat request actions */}
                   {notification.type === 'live_chat_request' && (
                     <div className="flex gap-2 px-4 pb-2">
                       <button

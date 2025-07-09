@@ -4,6 +4,7 @@ import Editor from '@monaco-editor/react'
 import { requestService } from '@/src/services/requests/requestService';
 import { useTheme } from '@/src/context/themeContext';
 
+// Helper function to regenerate AI answer after description update
 async function regenerateAIAnswer(requestId, title, description) {
   try {
     await fetch('/api/ai-answer', {
@@ -16,6 +17,7 @@ async function regenerateAIAnswer(requestId, title, description) {
   }
 }
 
+// Component for displaying and editing the full description of a request
 export default function FullDescription({ description, files, aiSummary, codeSnippet, codeLanguage, isOwner, requestId, title }) {
   const [editing, setEditing] = useState(false);
   const [editDescription, setEditDescription] = useState(description);
@@ -23,17 +25,20 @@ export default function FullDescription({ description, files, aiSummary, codeSni
   const [error, setError] = useState("");
   const { colors } = useTheme();
 
+  // Start editing
   const handleEdit = () => {
     setEditing(true);
     setEditDescription(description);
     setError("");
   };
 
+  // Cancel editing
   const handleCancel = () => {
     setEditing(false);
     setError("");
   };
 
+  // Save the edited description
   const handleSave = async () => {
     if (!editDescription.trim()) {
       setError("Description cannot be empty.");
@@ -58,12 +63,14 @@ export default function FullDescription({ description, files, aiSummary, codeSni
 
   return (
     <div className="mb-6" style={{ color: colors.text }}>
+      {/* Description header and edit button */}
       <h2 className="font-semibold text-lg mb-2 flex items-center" style={{ color: colors.text }}>
         Description
         {isOwner && !editing && (
           <button onClick={handleEdit} className="ml-3 text-base hover:underline" style={{ color: colors.button }}>Edit</button>
         )}
       </h2>
+      {/* Editing mode */}
       {editing ? (
         <div>
           <textarea
@@ -81,9 +88,11 @@ export default function FullDescription({ description, files, aiSummary, codeSni
           {error && <div className="text-sm mt-1" style={{ color: '#ef4444' }}>{error}</div>}
         </div>
       ) : (
+        // Display mode
         <p className="mb-4 whitespace-pre-line" style={{ color: colors.text }}>{description}</p>
       )}
       
+      {/* Code snippet section */}
       {codeSnippet && (
         <div className="mb-4">
           <h3 className="font-semibold mb-2" style={{ color: colors.text }}>Code Snippet</h3>
@@ -107,6 +116,7 @@ export default function FullDescription({ description, files, aiSummary, codeSni
         </div>
       )}
 
+      {/* Attachments section */}
       {files && files.length > 0 && (
         <div>
           <h3 className="font-semibold mb-1" style={{ color: colors.text }}>Attachments</h3>
@@ -125,6 +135,7 @@ export default function FullDescription({ description, files, aiSummary, codeSni
           </ul>
         </div>
       )}
+      {/* AI summary section */}
       {aiSummary && (
         <div className="p-3 mt-4" style={{ background: colors.mode === 'dark' ? '#1e293b' : '#dbeafe', borderLeft: `4px solid ${colors.button}`, color: colors.text }}>
           <strong style={{ color: colors.text }}>AI Summary:</strong> {aiSummary}

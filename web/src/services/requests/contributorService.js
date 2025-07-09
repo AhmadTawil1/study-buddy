@@ -1,6 +1,7 @@
 import { db } from '@/src/firebase/firebase';
 import { collection, onSnapshot, getDocs, query, where } from 'firebase/firestore';
 
+// Helper to count and sort contributors by answer count
 const processContributors = (docs) => {
   const contributorCount = {};
   docs.forEach(doc => {
@@ -16,6 +17,7 @@ const processContributors = (docs) => {
     .map(([email, count]) => ({ email, count }));
 };
 
+// Fetch user data (name, nickname, id) for a list of emails
 const fetchUserData = async (emails) => {
   if (emails.length === 0) return {};
   
@@ -31,6 +33,7 @@ const fetchUserData = async (emails) => {
   return userDataMap;
 };
 
+// Subscribe to the top 5 contributors (by answer count) in the 'answers' collection
 export function subscribeToTopContributors(callback) {
   return onSnapshot(collection(db, 'answers'), async (snapshot) => {
     const contributors = processContributors(snapshot.docs);

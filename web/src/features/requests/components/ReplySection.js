@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTheme } from '@/src/context/themeContext';
 
+// Component for displaying and managing replies to an answer
 export default function ReplySection({ answerId }) {
   const { user } = useAuth();
   const [replies, setReplies] = useState([]);
@@ -15,6 +16,7 @@ export default function ReplySection({ answerId }) {
   const router = useRouter();
   const { colors } = useTheme();
 
+  // Subscribe to real-time updates for replies to this answer
   useEffect(() => {
     if (!answerId) return;
     const unsubscribe = questionService.subscribeToReplies(answerId, (updatedReplies) => {
@@ -27,6 +29,7 @@ export default function ReplySection({ answerId }) {
     };
   }, [answerId]);
 
+  // Handle submitting a new reply
   const handleSubmitReply = async (e) => {
     e.preventDefault();
     if (!newReplyContent.trim() || !user) return;
@@ -44,6 +47,7 @@ export default function ReplySection({ answerId }) {
     }
   };
 
+  // Handle upvoting a reply
   const handleReplyUpvote = async (replyId) => {
     if (!replyId || !user) return;
     try {
@@ -53,6 +57,7 @@ export default function ReplySection({ answerId }) {
     }
   };
 
+  // Handle deleting a reply
   const handleDeleteReply = async (replyId) => {
     if (!replyId) return;
     try {
@@ -64,12 +69,14 @@ export default function ReplySection({ answerId }) {
 
   return (
     <div className="mt-4 space-y-4">
+      {/* List of replies */}
       {replies.length > 0 && (
         <div className="space-y-3">
           {replies.map(reply => (
             <div key={reply.id} className="bg-gray-50 rounded-lg p-4 ml-8">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
+                  {/* Avatar and author */}
                   <div 
                     className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                     onClick={() => reply.userId && router.push(`/profile/${reply.userId}`)}
@@ -87,6 +94,7 @@ export default function ReplySection({ answerId }) {
                     </div>
                   </div>
                 </div>
+                {/* Delete button for owner */}
                 {user && (reply.userId === user.uid || reply.author === user.email) && (
                   <button
                     onClick={() => handleDeleteReply(reply.id)}
@@ -97,8 +105,10 @@ export default function ReplySection({ answerId }) {
                 )}
               </div>
               
+              {/* Reply content */}
               <div className="text-sm text-gray-700 mb-2">{reply.content}</div>
               
+              {/* Upvote button */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleReplyUpvote(reply.id)}
@@ -114,6 +124,7 @@ export default function ReplySection({ answerId }) {
         </div>
       )}
 
+      {/* Reply input for logged-in users */}
       {user && (
         <div className="ml-8">
           {!isReplying ? (

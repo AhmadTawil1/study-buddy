@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+// Color palette for light and dark modes
 const COLORS = {
   light: {
     page: '#f4f6fb',
@@ -29,9 +30,12 @@ const COLORS = {
   },
 };
 
+// Create the theme context
 const ThemeContext = createContext();
 
+// ThemeProvider component to wrap your app and provide theme state
 export function ThemeProvider({ children }) {
+  // Get system color scheme preference
   const getSystemMode = () => {
     if (typeof window !== 'undefined' && window.matchMedia) {
       return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -39,23 +43,29 @@ export function ThemeProvider({ children }) {
     return 'light';
   };
 
+  // State for current mode (light or dark)
   const [mode, setMode] = useState(getSystemMode());
 
+  // Update the HTML class for dark mode
   useEffect(() => {
     document.documentElement.classList.toggle('dark', mode === 'dark');
   }, [mode]);
 
+  // Toggle between light and dark mode
   const toggleMode = () => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'));
 
+  // Context value with mode, color palette, and toggle function
   const value = {
     mode,
     colors: COLORS[mode],
     toggleMode,
   };
 
+  // Provide the theme context to children
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
+// useTheme hook to access theme context in components
 export function useTheme() {
   return useContext(ThemeContext);
 } 

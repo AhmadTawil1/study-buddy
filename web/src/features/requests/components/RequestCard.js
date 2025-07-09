@@ -11,6 +11,7 @@ import { useTheme } from '@/src/context/themeContext'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '@/src/firebase/firebase'
 
+// Card component for displaying a single request/ask item
 export default function RequestCard({ id, title, description, timeAgo, author, tags, answersCount, userId, createdAt }) {
   const { user } = useAuth()
   const [isSaved, setIsSaved] = useState(false)
@@ -18,8 +19,8 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
   const { colors } = useTheme();
   const [realAnswersCount, setRealAnswersCount] = useState(0);
 
+  // Real-time listener for answers (excluding AI Assistant)
   useEffect(() => {
-    // Real-time listener for answers excluding AI Assistant
     if (!id) return;
     const q = query(collection(db, 'answers'), where('requestId', '==', id));
     const unsub = onSnapshot(q, (snapshot) => {
@@ -30,9 +31,9 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
     return () => unsub();
   }, [id]);
 
+  // Check if this question is saved by the user
   useEffect(() => {
     if (!user) return
-    // Check if this question is saved by the user
     const checkSaved = async () => {
       try {
         const savedQuestions = await requestService.getSavedQuestions(user.uid)
@@ -44,6 +45,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
     checkSaved()
   }, [user, id])
 
+  // Handle bookmark (save/unsave)
   const handleSave = async () => {
     if (!user) return
     setIsSaving(true)
@@ -61,9 +63,11 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
   }
 
   return (
+    // Card layout
     <Card className="hover:shadow-2xl transition-shadow p-6 pt-5 border-t-4 border-blue-200" bgColor={colors.card}>
       <div className="flex justify-between items-start mb-4">
         <div>
+          {/* Title and author */}
           <h3 className="text-lg font-semibold mb-1" style={{ color: colors.text }}>{title}</h3>
           <div className="flex items-center gap-2 text-xs mb-1" style={{ color: colors.inputPlaceholder }}>
             <span>by <Link href={`/profile/${userId}`} className="hover:underline font-medium" style={{ color: colors.button }}>{author}</Link></span>
@@ -71,6 +75,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
             <span>{createdAt ? format(createdAt.toDate ? createdAt.toDate() : createdAt, 'PPpp') : timeAgo}</span>
           </div>
         </div>
+        {/* Bookmark button */}
         {user && (
           <button
             className={`transition-colors rounded-full p-1 border-none outline-none focus:ring-2 focus:ring-blue-200 ${
@@ -87,8 +92,10 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
         )}
       </div>
 
+      {/* Description */}
       <p className="text-sm mb-4 line-clamp-2" style={{ color: colors.text }}>{description}</p>
 
+      {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {tags.map((tag, index) => (
           <span
@@ -101,6 +108,7 @@ export default function RequestCard({ id, title, description, timeAgo, author, t
         ))}
       </div>
 
+      {/* Answers count and view button */}
       <div className="flex justify-between items-center">
         <div className="flex items-center text-sm" style={{ color: colors.inputPlaceholder }}>
           <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />

@@ -8,6 +8,7 @@ import { format } from 'date-fns'
 import { useTheme } from '@/src/context/themeContext';
 
 // Add fetch for AI answer
+// Helper to regenerate AI answer after title/description edit
 async function regenerateAIAnswer(requestId, title, description) {
   try {
     await fetch('/api/ai-answer', {
@@ -20,6 +21,7 @@ async function regenerateAIAnswer(requestId, title, description) {
   }
 }
 
+// Component for displaying the overview of a request/question
 export default function QuestionOverview({ request }) {
   const { user } = useAuth();
   const [isRequestSaved, setIsRequestSaved] = useState(request.isSavedByCurrentUser);
@@ -29,8 +31,10 @@ export default function QuestionOverview({ request }) {
   const [error, setError] = useState("");
   const { colors } = useTheme();
 
+  // Determine if the current user is the owner of the request
   const isOwner = user && (user.uid === request.userId);
 
+  // Update saved status if the prop changes
   useEffect(() => {
     console.log('[QuestionOverview] useEffect triggered.');
     console.log('[QuestionOverview] user (for reference in useEffect):', user);
@@ -39,6 +43,7 @@ export default function QuestionOverview({ request }) {
     setIsRequestSaved(newSavedStatus);
   }, [request.isSavedByCurrentUser, user]);
 
+  // Handle upvoting the request
   const handleUpvote = async () => {
     if (!request || !request.id || !user) return;
     try {
@@ -48,6 +53,7 @@ export default function QuestionOverview({ request }) {
     }
   };
 
+  // Handle saving/unsaving the request
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -64,11 +70,13 @@ export default function QuestionOverview({ request }) {
     setSaving(false);
   };
 
+  // Cancel editing the title
   const handleCancel = () => {
     setEditing(false);
     setError("");
   };
 
+  // Handle sharing the request (native share or copy link)
   const handleShare = async () => {
     if (!request || !request.id) return;
     const shareUrl = `${window.location.origin}/requests/${request.id}`;
@@ -92,12 +100,14 @@ export default function QuestionOverview({ request }) {
     }
   };
 
+  // Start editing the title
   const handleEdit = () => {
     setEditing(true);
     setEditTitle(request.title);
     setError("");
   };
 
+  // Save the edited title
   const handleSaveTitle = async () => {
     if (!editTitle.trim()) {
       setError("Title cannot be empty.");
@@ -119,9 +129,11 @@ export default function QuestionOverview({ request }) {
   };
 
   return (
+    // Card for question overview
     <div className="rounded-xl shadow-lg p-6 mb-6" style={{ background: colors.card, color: colors.text }}>
       <div className="flex justify-between items-start mb-4">
         <div>
+          {/* Title editing or display */}
           {editing ? (
             <div className="flex items-center gap-2">
               <input
@@ -162,12 +174,14 @@ export default function QuestionOverview({ request }) {
             </div>
           )}
           {error && <p className="text-sm mt-1" style={{ color: '#ef4444' }}>{error}</p>}
+          {/* Author and date */}
           <div className="flex items-center gap-2 text-xs mt-1" style={{ color: colors.inputPlaceholder }}>
             <span>by <Link href={`/profile/${request.userId}`} className="hover:underline font-medium" style={{ color: colors.button }}>{request.author}</Link></span>
             <span>&middot;</span>
             <span>{request.createdAt ? format(request.createdAt.toDate ? request.createdAt.toDate() : request.createdAt, 'PPpp') : ''}</span>
           </div>
         </div>
+        {/* Save and share buttons */}
         {user && (
           <button
             onClick={handleSave}
@@ -188,6 +202,7 @@ export default function QuestionOverview({ request }) {
         </button>
       </div>
 
+      {/* Answers count and tags */}
       <div className="flex items-center gap-4 text-sm mb-4" style={{ color: colors.inputPlaceholder }}>
         <div className="flex items-center gap-1">
           <FiMessageSquare className="w-4 h-4" />
@@ -195,6 +210,7 @@ export default function QuestionOverview({ request }) {
         </div>
       </div>
 
+      {/* Tags */}
       <div className="flex flex-wrap gap-2">
         {request.tags?.map((tag, index) => (
           <span
