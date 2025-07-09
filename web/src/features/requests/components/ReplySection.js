@@ -5,7 +5,6 @@ import { questionService } from '@/src/services/questionService';
 import { FiThumbsUp, FiTrash2 } from 'react-icons/fi';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { submitReply } from '@/src/services/requests/answerService';
 import { useTheme } from '@/src/context/themeContext';
 
 export default function ReplySection({ answerId }) {

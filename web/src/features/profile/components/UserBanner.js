@@ -1,7 +1,8 @@
 'use client'
-import { UserCircleIcon, PencilIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useTheme } from '@/src/context/themeContext'
 import formatDate from '@/src/utils/formatDate'
+import React from 'react'
 
 export default function UserBanner({ 
   profile, 
@@ -12,9 +13,27 @@ export default function UserBanner({
   onEditName, 
   onSaveName, 
   onCancelEdit, 
-  onNameChange 
+  onNameChange,
+  onAvatarChange,
+  avatarUploading,
+  onAvatarDelete,
+  avatarDeleting
 }) {
   const { colors } = useTheme()
+  const fileInputRef = React.useRef(null)
+
+  const handleAvatarEditClick = () => {
+    if (isOwner && fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files && e.target.files[0]
+    if (file && onAvatarChange) {
+      onAvatarChange(file)
+    }
+  }
 
   return (
     <div className="relative h-48 bg-gradient-to-r from-indigo-600 to-purple-600">
@@ -24,14 +43,46 @@ export default function UserBanner({
             <img 
               src={profile.avatar} 
               alt={profile.name} 
-              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-lg"
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-lg object-cover"
             />
           ) : (
             <UserCircleIcon className="w-24 h-24 sm:w-32 sm:h-32 text-white" />
           )}
-          <button className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors">
-            <PencilIcon className="w-5 h-5 text-indigo-600" />
-          </button>
+          {isOwner && (
+            <>
+              <button
+                className="absolute bottom-0 right-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                onClick={handleAvatarEditClick}
+                disabled={avatarUploading || avatarDeleting}
+                title="Change profile picture"
+              >
+                <PencilIcon className="w-5 h-5 text-indigo-600" />
+              </button>
+              {profile.avatar && (
+                <button
+                  className="absolute bottom-0 left-0 bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+                  onClick={onAvatarDelete}
+                  disabled={avatarUploading || avatarDeleting}
+                  title="Delete profile picture"
+                >
+                  <TrashIcon className="w-5 h-5 text-red-600" />
+                </button>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                disabled={avatarUploading || avatarDeleting}
+              />
+              {(avatarUploading || avatarDeleting) && (
+                <div className="absolute bottom-0 left-0 right-0 flex justify-center items-center bg-white/70 rounded-full w-24 h-24 sm:w-32 sm:h-32">
+                  <span className={`font-semibold animate-pulse ${avatarUploading ? 'text-indigo-600' : 'text-red-600'}`}>{avatarUploading ? 'Uploading...' : 'Deleting...'}</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
         <div className="text-white ml-4">
           {isOwner && editingName ? (

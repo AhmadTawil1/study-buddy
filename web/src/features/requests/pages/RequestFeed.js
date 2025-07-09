@@ -2,11 +2,12 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import RequestCard from '../components/RequestCard'
-import SearchBar from '../components/SearchBar'
+import RequestSearchBar from '../components/RequestSearchBar'
 import FiltersPanel from '../components/FiltersPanel'
 import SidePanel from '../components/SidePanel'
 import { requestService } from '@/src/services/requests/requestService'
 import timeAgo from '@/src/utils/timeAgo'
+import { searchRequests } from '../../../services/algoliaService';
 
 const PAGE_SIZE = 10
 
@@ -17,63 +18,92 @@ export default function RequestFeed() {
   const [lastDoc, setLastDoc] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState({})
+  const [error, setError] = useState(null);
   const sentinelRef = useRef(null)
 
-  // Initial load
+  // Fetch requests whenever searchQuery or filters change
   useEffect(() => {
-    setRequests([])
-    setLastDoc(null)
-    setHasMore(true)
-    loadRequests(true)
-    // eslint-disable-next-line
-  }, [searchQuery, filters])
+    let ignore = false;
+    async function fetchData() {
+      setLoading(true);
+      setError(null);
+      try {
+        if (searchQuery.trim()) {
+          // Use Algolia
+          const hits = await searchRequests(searchQuery);
+          if (!ignore) {
+            setRequests(hits);
+            setHasMore(false);
+            setLastDoc(null);
+          }
+        } else {
+          // Use Firestore
+          const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, null, filters, '');
+          if (!ignore) {
+            setRequests(newRequests);
+            setLastDoc(newLastDoc);
+            setHasMore(!!newLastDoc && newRequests.length === PAGE_SIZE);
+          }
+        }
+      } catch (err) {
+        if (!ignore) setError('Search failed.');
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { ignore = true; };
+  }, [searchQuery, filters]);
 
-  const loadRequests = useCallback(async (reset = false) => {
-    if (loading || (!reset && !hasMore)) return
-    setLoading(true)
-    const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, reset ? null : lastDoc, filters, searchQuery)
-    setRequests(prev => {
-      if (reset) return newRequests
-      const existingIds = new Set(prev.map(r => r.id))
-      const filtered = newRequests.filter(r => !existingIds.has(r.id))
-      return [...prev, ...filtered]
-    })
-    setLastDoc(newLastDoc)
-    setHasMore(!!newLastDoc && newRequests.length === PAGE_SIZE)
-    setLoading(false)
-  }, [loading, hasMore, lastDoc, filters, searchQuery])
-
-  // Infinite scroll observer
+  // Infinite scroll for Firestore results only
   useEffect(() => {
-    if (!hasMore || loading) return
+    if (searchQuery.trim()) return; // Disable infinite scroll during search
+    if (!hasMore || loading) return;
     const observer = new window.IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting) {
-          loadRequests()
+          loadMoreRequests();
         }
       },
       { threshold: 1 }
-    )
-    if (sentinelRef.current) observer.observe(sentinelRef.current)
-    return () => observer.disconnect()
-  }, [loadRequests, hasMore, loading])
+    );
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loading, searchQuery]);
+
+  const loadMoreRequests = useCallback(async () => {
+    if (loading || !hasMore || searchQuery.trim()) return;
+    setLoading(true);
+    try {
+      const { requests: newRequests, lastDoc: newLastDoc } = await requestService.fetchRequestsPaginated(PAGE_SIZE, lastDoc, filters, '');
+      setRequests(prev => {
+        const existingIds = new Set(prev.map(r => r.id || r.objectID));
+        const filtered = newRequests.filter(r => !existingIds.has(r.id || r.objectID));
+        return [...prev, ...filtered];
+      });
+      setLastDoc(newLastDoc);
+      setHasMore(!!newLastDoc && newRequests.length === PAGE_SIZE);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore, lastDoc, filters, searchQuery]);
 
   // Helper: active filters summary
-  const activeFilters = []
-  if (filters.subject) activeFilters.push(filters.subject)
-  if (filters.status) activeFilters.push(`Status: ${filters.status}`)
+  const activeFilters = [];
+  if (filters.subject) activeFilters.push(filters.subject);
+  if (filters.status) activeFilters.push(`Status: ${filters.status}`);
 
   return (
     <div className="container mx-auto">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Main Content */}
         <div className="flex-1">
-          <SearchBar 
+          <RequestSearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            onSuggestionClick={(suggestion) => setSearchQuery(suggestion)}
+            loading={loading}
           />
-          <FiltersPanel 
+          <FiltersPanel
             filters={filters}
             onFilterChange={setFilters}
           />
@@ -88,6 +118,9 @@ export default function RequestFeed() {
               ))}
             </div>
           </div>
+          {error && (
+            <div className="text-red-500 mb-2">{error}</div>
+          )}
           <div className="mt-2 space-y-4">
             {/* Request Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -106,16 +139,16 @@ export default function RequestFeed() {
                 const uniqueRequests = [];
                 const seenIds = new Set();
                 for (const req of requests) {
-                  if (!seenIds.has(req.id)) {
+                  const key = req.id || req.objectID;
+                  if (!seenIds.has(key)) {
                     uniqueRequests.push(req);
-                    seenIds.add(req.id);
+                    seenIds.add(key);
                   }
                 }
-                console.log('Request IDs:', uniqueRequests.map(r => r.id));
                 return uniqueRequests.map(req => (
                   <RequestCard
-                    key={req.id}
-                    id={req.id}
+                    key={req.id || req.objectID}
+                    id={req.id || req.objectID}
                     title={req.title}
                     description={req.description}
                     timeAgo={req.createdAt?.toDate ? timeAgo(req.createdAt.toDate()) : ''}
@@ -129,7 +162,7 @@ export default function RequestFeed() {
               })()}
             </div>
             {/* Infinite scroll sentinel */}
-            <div ref={sentinelRef} style={{ height: 1 }} />
+            {!searchQuery.trim() && <div ref={sentinelRef} style={{ height: 1 }} />}
             {loading && requests.length > 0 && (
               <div className="text-center text-gray-400 py-4">Loading more...</div>
             )}
@@ -144,5 +177,5 @@ export default function RequestFeed() {
         </div>
       </div>
     </div>
-  )
+  );
 }

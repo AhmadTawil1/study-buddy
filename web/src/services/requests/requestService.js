@@ -64,13 +64,6 @@ const filterUnansweredRequests = async (requests) => {
 
 export const requestService = {
   // Core CRUD
-  getRequests: async (filters = {}) => {
-    const q = buildQuery('requests', filters, filters.sortBy);
-    const snapshot = await getDocs(q);
-    let requests = snapshot.docs.map(formatRequest);
-    return filters.unanswered ? await filterUnansweredRequests(requests) : requests;
-  },
-
   subscribeToRequests: (callback, filters = {}) => {
     const q = buildQuery('requests', filters, filters.sortBy);
     return onSnapshot(q, async (snapshot) => {
@@ -102,18 +95,6 @@ export const requestService = {
 
   updateRequest: async (requestId, updateData) => {
     await updateDoc(doc(db, 'requests', requestId), { ...updateData, updatedAt: serverTimestamp() });
-  },
-
-  getRequestCount: async (filters = {}) => {
-    const q = buildQuery('requests', filters);
-    const snapshot = await getCountFromServer(q);
-    return snapshot.data().count;
-  },
-
-  subscribeToRequestById: (requestId, callback) => {
-    return onSnapshot(doc(db, 'requests', requestId), (docSnap) => {
-      callback(docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null);
-    });
   },
 
   // Voting

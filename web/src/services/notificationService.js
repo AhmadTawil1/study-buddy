@@ -22,8 +22,6 @@ import {
   addDoc,
   updateDoc,
   serverTimestamp,
-  arrayUnion,
-  arrayRemove,
   writeBatch
 } from 'firebase/firestore';
 
@@ -142,22 +140,5 @@ export const notificationService = {
   deleteNotification: async (notificationId) => {
     const notificationRef = doc(db, 'notifications', notificationId);
     await deleteDoc(notificationRef);
-  },
-
-  /**
-   * Gets the count of unread notifications for a user
-   * @param {string} userId - The user ID to count unread notifications for
-   * @returns {Promise<number>} Count of unread notifications
-   */
-  getUnreadCount: async (userId) => {
-    const notificationsRef = collection(db, 'notifications');
-    const q = query(
-      notificationsRef,
-      where('userId', '==', userId),
-      where('read', '==', false) // Only unread notifications
-    );
-
-    const snapshot = await getDocs(q);
-    return snapshot.size; // Return the count directly
   }
 }; 

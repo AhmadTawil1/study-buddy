@@ -13,14 +13,11 @@ import { useTheme } from '@/src/context/themeContext';
 import FileUpload from '@/src/components/common/FileUpload';
 import { uploadFiles } from '@/src/services/storageService';
 import { notificationService } from '@/src/services/notificationService';
-import { submitAnswer, submitReply } from '@/src/services/requests/answerService';
 
 export default function AnswerSection({ answers, requestId, questionTitle, questionDescription, questionOwnerId }) {
   const { user } = useAuth();
   const [newAnswerContent, setNewAnswerContent] = useState('');
   const [showReplies, setShowReplies] = useState({});
-  const [aiAnswer, setAiAnswer] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [files, setFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -143,11 +140,6 @@ export default function AnswerSection({ answers, requestId, questionTitle, quest
       </div>
 
       <div className="space-y-4">
-        {/* {aiLoading && (
-          <div className="rounded-lg shadow-sm border p-6" style={{ background: colors.card, borderColor: colors.inputBorder, color: colors.inputPlaceholder }}>
-            Generating AI answer...
-          </div>
-        )} */}
         {allAnswers.map(ans => (
           <div
             key={ans.id}

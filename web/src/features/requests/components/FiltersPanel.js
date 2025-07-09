@@ -1,6 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { requestService } from '@/src/services/requests/requestService'
+import { SUBJECTS } from '@/src/constants/askConfig'
 
 const TIME_RANGES = [
   { value: '24h', label: 'Last 24h' },
@@ -8,18 +7,6 @@ const TIME_RANGES = [
   { value: '30d', label: '30d' },
   { value: 'all', label: 'All' }
 ]
-const SORT_OPTIONS = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'most_answered', label: 'Most Answered' },
-  { value: 'unanswered', label: 'Unanswered' }
-]
-const DIFFICULTY_LEVELS = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' }
-]
-
-const SUBJECTS = ['Math', 'Physics', 'Computer Science', 'Chemistry', 'Biology', 'Other']
 
 export default function FiltersPanel({ filters, onFilterChange }) {
   const handleSubjectSelect = (subject) => {

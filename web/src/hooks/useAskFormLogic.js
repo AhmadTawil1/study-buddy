@@ -50,25 +50,6 @@ export function useAskFormLogic() {
     setLoadingDescription(false)
   }
 
-  const handleDrag = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true)
-    } else if (e.type === "dragleave") {
-      setDragActive(false)
-    }
-  }
-
-  const handleDrop = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setDragActive(false)
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFiles(prev => handleFilesUtil(e.dataTransfer.files, prev))
-    }
-  }
-
   const handleFiles = (fileList) => {
     setFiles(prev => handleFilesUtil(fileList, prev))
   }
@@ -222,8 +203,6 @@ export function useAskFormLogic() {
     handleSubmit,
     handleRephraseTitle,
     handleRephraseDescription,
-    handleDrag,
-    handleDrop,
     handleFiles,
     removeFile,
     addTag,

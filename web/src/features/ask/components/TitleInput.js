@@ -5,8 +5,6 @@ import { motion } from 'framer-motion'
 import { rephraseQuestion } from '@/src/services/aiService'
 import { useTheme } from '@/src/context/themeContext'
 
-const MAX_TITLE_LENGTH = 50
-
 export default function TitleInput({ value, onChange, onRephrase, loading, clarityScore, maxLength }) {
   const [aiTitle, setAiTitle] = useState('')
   const { colors } = useTheme();

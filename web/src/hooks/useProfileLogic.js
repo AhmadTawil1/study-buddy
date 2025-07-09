@@ -6,6 +6,9 @@ import { profileService } from '@/src/services/profileService'
 import { requestService } from '@/src/services/requests/requestService'
 import { buildRecentActivity, isProfileOwner } from '@/src/utils/profileUtils'
 import { getAuth } from 'firebase/auth'
+import { uploadFiles } from '@/src/services/storageService'
+import { storage } from '@/src/firebase/firebase'
+import { ref, deleteObject } from 'firebase/storage'
 
 export function useProfileLogic(user, propUserId) {
   const { logout } = useAuth()
@@ -34,6 +37,8 @@ export function useProfileLogic(user, propUserId) {
   const [editLinkedin, setEditLinkedin] = useState('')
   const [savingSocial, setSavingSocial] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarDeleting, setAvatarDeleting] = useState(false)
 
   // Determine which userId to use
   const userId = propUserId || (user ? user.uid : null)
@@ -98,6 +103,49 @@ export function useProfileLogic(user, propUserId) {
       setSaveMsg('Failed to update social links.') 
     }
     setSavingSocial(false)
+    setTimeout(() => setSaveMsg(''), 2000)
+  }
+
+  // Handler for avatar upload
+  const handleAvatarChange = async (file) => {
+    if (!userId || !file) return
+    setAvatarUploading(true)
+    setSaveMsg('')
+    try {
+      // Upload the file to Firebase Storage
+      const [downloadURL] = await uploadFiles([file], `users/${userId}/avatar`, null)
+      // Update the user's profile in Firestore
+      await profileService.updateProfile(userId, { avatar: downloadURL })
+      setProfile(prev => ({ ...prev, avatar: downloadURL }))
+      setSaveMsg('Profile picture updated!')
+    } catch (e) {
+      setSaveMsg('Failed to update profile picture.')
+    }
+    setAvatarUploading(false)
+    setTimeout(() => setSaveMsg(''), 2000)
+  }
+
+  // Handler for avatar delete
+  const handleAvatarDelete = async () => {
+    if (!userId || !profile?.avatar) return
+    setAvatarDeleting(true)
+    setSaveMsg('')
+    try {
+      // Try to delete from Firebase Storage
+      const avatarRef = ref(storage, `users/${userId}/avatar/${profile.avatar.split('/').pop()}`)
+      try {
+        await deleteObject(avatarRef)
+      } catch (e) {
+        // Ignore if file not found or already deleted
+      }
+      // Remove avatar field from Firestore
+      await profileService.updateProfile(userId, { avatar: null })
+      setProfile(prev => ({ ...prev, avatar: null }))
+      setSaveMsg('Profile picture deleted!')
+    } catch (e) {
+      setSaveMsg('Failed to delete profile picture.')
+    }
+    setAvatarDeleting(false)
     setTimeout(() => setSaveMsg(''), 2000)
   }
 
@@ -166,6 +214,8 @@ export function useProfileLogic(user, propUserId) {
     saveMsg,
     isOwner,
     userId,
+    avatarUploading,
+    avatarDeleting,
 
     // Setters
     setEditingName,
@@ -183,6 +233,8 @@ export function useProfileLogic(user, propUserId) {
     handleSaveSocial,
     logout,
     router,
+    handleAvatarChange,
+    handleAvatarDelete,
 
     // Computed
     recentActivity

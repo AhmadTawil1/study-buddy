@@ -13,11 +13,9 @@ export default function RequestsPage() {
   return (
     <div className="min-h-screen" style={{ background: colors.page, color: colors.text }}>
       {/* Header */}
-      <div className="border-b shadow-md rounded-lg mx-4 mt-4" style={{ background: colors.card }}>
-        <div className="container mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: colors.text }}>Help Requests</h1>
-          <p style={{ color: colors.inputPlaceholder }}>Browse, filter, and contribute to help requests</p>
-        </div>
+      <div className="container mx-auto pt-12 pb-6 px-4">
+        <h1 className="text-4xl font-bold mb-2" style={{ color: colors.text }}>Help Requests</h1>
+        <p className="text-lg" style={{ color: colors.inputPlaceholder }}>Browse, filter, and contribute to help requests</p>
       </div>
 
       {/* Main Content */}

@@ -116,20 +116,6 @@ export const profileService = {
   },
 
   /**
-   * Retrieves all saved questions for a specific user
-   * @param {string} userId - The user ID to fetch saved questions for
-   * @returns {Promise<Array>} Array of saved question objects
-   */
-  getUserSavedQuestions: async (userId) => {
-    console.log(`[profileService.getUserSavedQuestions] Fetching saved questions for user: ${userId}`);
-    const savedQuery = query(collection(db, 'users', userId, 'savedQuestions'));
-    const savedSnap = await getDocs(savedQuery);
-    const savedDocs = savedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    console.log('[profileService.getUserSavedQuestions] Raw saved documents fetched:', savedDocs);
-    return savedDocs;
-  },
-
-  /**
    * Calculates comprehensive user statistics including questions, answers, upvotes, and ranking
    * @param {string} userId - The user ID to calculate stats for
    * @param {string} userEmail - The user's email for additional querying

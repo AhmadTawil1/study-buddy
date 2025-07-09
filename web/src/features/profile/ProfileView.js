@@ -34,6 +34,10 @@ export default function ProfileView({ userId: propUserId }) {
     saveMsg,
     isOwner,
     recentActivity,
+    avatarUploading,
+    handleAvatarChange,
+    avatarDeleting,
+    handleAvatarDelete,
 
     // Setters
     setEditingName,
@@ -71,6 +75,10 @@ export default function ProfileView({ userId: propUserId }) {
           setEditName(profile.name || '')
         }}
         onNameChange={(e) => setEditName(e.target.value)}
+        onAvatarChange={handleAvatarChange}
+        avatarUploading={avatarUploading}
+        onAvatarDelete={handleAvatarDelete}
+        avatarDeleting={avatarDeleting}
       />
 
       {/* Badges */}
