@@ -7,7 +7,6 @@ import AboutSection from './components/AboutSection'
 import StatsGrid from './components/StatsGrid'
 import RecentActivity from './components/RecentActivity'
 import ProfileTabs from './components/ProfileTabs'
-import AccountSettings from './components/AccountSettings'
 import SocialLinks from './components/SocialLinks'
 import Badge from '@/src/components/common/Badge'
 
@@ -123,8 +122,6 @@ export default function ProfileView({ userId: propUserId }) {
           onSavedQuestionClick={(q) => router.push(`/requests/${q.id}`)}
         />
 
-        {/* Account Management */}
-        <AccountSettings onLogout={logout} />
 
         {/* Social Links Section */}
         <SocialLinks
