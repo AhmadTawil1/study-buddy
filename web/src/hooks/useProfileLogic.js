@@ -23,7 +23,6 @@ export function useProfileLogic(user, propUserId) {
     questionsAsked: 0,
     questionsAnswered: 0,
     upvotesEarned: 0,
-    averageRating: 0,
     rank: 0
   })
   const [editingName, setEditingName] = useState(false)
@@ -45,11 +44,11 @@ export function useProfileLogic(user, propUserId) {
   const isOwner = isProfileOwner(user, userId, propUserId)
 
   // Handlers
-  const handleUnsave = async (questionId) => {
+  const handleUnsave = async (requestId) => {
     if (!user) return
     try {
-      await requestService.unsaveQuestion(user.uid, questionId)
-      setSavedQuestions(prev => prev.filter(q => q.id !== questionId))
+      await requestService.unsaveQuestion(user.uid, requestId)
+      setSavedQuestions(prev => prev.filter(q => q.id !== requestId))
     } catch (error) {
       console.error('Error unsaving question:', error)
     }

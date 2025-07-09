@@ -121,8 +121,7 @@ export const fetchTopHelpers = async () => {
       userDataMap[doc.id] = {
         userId: doc.id,
         displayName: data.nickname || data.name || data.email || doc.id,
-        subjects: data.subjects || [],
-        rating: data.rating || 0
+        subjects: data.subjects || []
       }
     })
 
@@ -132,7 +131,6 @@ export const fetchTopHelpers = async () => {
         id: userDataMap[item.uid]?.userId,
         displayName: userDataMap[item.uid]?.displayName || item.uid,
         subjects: userDataMap[item.uid]?.subjects || [],
-        rating: userDataMap[item.uid]?.rating || 0,
         answers: item.count
       }))
       .filter(helper => !!helper.id)

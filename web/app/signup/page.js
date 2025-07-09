@@ -78,8 +78,6 @@ export default function SignupPage() {
         joinDate: serverTimestamp(),
         role: 'student',
         subjects: [],
-        rating: 0,
-        totalRatings: 0,
         emailVerified: user.emailVerified || false,
       })
       router.push('/profile');

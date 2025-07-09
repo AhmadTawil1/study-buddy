@@ -122,7 +122,7 @@ export const profileService = {
    * @returns {Promise<object>} Object containing user statistics
    */
   getUserStats: async (userId, userEmail) => {
-    // Fetch answers for upvotes and ratings (by userId or author/authorEmail)
+    // Fetch answers for upvotes (by userId or author/authorEmail)
     const answersRef = collection(db, 'answers');
     const q1 = query(answersRef, where('userId', '==', userId));
     const q2 = query(answersRef, where('author', '==', userEmail));

@@ -22,7 +22,6 @@ export default function PublicProfileView({ userId }) {
     questionsAsked: 0,
     questionsAnswered: 0,
     upvotesEarned: 0,
-    averageRating: 0,
     rank: 0
   })
   const router = useRouter()

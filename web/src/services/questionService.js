@@ -61,7 +61,7 @@ export const questionService = {
 
   /**
    * Updates an existing question
-   * @param {string} questionId - The question ID to update
+   * @param {string} requestId - The request ID to update
    * @param {object} updateData - Data to update
    * @returns {Promise<void>}
    */
@@ -85,11 +85,11 @@ export const questionService = {
         await updateDoc(answerRef, { ...d, requestId: rid, questionTitle: req.title, updatedAt: serverTimestamp() });
         return { id: answerRef.id, ...d, ...aiSnap.data() };
       }
-      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, isAccepted: false, upvotedBy: [], replies: [] };
+      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, upvotedBy: [], replies: [] };
       await setDoc(answerRef, newA);
       await updateDoc(reqRef, { answers: arrayUnion(answerRef.id), updatedAt: serverTimestamp() });
     } else {
-      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, isAccepted: false, upvotedBy: [], replies: [] };
+      newA = { ...d, requestId: rid, questionTitle: req.title, createdAt: serverTimestamp(), upvotes: 0, downvotes: 0, upvotedBy: [], replies: [] };
       answerRef = await addDoc(collection(db, 'answers'), newA);
       await updateDoc(reqRef, { answers: arrayUnion(answerRef.id), updatedAt: serverTimestamp(), answersCount: increment(1) });
     }
@@ -114,7 +114,7 @@ export const questionService = {
 
   /**
    * Votes on a question (upvote or downvote)
-   * @param {string} questionId - The question ID to vote on
+   * @param {string} requestId - The request ID to vote on
    * @param {string} voteType - 'up' or 'down'
    * @param {string} userId - The user ID voting
    * @returns {Promise<void>}
@@ -124,7 +124,7 @@ export const questionService = {
     await updateDoc(ref, { [t === 'up' ? 'upvotes' : 'downvotes']: increment(1) });
     if (t === 'up' && uid) {
       const d = (await getDoc(ref)).data();
-      if (d.userId && uid !== d.userId) await notify(d.userId, 'upvote', { questionId: id, message: `Your question "${d.title}" received an upvote!` });
+      if (d.userId && uid !== d.userId) await notify(d.userId, 'upvote', { requestId: id, message: `Your question "${d.title}" received an upvote!` });
     }
   },
 
@@ -145,16 +145,7 @@ export const questionService = {
     else if (t === 'down') await updateDoc(ref, { downvotes: increment(1) });
   },
 
-  /**
-   * Accepts an answer as the best answer for a question
-   * @param {string} questionId - The question ID
-   * @param {string} answerId - The answer ID to accept
-   * @returns {Promise<void>}
-   */
-  acceptAnswer: (qid, aid) => Promise.all([
-    updateDoc(doc(db, 'questions', qid), { acceptedAnswerId: aid, updatedAt: serverTimestamp() }),
-    updateDoc(doc(db, 'answers', aid), { isAccepted: true, updatedAt: serverTimestamp() })
-  ]),
+
 
   /**
    * Deletes an answer and updates the parent request

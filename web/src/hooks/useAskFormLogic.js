@@ -118,7 +118,7 @@ export function useAskFormLogic() {
       console.log('Creating request:', request)
       const createdRequest = await requestService.createRequest(request)
       console.log('Request created:', createdRequest)
-      const questionId = createdRequest.id
+      const requestId = createdRequest.id
 
       // Generate AI answer using the service
       const aiAnswer = await generateAnswer({
@@ -130,12 +130,12 @@ export function useAskFormLogic() {
       console.log('AI answer:', aiAnswer)
 
       // Save the AI answer as a normal answer
-      await questionService.addAnswer(questionId, {
+      await questionService.addAnswer(requestId, {
         author: 'AI Assistant',
         badge: 'AI',
         content: aiAnswer,
         userId: 'ai-bot',
-        requestId: questionId
+        requestId: requestId
       })
       console.log('AI answer saved')
 

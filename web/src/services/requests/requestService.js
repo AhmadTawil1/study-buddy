@@ -85,9 +85,7 @@ export const requestService = {
     const newRequest = {
       ...requestData,
       title_lowercase: requestData.title?.toLowerCase() || '',
-      createdAt: serverTimestamp(),
-      status: 'open',
-      responses: []
+      createdAt: serverTimestamp()
     };
     const docRef = await addDoc(collection(db, 'requests'), newRequest);
     return { id: docRef.id, ...newRequest };

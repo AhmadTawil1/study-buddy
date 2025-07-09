@@ -91,7 +91,7 @@ export default function RequestFeed() {
   // Helper: active filters summary
   const activeFilters = [];
   if (filters.subject) activeFilters.push(filters.subject);
-  if (filters.status) activeFilters.push(`Status: ${filters.status}`);
+  
 
   return (
     <div className="container mx-auto">

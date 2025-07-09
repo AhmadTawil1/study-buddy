@@ -58,7 +58,6 @@ export const RequestProvider = ({ children }) => {
   // Default filter configuration
   const [filters, setFilters] = useState({
     subject: null,      // Filter by subject
-    status: null,       // Filter by request status
     userId: null,       // Filter by user ID
     timeRange: 'all',   // Filter by time range
     sortBy: 'newest',   // Sort order
@@ -125,7 +124,7 @@ export const RequestProvider = ({ children }) => {
    * Example usage:
    * ```js
    * const { updateRequest } = useRequest();
-   * await updateRequest('request123', { status: 'completed' });
+   * await updateRequest('request123', { title: 'Updated title' });
    * ```
    */
   const updateRequest = async (requestId, updateData) => {
@@ -145,7 +144,7 @@ export const RequestProvider = ({ children }) => {
    * Example usage:
    * ```js
    * const { updateFilters } = useRequest();
-   * updateFilters({ subject: 'Math', status: 'open' });
+   * updateFilters({ subject: 'Math', unanswered: true });
    * ```
    */
   const updateFilters = (newFilters) => {

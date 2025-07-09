@@ -44,7 +44,7 @@ export default function NotificationDropdown() {
     if (notification.type === 'live_chat_request' || notification.type === 'live_chat_accepted') {
       router.push(`/chat/${notification.requestId}?with=${notification.fromUserId}`);
     } else {
-      const postId = notification.requestId || notification.questionId || notification.id;
+      const postId = notification.requestId || notification.id;
       router.push(`/requests/${postId}`);
     }
     setIsOpen(false);
@@ -144,7 +144,7 @@ export default function NotificationDropdown() {
                 <div key={notification.id}>
                   {/* Notification item */}
                   <a
-                    href={notification.type === 'live_chat_request' ? undefined : `/requests/${notification.requestId || notification.questionId || notification.id}`}
+                    href={notification.type === 'live_chat_request' ? undefined : `/requests/${notification.requestId || notification.id}`}
                     onClick={notification.type === 'live_chat_request' ? undefined : (e) => handleNotificationClick(notification, e)}
                     className={`block p-4 border-b hover:bg-opacity-50 transition-colors ${!notification.read ? 'bg-opacity-10' : ''}`}
                     style={{ 

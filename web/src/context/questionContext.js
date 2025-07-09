@@ -109,7 +109,7 @@ export const QuestionProvider = ({ children }) => {
   /**
    * Updates an existing question in Firestore
    * 
-   * @param {string} questionId - ID of the question to update
+   * @param {string} requestId - ID of the request to update
    * @param {Object} updateData - Fields to update
    * @returns {Promise<void>}
    * @throws {Error} If question update fails
@@ -117,12 +117,12 @@ export const QuestionProvider = ({ children }) => {
    * Example usage:
    * ```js
    * const { updateQuestion } = useQuestion();
-   * await updateQuestion('question123', { title: 'Updated title' });
+   * await updateQuestion('request123', { title: 'Updated title' });
    * ```
    */
-  const updateQuestion = async (questionId, updateData) => {
+  const updateQuestion = async (requestId, updateData) => {
     try {
-      await questionService.updateQuestion(questionId, updateData);
+      await questionService.updateQuestion(requestId, updateData);
     } catch (error) {
       console.error('Error updating question:', error);
       throw error;
@@ -132,7 +132,7 @@ export const QuestionProvider = ({ children }) => {
   /**
    * Adds an answer to a question
    * 
-   * @param {string} questionId - ID of the question
+   * @param {string} requestId - ID of the request
    * @param {Object} answerData - Data for the answer
    * @returns {Promise<Object>} The created answer object
    * @throws {Error} If answer creation fails
@@ -140,14 +140,14 @@ export const QuestionProvider = ({ children }) => {
    * Example usage:
    * ```js
    * const { addAnswer } = useQuestion();
-   * const newAnswer = await addAnswer('question123', {
+   * const newAnswer = await addAnswer('request123', {
    *   content: 'Here is the solution...'
    * });
    * ```
    */
-  const addAnswer = async (questionId, answerData) => {
+  const addAnswer = async (requestId, answerData) => {
     try {
-      const newAnswer = await questionService.addAnswer(questionId, {
+      const newAnswer = await questionService.addAnswer(requestId, {
         ...answerData,
         userId: user.uid,
         authorName: user.displayName || 'Anonymous'
@@ -162,7 +162,7 @@ export const QuestionProvider = ({ children }) => {
   /**
    * Votes on a question (upvote or downvote)
    * 
-   * @param {string} questionId - ID of the question
+   * @param {string} requestId - ID of the request
    * @param {string} voteType - Type of vote ('up' or 'down')
    * @returns {Promise<void>}
    * @throws {Error} If voting fails
@@ -170,12 +170,12 @@ export const QuestionProvider = ({ children }) => {
    * Example usage:
    * ```js
    * const { voteQuestion } = useQuestion();
-   * await voteQuestion('question123', 'up');
+   * await voteQuestion('request123', 'up');
    * ```
    */
-  const voteQuestion = async (questionId, voteType) => {
+  const voteQuestion = async (requestId, voteType) => {
     try {
-      await questionService.voteQuestion(questionId, voteType, user?.uid);
+      await questionService.voteQuestion(requestId, voteType, user?.uid);
     } catch (error) {
       console.error('Error voting on question:', error);
       throw error;
@@ -205,28 +205,7 @@ export const QuestionProvider = ({ children }) => {
     }
   };
 
-  /**
-   * Marks an answer as accepted for a question
-   * 
-   * @param {string} questionId - ID of the question
-   * @param {string} answerId - ID of the answer to accept
-   * @returns {Promise<void>}
-   * @throws {Error} If accepting answer fails
-   * 
-   * Example usage:
-   * ```js
-   * const { acceptAnswer } = useQuestion();
-   * await acceptAnswer('question123', 'answer123');
-   * ```
-   */
-  const acceptAnswer = async (questionId, answerId) => {
-    try {
-      await questionService.acceptAnswer(questionId, answerId);
-    } catch (error) {
-      console.error('Error accepting answer:', error);
-      throw error;
-    }
-  };
+
 
   /**
    * Updates the filters for question list
@@ -256,7 +235,6 @@ export const QuestionProvider = ({ children }) => {
     addAnswer,        // Function to add answers
     voteQuestion,     // Function to vote on questions
     voteAnswer,       // Function to vote on answers
-    acceptAnswer,     // Function to accept answers
     updateFilters     // Function to update filters
   };
 
