@@ -204,7 +204,18 @@ export default function SignupPage() {
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
             style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithGoogle}
+            onClick={async () => {
+              setLoading(true);
+              setError('');
+              try {
+                await signInWithGoogle();
+                router.push('/profile');
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <img src="/google.svg" alt="Google" className="h-5 w-5" /> Sign up with Google
           </button>
@@ -212,7 +223,18 @@ export default function SignupPage() {
             type="button"
             className="w-full py-2 rounded-lg font-semibold border flex items-center justify-center gap-2 transition-colors"
             style={{ background: colors.inputBg, color: colors.text, borderColor: colors.inputBorder }}
-            onClick={signInWithGithub}
+            onClick={async () => {
+              setLoading(true);
+              setError('');
+              try {
+                await signInWithGithub();
+                router.push('/profile');
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <img src="/github.svg" alt="GitHub" className="h-5 w-5" /> Sign up with GitHub
           </button>
