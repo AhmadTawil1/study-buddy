@@ -8,7 +8,7 @@ Built with **Next.js 14**, **Tailwind CSS**, **Firebase**, and **OpenAI**, the a
 
 ## 🚀 Live Demo
 
-[🔗 Hosted on Vercel]([https://your-vercel-deployment-url.com](https://study-buddy-ebon-one.vercel.app/))
+[🔗 Hosted on Vercel](https://study-buddy-ebon-one.vercel.app/)
 
 ---
 
